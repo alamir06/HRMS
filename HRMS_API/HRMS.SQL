@@ -102,26 +102,21 @@ CREATE TABLE employee (
     id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
     employee_code VARCHAR(50) UNIQUE NOT NULL,
     company_id BINARY(16) NOT NULL,
-    -- Employee Type Classification
     employee_category_id BINARY(16) NOT NULL,
     employee_type ENUM('academic', 'hr_officer', 'outsource') NOT NULL,
-    -- Academic Fields (for academic employees)
-    college_id BINARY(16),
-    academic_rank VARCHAR(50),
-    academic_rank_amharic VARCHAR(50),
-    academic_status ENUM('active', 'on_leave', 'sabbatical') DEFAULT 'active',
-    field_of_specialization VARCHAR(100),
-    field_of_specialization_amharic VARCHAR(100),
-    -- HR Officer Fields (for HR employees)
-    hr_role_id BINARY(16),
-    -- Outsource Fields (for outsourced employees)
-    outsourcing_company_id BINARY(16),
-    -- Common Organizational Structure
     department_id BINARY(16) NOT NULL,
     designation_id BINARY(16) NOT NULL,
     manager_id BINARY(16),
-    
-    -- Personal Information
+    hire_date DATE NOT NULL,
+    employment_type ENUM('full_time', 'part_time', 'contract', 'intern') NOT NULL,
+    employment_status ENUM('active', 'on_leave', 'terminated', 'resigned') DEFAULT 'active',
+    termination_date DATE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+CREATE TABLE employee_personal (
+    id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
+    employee_id BINARY(16) NOT NULL,
     first_name VARCHAR(100) NOT NULL,
     first_name_amharic VARCHAR(100),
     middle_name VARCHAR(100),
@@ -137,23 +132,45 @@ CREATE TABLE employee (
     emergency_contact_phone VARCHAR(20),
     address TEXT,
     address_amharic TEXT,
-    
-    -- Employment Information
+    FOREIGN KEY (employee_id) REFERENCES employee(id) ON DELETE CASCADE
+);
+-- optiona table
+CREATE TABLE employee_employment (
+    id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
+    employee_id BINARY(16) NOT NULL,
     official_email VARCHAR(150) UNIQUE NOT NULL,
     official_phone VARCHAR(20),
-    hire_date DATE NOT NULL,
-    employment_type ENUM('full_time', 'part_time', 'contract', 'intern') NOT NULL,
-    employment_status ENUM('active', 'on_leave', 'terminated', 'resigned') DEFAULT 'active',
     salary DECIMAL(12,2),
-    termination_date DATE,
-    
-    -- Education
     qualification VARCHAR(100),
     qualification_amharic VARCHAR(100),
-    
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    FOREIGN KEY (employee_id) REFERENCES employee(id) ON DELETE CASCADE
 );
+
+CREATE TABLE employee_academic (
+    id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
+    employee_id BINARY(16) NOT NULL,
+    college_id BINARY(16),
+    academic_rank VARCHAR(50),
+    academic_rank_amharic VARCHAR(50),
+    academic_status ENUM('active', 'on_leave', 'sabbatical') DEFAULT 'active',
+    field_of_specialization VARCHAR(100),
+    field_of_specialization_amharic VARCHAR(100),
+    FOREIGN KEY (employee_id) REFERENCES employee(id) ON DELETE CASCADE
+);
+
+CREATE TABLE employee_hr (
+    id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
+    employee_id BINARY(16) NOT NULL,
+    hr_role_id BINARY(16) NOT NULL,
+    FOREIGN KEY (employee_id) REFERENCES employee(id) ON DELETE CASCADE
+);
+CREATE TABLE employee_outsource (
+    id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
+    employee_id BINARY(16) NOT NULL,
+    outsourcing_company_id BINARY(16) NOT NULL,
+    FOREIGN KEY (employee_id) REFERENCES employee(id) ON DELETE CASCADE
+);
+
 -- USER AUTHENTICATIO
 CREATE TABLE users (
     id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
@@ -563,12 +580,32 @@ ALTER TABLE designations ADD FOREIGN KEY (department_id) REFERENCES department(i
 ALTER TABLE employee 
 ADD FOREIGN KEY (company_id) REFERENCES company(id) ON DELETE CASCADE,
 ADD FOREIGN KEY (employee_category_id) REFERENCES employee_categories(id) ON DELETE CASCADE,
-ADD FOREIGN KEY (college_id) REFERENCES college(id) ON DELETE SET NULL,
-ADD FOREIGN KEY (hr_role_id) REFERENCES hr_roles(id) ON DELETE SET NULL,
-ADD FOREIGN KEY (outsourcing_company_id) REFERENCES outsourcing_companies(id) ON DELETE SET NULL,
 ADD FOREIGN KEY (department_id) REFERENCES department(id) ON DELETE CASCADE,
 ADD FOREIGN KEY (designation_id) REFERENCES designations(id) ON DELETE CASCADE,
 ADD FOREIGN KEY (manager_id) REFERENCES employee(id) ON DELETE SET NULL;
+
+-- Employee Personal foreign keys
+ALTER TABLE employee_personal 
+ADD FOREIGN KEY (employee_id) REFERENCES employee(id) ON DELETE CASCADE;
+
+-- Employee Employment foreign keys  
+ALTER TABLE employee_employment 
+ADD FOREIGN KEY (employee_id) REFERENCES employee(id) ON DELETE CASCADE;
+
+-- Employee Academic foreign keys
+ALTER TABLE employee_academic 
+ADD FOREIGN KEY (employee_id) REFERENCES employee(id) ON DELETE CASCADE,
+ADD FOREIGN KEY (college_id) REFERENCES college(id) ON DELETE SET NULL;
+
+-- Employee HR foreign keys
+ALTER TABLE employee_hr 
+ADD FOREIGN KEY (employee_id) REFERENCES employee(id) ON DELETE CASCADE,
+ADD FOREIGN KEY (hr_role_id) REFERENCES hr_roles(id) ON DELETE CASCADE;
+
+-- Employee Outsource foreign keys
+ALTER TABLE employee_outsource 
+ADD FOREIGN KEY (employee_id) REFERENCES employee(id) ON DELETE CASCADE,
+ADD FOREIGN KEY (outsourcing_company_id) REFERENCES outsourcing_companies(id) ON DELETE CASCADE;
 
 -- Users foreign keys
 ALTER TABLE users ADD FOREIGN KEY (employee_id) REFERENCES employee(id) ON DELETE CASCADE;
@@ -672,70 +709,261 @@ CREATE INDEX idx_applicant_recruitment_status ON applicant(recruitment_id, statu
 CREATE INDEX idx_asset_status ON assets(status);
 CREATE INDEX idx_notices_publish ON notices(publish_date, is_published);
 CREATE INDEX idx_notifications_user_read ON notifications(user_id, is_read);
+-- Indexes for the new tables
+CREATE INDEX idx_employee_personal_employee ON employee_personal(employee_id);
+CREATE INDEX idx_employee_employment_employee ON employee_employment(employee_id);
+CREATE INDEX idx_employee_academic_employee ON employee_academic(employee_id);
+CREATE INDEX idx_employee_hr_employee ON employee_hr(employee_id);
+CREATE INDEX idx_employee_outsource_employee ON employee_outsource(employee_id);
+-- Unique constraints for one-to-one relationships
+ALTER TABLE employee_personal ADD UNIQUE KEY unique_employee_personal (employee_id);
+ALTER TABLE employee_employment ADD UNIQUE KEY unique_employee_employment (employee_id);
+ALTER TABLE employee_academic ADD UNIQUE KEY unique_employee_academic (employee_id);
+ALTER TABLE employee_hr ADD UNIQUE KEY unique_employee_hr (employee_id);
+ALTER TABLE employee_outsource ADD UNIQUE KEY unique_employee_outsource (employee_id);
 
--- VALIDATION TRIGGER
+-- VALIDATION TRIGGER (Updated for normalized schema)
 DELIMITER //
 CREATE TRIGGER validate_employee_type_consistency
 BEFORE INSERT ON employee
 FOR EACH ROW
 BEGIN
-    -- Validate employee type consistency
-    IF NEW.employee_type = 'academic' THEN
-        IF NEW.college_id IS NULL THEN
-            SIGNAL SQLSTATE '45000'
-            SET MESSAGE_TEXT = 'Academic employees must have a college assigned';
-        END IF;
-        IF NEW.hr_role_id IS NOT NULL THEN
-            SIGNAL SQLSTATE '45000'
-            SET MESSAGE_TEXT = 'Academic employees cannot have HR roles';
-        END IF;
-        IF NEW.outsourcing_company_id IS NOT NULL THEN
-            SIGNAL SQLSTATE '45000'
-            SET MESSAGE_TEXT = 'Academic employees cannot be outsourced';
-        END IF;
+    -- Note: We can't validate college_id, hr_role_id, outsourcing_company_id here anymore
+    -- because they're in separate tables. The validation will be done in application logic
+    -- and in the AFTER INSERT triggers on the child tables.
     
-    ELSEIF NEW.employee_type = 'hr_officer' THEN
-        IF NEW.hr_role_id IS NULL THEN
-            SIGNAL SQLSTATE '45000'
-            SET MESSAGE_TEXT = 'HR Officers must have an HR role assigned';
-        END IF;
-        IF NEW.college_id IS NOT NULL THEN
-            SIGNAL SQLSTATE '45000'
-            SET MESSAGE_TEXT = 'HR Officers cannot have academic assignments';
-        END IF;
-        IF NEW.outsourcing_company_id IS NOT NULL THEN
-            SIGNAL SQLSTATE '45000'
-            SET MESSAGE_TEXT = 'HR Officers cannot be outsourced';
-        END IF;
-    
-    ELSEIF NEW.employee_type = 'outsource' THEN
-        IF NEW.outsourcing_company_id IS NULL THEN
-            SIGNAL SQLSTATE '45000'
-            SET MESSAGE_TEXT = 'Outsourced employees must have an outsourcing company';
-        END IF;
-        IF NEW.college_id IS NOT NULL THEN
-            SIGNAL SQLSTATE '45000'
-            SET MESSAGE_TEXT = 'Outsourced employees cannot have academic assignments';
-        END IF;
-        IF NEW.hr_role_id IS NOT NULL THEN
-            SIGNAL SQLSTATE '45000'
-            SET MESSAGE_TEXT = 'Outsourced employees cannot have HR roles';
-        END IF;
-    END IF;
-    
-    -- Validate manager is not self
+    -- We can only validate manager is not self
     IF NEW.manager_id IS NOT NULL AND NEW.manager_id = NEW.id THEN
         SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'Employee cannot be their own manager';
     END IF;
 END//
 DELIMITER ;
+
+-- Create validation triggers for the child tables
+DELIMITER //
+
+-- Trigger to validate academic employees have college assigned
+CREATE TRIGGER validate_academic_employee_consistency
+AFTER INSERT ON employee_academic
+FOR EACH ROW
+BEGIN
+    DECLARE emp_type ENUM('academic', 'hr_officer', 'outsource');
+    DECLARE emp_college_id BINARY(16);
+    
+    -- Get employee type and college_id
+    SELECT e.employee_type, ea.college_id INTO emp_type, emp_college_id
+    FROM employee e
+    LEFT JOIN employee_academic ea ON e.id = ea.employee_id
+    WHERE e.id = NEW.employee_id;
+    
+    IF emp_type = 'academic' AND emp_college_id IS NULL THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Academic employees must have a college assigned in employee_academic table';
+    END IF;
+END//
+
+-- Trigger to validate HR officers have HR role assigned
+CREATE TRIGGER validate_hr_employee_consistency
+AFTER INSERT ON employee_hr
+FOR EACH ROW
+BEGIN
+    DECLARE emp_type ENUM('academic', 'hr_officer', 'outsource');
+    
+    -- Get employee type
+    SELECT employee_type INTO emp_type 
+    FROM employee 
+    WHERE id = NEW.employee_id;
+    
+    IF emp_type != 'hr_officer' THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'HR info can only be added for HR officer employees';
+    END IF;
+END//
+
+-- Trigger to validate outsourced employees have outsourcing company assigned
+CREATE TRIGGER validate_outsource_employee_consistency
+AFTER INSERT ON employee_outsource
+FOR EACH ROW
+BEGIN
+    DECLARE emp_type ENUM('academic', 'hr_officer', 'outsource');
+    
+    -- Get employee type
+    SELECT employee_type INTO emp_type 
+    FROM employee 
+    WHERE id = NEW.employee_id;
+    
+    IF emp_type != 'outsource' THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Outsource info can only be added for outsourced employees';
+    END IF;
+END//
+
+-- Trigger to prevent wrong employee type data in academic table
+CREATE TRIGGER prevent_wrong_type_academic
+BEFORE INSERT ON employee_academic
+FOR EACH ROW
+BEGIN
+    DECLARE emp_type ENUM('academic', 'hr_officer', 'outsource');
+    
+    -- Get employee type
+    SELECT employee_type INTO emp_type 
+    FROM employee 
+    WHERE id = NEW.employee_id;
+    
+    IF emp_type != 'academic' THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Academic information can only be added for academic employees';
+    END IF;
+END//
+
+-- Trigger to prevent wrong employee type data in HR table
+CREATE TRIGGER prevent_wrong_type_hr
+BEFORE INSERT ON employee_hr
+FOR EACH ROW
+BEGIN
+    DECLARE emp_type ENUM('academic', 'hr_officer', 'outsource');
+    
+    -- Get employee type
+    SELECT employee_type INTO emp_type 
+    FROM employee 
+    WHERE id = NEW.employee_id;
+    
+    IF emp_type != 'hr_officer' THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'HR information can only be added for HR officer employees';
+    END IF;
+END//
+
+-- Trigger to prevent wrong employee type data in outsource table
+CREATE TRIGGER prevent_wrong_type_outsource
+BEFORE INSERT ON employee_outsource
+FOR EACH ROW
+BEGIN
+    DECLARE emp_type ENUM('academic', 'hr_officer', 'outsource');
+    
+    -- Get employee type
+    SELECT employee_type INTO emp_type 
+    FROM employee 
+    WHERE id = NEW.employee_id;
+    
+    IF emp_type != 'outsource' THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Outsource information can only be added for outsourced employees';
+    END IF;
+END//
+
+DELIMITER ;
+
+-- Create a comprehensive view to check employee data consistency
+CREATE VIEW employee_consistency_check AS
+SELECT 
+    e.id,
+    e.employee_code,
+    e.employee_type,
+    CASE 
+        WHEN e.employee_type = 'academic' AND ea.id IS NULL THEN 'MISSING_ACADEMIC_INFO'
+        WHEN e.employee_type = 'hr_officer' AND eh.id IS NULL THEN 'MISSING_HR_INFO'
+        WHEN e.employee_type = 'outsource' AND eo.id IS NULL THEN 'MISSING_OUTSOURCE_INFO'
+        WHEN e.employee_type = 'academic' AND ea.college_id IS NULL THEN 'MISSING_COLLEGE'
+        ELSE 'VALID'
+    END as consistency_status,
+    ep.first_name,
+    ep.last_name
+FROM employee e
+LEFT JOIN employee_personal ep ON e.id = ep.employee_id
+LEFT JOIN employee_academic ea ON e.id = ea.employee_id
+LEFT JOIN employee_hr eh ON e.id = eh.employee_id
+LEFT JOIN employee_outsource eo ON e.id = eo.employee_id;
 -- HELPER VIEW FOR BILINGUAL DAT
+-- Drop the old view
+DROP VIEW IF EXISTS employee_bilingual;
+
+-- Create updated bilingual view
 CREATE VIEW employee_bilingual AS
 SELECT 
     e.*,
-    COALESCE(e.first_name_amharic, e.first_name) as display_first_name,
-    COALESCE(e.last_name_amharic, e.last_name) as display_last_name,
-    u.preferred_language
+    ep.first_name, ep.first_name_amharic, 
+    ep.middle_name, ep.middle_name_amharic,
+    ep.last_name, ep.last_name_amharic,
+    ep.gender, ep.date_of_birth,
+    ee.official_email, ee.official_phone, ee.salary,
+    ea.academic_rank, ea.academic_rank_amharic,
+    ea.field_of_specialization, ea.field_of_specialization_amharic,
+    d.department_name, d.department_name_amharic,
+    des.title as designation_title, des.title_amharic as designation_title_amharic,
+    ec.category_name, ec.category_name_amharic,
+    u.preferred_language,
+    -- Display names based on preferred language
+    CASE 
+        WHEN u.preferred_language = 'am' AND ep.first_name_amharic IS NOT NULL 
+        THEN ep.first_name_amharic 
+        ELSE ep.first_name 
+    END as display_first_name,
+    CASE 
+        WHEN u.preferred_language = 'am' AND ep.last_name_amharic IS NOT NULL 
+        THEN ep.last_name_amharic 
+        ELSE ep.last_name 
+    END as display_last_name
 FROM employee e
+LEFT JOIN employee_personal ep ON e.id = ep.employee_id
+LEFT JOIN employee_employment ee ON e.id = ee.employee_id
+LEFT JOIN employee_academic ea ON e.id = ea.employee_id
+LEFT JOIN department d ON e.department_id = d.id
+LEFT JOIN designations des ON e.designation_id = des.id
+LEFT JOIN employee_categories ec ON e.employee_category_id = ec.id
 LEFT JOIN users u ON e.id = u.employee_id;
+
+-- Trigger for academic employees
+DELIMITER //
+CREATE TRIGGER validate_academic_employee
+BEFORE INSERT ON employee_academic
+FOR EACH ROW
+BEGIN
+    DECLARE emp_type ENUM('academic', 'hr_officer', 'outsource');
+    
+    -- Get employee type
+    SELECT employee_type INTO emp_type FROM employee WHERE id = NEW.employee_id;
+    
+    IF emp_type != 'academic' THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Academic info can only be added for academic employees';
+    END IF;
+END//
+DELIMITER ;
+
+-- Trigger for HR employees
+DELIMITER //
+CREATE TRIGGER validate_hr_employee
+BEFORE INSERT ON employee_hr
+FOR EACH ROW
+BEGIN
+    DECLARE emp_type ENUM('academic', 'hr_officer', 'outsource');
+    
+    -- Get employee type
+    SELECT employee_type INTO emp_type FROM employee WHERE id = NEW.employee_id;
+    
+    IF emp_type != 'hr_officer' THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'HR info can only be added for HR officer employees';
+    END IF;
+END//
+DELIMITER ;
+
+-- Trigger for outsource employees
+DELIMITER //
+CREATE TRIGGER validate_outsource_employee
+BEFORE INSERT ON employee_outsource
+FOR EACH ROW
+BEGIN
+    DECLARE emp_type ENUM('academic', 'hr_officer', 'outsource');
+    
+    -- Get employee type
+    SELECT employee_type INTO emp_type FROM employee WHERE id = NEW.employee_id;
+    
+    IF emp_type != 'outsource' THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Outsource info can only be added for outsourced employees';
+    END IF;
+END//
+DELIMITER ;

@@ -1,17 +1,13 @@
-// server.js
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
+import rateLimit from 'express-rate-limit';
 import pool from "./config/database.js";
 
-//Routes
+// Routes
 import appRouter from './routes/index.js';
-
-//Middleware
-import { authenticateToken } from './middleware/auth.js';
-
 
 dotenv.config();
 
@@ -21,58 +17,56 @@ const PORT = process.env.PORT || 3000;
 // Make Database Pool Available Globally
 app.locals.pool = pool;
 
+// Rate Limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: process.env.NODE_ENV === 'production' ? 100 : 1000,
+  message: { error: 'Too many requests, please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // Middleware
 app.use(helmet());
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
-  credentials: true
+  origin: process.env.CLIENT_URL,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
-app.use(morgan('combined'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+
+app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
+app.use(limiter);
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Request logging middleware
+app.use((req, res, next) => {
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  }
+  next();
+});
 
 // Main Routes
 app.use('/api', appRouter);
-
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error('Error:', err);
-
-  // MySQL duplicate entry error
-  if (err.code === 'ER_DUP_ENTRY') {
-    return res.status(400).json({
-      error: 'Duplicate entry',
-      message: 'A record with this information already exists'
-    });
-  }
-
-  // JWT errors
-  if (err.name === 'JsonWebTokenError') {
-    return res.status(401).json({ error: 'Invalid token' });
-  }
-  if (err.name === 'TokenExpiredError') {
-    return res.status(401).json({ error: 'Token expired' });
-  }
-  // Default error
-  res.status(500).json({
-    error: 'Internal server error',
-    message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
-  });
-});
 
 // Health check endpoint
 app.get('/health', async (req, res) => {
   try {
     const connection = await pool.getConnection();
+    const [results] = await connection.execute('SELECT 1 as test');
     connection.release();
+    
     res.status(200).json({ 
       status: 'OK', 
       timestamp: new Date().toISOString(),
       database: 'Connected',
-      environment: process.env.NODE_ENV || 'development'
+      environment: process.env.NODE_ENV || 'development',
+      uptime: process.uptime()
     });
   } catch (error) {
-    res.status(500).json({ 
+    res.status(503).json({ 
       status: 'Error', 
       timestamp: new Date().toISOString(),
       database: 'Disconnected',
@@ -88,13 +82,40 @@ app.get('/api', (req, res) => {
     version: '1.0.0',
     description: 'Human Resource Management System API',
     endpoints: {
-      auth: '/api',
+      auth: '/api/auth',
+      employees: '/api/employees',
+      attendance: '/api/attendance',
+      leave: '/api/leave'
     },
     documentation: '/api-docs'
   });
 });
 
-// 404 handler for undefined routes
+// Error handling middleware (AFTER routes)
+app.use((err, req, res, next) => {
+  console.error('Error:', err);
+
+  if (err.code === 'ER_DUP_ENTRY') {
+    return res.status(400).json({
+      error: 'Duplicate entry',
+      message: 'A record with this information already exists'
+    });
+  }
+  if (err.name === 'JsonWebTokenError') {
+    return res.status(401).json({ error: 'Invalid token' });
+  }
+  if (err.name === 'TokenExpiredError') {
+    return res.status(401).json({ error: 'Token expired' });
+  }
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  res.status(err.status || 500).json({
+    error: 'Internal server error',
+    message: isDevelopment ? err.message : 'Something went wrong',
+    ...(isDevelopment && { stack: err.stack })
+  });
+});
+
+// 404 handler (LAST middleware)
 app.use((req, res) => {
   res.status(404).json({
     error: 'Route not found',
