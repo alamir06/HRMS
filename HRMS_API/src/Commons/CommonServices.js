@@ -5,11 +5,12 @@ export class CrudService {
     tableName,
     idField = "id",
     uuidEnabled = true,
-    uuidFields) {
+    uuidFields = ["id"]
+  ) {
     this.tableName = tableName;
     this.idField = idField;
     this.uuidEnabled = uuidEnabled;
-    this.uuidFields=uuidFields
+    this.uuidFields = uuidFields || ["id"]; // Default to ['id'] if not provided
   }
 
   async create(data, fields = ["*"]) {
@@ -35,11 +36,11 @@ export class CrudService {
         ", "
       )}) VALUES (${placeholders.join(", ")})`;
 
-      const [result] = await pool.execute(query, values);
+      const [result] = await pool.query(query, values);
 
       // Return the created record
       if (this.uuidEnabled) {
-        const [rows] = await pool.execute(
+        const [rows] = await pool.query(
           `SELECT BIN_TO_UUID(id) as id FROM ${this.tableName} ORDER BY created_at DESC LIMIT 1`
         );
 
@@ -56,12 +57,11 @@ export class CrudService {
     }
   }
 
-  // READ - Find record by ID (FIXED for UUID)
+  // READ - Find record by ID
   async findById(id, fields = ["*"]) {
     try {
       const selectFields = this.getSelectFields(fields);
 
-      // FIX: Proper UUID handling
       let query, params;
 
       if (this.uuidEnabled) {
@@ -72,7 +72,7 @@ export class CrudService {
         params = [id];
       }
 
-      const [records] = await pool.execute(query, params);
+      const [records] = await pool.query(query, params);
 
       if (records.length === 0) {
         throw new Error("Record not found");
@@ -235,39 +235,60 @@ export class CrudService {
     }
   }
 
-  // Helper method to select fields with UUID conversion - FIXED
+  // Helper method to select fields with UUID conversion - SINGLE VERSION
   getSelectFields(fields = ["*"]) {
     if (!this.uuidEnabled) {
       return fields.join(", ");
     }
 
-    // Handle the case where we want all fields (*)
-    if (fields[0] === "*") {
-      // Get all column names except id, then add converted id
-      const allColumns = this.getAllColumnNames();
-      const otherColumns = allColumns.filter((col) => col !== "id");
-      if (otherColumns.length > 0) {
-        return `BIN_TO_UUID(id) as id, ${otherColumns.join(", ")}`;
-      } else {
-        return `BIN_TO_UUID(id) as id, *`;
-      }
+    // For specific fields
+    if (fields[0] !== "*") {
+      return fields
+        .map((field) =>
+          this.isUuidField(field) ? `BIN_TO_UUID(${field}) as ${field}` : field
+        )
+        .join(", ");
     }
 
-    // Handle specific fields - convert id field
-    return fields
-      .map((field) =>
-        field === "id" && this.uuidEnabled
-          ? `BIN_TO_UUID(${field}) as ${field}`
-          : field
-      )
-      .join(", ");
+    // For "*" - Handle all tables with explicit column listing
+    const tableColumns = this.getAllColumnNames();
+
+    if (tableColumns[0] === "*") {
+      // Fallback if we don't have specific columns
+      return `BIN_TO_UUID(id) as id, ${this.tableName}.*`;
+    } else {
+      // Convert all UUID fields and include all other columns
+      const convertedColumns = tableColumns.map((col) => {
+        if (this.isUuidField(col)) {
+          return `BIN_TO_UUID(${col}) as ${col}`;
+        }
+        return col;
+      });
+      return convertedColumns.join(", ");
+    }
   }
 
-  // Helper to get all column names for the table
+  // Helper to check if a field is a UUID field
+  isUuidField(fieldName) {
+    const uuidFields = {
+      college: ["id", "company_id"],
+      company: ["id"],
+      hr_roles: ["id"],
+      department: ["id", "company_id", "college_id", "manager_id"],
+      // Add new tables here as you create them
+    };
+
+    return (
+      uuidFields[this.tableName]?.includes(fieldName) || fieldName === "id"
+    );
+  }
+
+  // Helper to get all column names for the table - CORRECTED
   getAllColumnNames() {
-    // Define column names for common tables
+    // Define column names for common tables (just the column names, no BIN_TO_UUID)
     const tableSchemas = {
       company: [
+        "id",
         "company_name",
         "company_name_amharic",
         "company_address",
@@ -282,6 +303,7 @@ export class CrudService {
         "updated_at",
       ],
       hr_roles: [
+        "id",
         "role_name",
         "role_name_amharic",
         "role_code",
@@ -291,27 +313,31 @@ export class CrudService {
         "status",
         "created_at",
       ],
-      // Add more tables as needed
+      college: [
+        "id",
+        "company_id",
+        "college_name",
+        "college_name_amharic",
+        "college_description",
+        "college_description_amharic",
+        "created_at",
+        "updated_at",
+      ],
+      department: [
+        "id",
+        "company_id",
+        "college_id",
+        "department_name",
+        "department_name_amharic",
+        "department_description",
+        "department_description_amharic",
+        "manager_id",
+        "department_status",
+        "created_at",
+        "updated_at",
+      ],
     };
 
     return tableSchemas[this.tableName] || [];
-  }
-
-  // Alternative simple method that always converts UUID
-  getSelectFieldsSimple(fields = ["*"]) {
-    if (!this.uuidEnabled) {
-      return fields.join(", ");
-    }
-
-    // Always convert UUID for id field, regardless of fields parameter
-    if (fields[0] === "*") {
-      return `BIN_TO_UUID(id) as id, *`;
-    }
-
-    return fields
-      .map((field) =>
-        field === "id" ? `BIN_TO_UUID(${field}) as ${field}` : field
-      )
-      .join(", ");
   }
 }

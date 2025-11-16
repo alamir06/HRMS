@@ -11,6 +11,7 @@ const companyCrudRouter = createCrudRouter({
   tableName: "company",
   validationSchema: companyValidationSchema,
   uuidEnabled: true,
+  uuidFields: ["id"],
   createRoles: ["admin", "super_admin"],
   readRoles: null, // Public read access
   updateRoles: ["admin", "super_admin"],

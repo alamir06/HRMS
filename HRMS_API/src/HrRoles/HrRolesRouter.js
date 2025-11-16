@@ -6,6 +6,7 @@ const hrRoleRouter = createCrudRouter({
   tableName: "hr_roles",
   validationSchema: hrRoleValidationSchema,
   uuidEnabled: true,
+  uuidFields: ["id", "company_id"],
   createRoles: ["admin", "super_admin", "hr_manager"],
   readRoles: ["admin", "super_admin", "hr_manager", "user"],
   updateRoles: ["admin", "super_admin", "hr_manager"],
