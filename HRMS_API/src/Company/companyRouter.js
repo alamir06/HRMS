@@ -1,55 +1,71 @@
-import express from 'express';
-
-import companyController from './companyController.js';
-import { companyIdSchema, createCompanySchema, updateCompanySchema, validateCompany } from './companyValidator.js';
-
+// routes/companyRoutes.js
+import express from "express";
+import { createCrudRouter } from "../Commons/CommonRouter.js";
+import { companyValidationSchema } from "./companyValidator.js";
+import { authenticateToken, authorize } from "../../middleware/auth.js";
+import  companyCustomController  from "./companyController.js";
 const companyRouter = express.Router();
 
-// Validation middleware for ID parameter
-const validateCompanyId = (req, res, next) => {
-  try {
-    companyIdSchema.parse({ id: req.params.id });
-    next();
-  } catch (error) {
-    return res.status(400).json({
-      error: 'Invalid company ID',
-      details: error.errors.map(err => ({
-        field: err.path.join('.'),
-        message: err.message
-      }))
-    });
-  }
-};
+const companyCrudRouter = createCrudRouter({
+  routePath: "/",
+  tableName: "company",
+  validationSchema: companyValidationSchema,
+  uuidEnabled: true,
+  createRoles: ["admin", "super_admin"],
+  readRoles: null, // Public read access
+  updateRoles: ["admin", "super_admin"],
+  deleteRoles: ["super_admin"],
+});
 
-// Routes
+companyRouter.use("/", companyCrudRouter);
+
+
+// Statistics and Analytics
+companyRouter.get(
+  "/stats/dashboard",
+  authenticateToken,
+  authorize("admin", "super_admin", "hr_manager"),
+  companyCustomController.getCompanyStats
+);
+
+// Search Operations
+companyRouter.get(
+  "/search/advanced",
+  // authenticateToken,
+  // authorize("admin", "super_admin", "hr_manager", "user"),
+  companyCustomController.advancedSearch
+);
+
+// Bulk Operations
 companyRouter.post(
-  '/createCompnay', 
-  validateCompany(createCompanySchema),
-  companyController.createCompany
+  "/bulk/update-status",
+  authenticateToken,
+  authorize("admin", "super_admin"),
+  companyCustomController.bulkUpdateStatus
 );
 
+// Export Operations
 companyRouter.get(
-  '/getCompnay', 
-  companyController.getAllCompanies
+  "/export",
+  authenticateToken,
+  authorize("admin", "super_admin"),
+  companyCustomController.exportCompanies
 );
 
+// Validation Operations
 companyRouter.get(
-  '/createCompnay/:id', 
-  validateCompanyId,
-  companyController.getCompanyById
+  "/validate",
+  authenticateToken,
+  authorize("admin", "super_admin", "hr_manager"),
+  companyCustomController.validateCompany
 );
 
-companyRouter.put(
-  '/createCompnay/:id', 
-  validateCompanyId,
-  validateCompany(updateCompanySchema),
-  companyController.updateCompany
-);
-
-companyRouter.delete(
-  '/createCompnay/:id', 
-  validateCompanyId,
-  companyController.deleteCompany
+// Analytics by Year
+companyRouter.get(
+  "/analytics/year/:year",
+  authenticateToken,
+  authorize("admin", "super_admin", "hr_manager"),
+  companyCustomController.getCompaniesByYear
 );
 
 export default companyRouter;
