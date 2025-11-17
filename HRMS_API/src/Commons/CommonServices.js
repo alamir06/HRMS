@@ -58,14 +58,27 @@ export class CrudService {
   }
 
   // READ - Find record by ID
-  async findById(id, fields = ["*"]) {
+  // In CrudService - Enhanced findById method
+  async findById(id, fields = ["*"], include = []) {
     try {
-      const selectFields = this.getSelectFields(fields);
+      let selectFields = this.getSelectFields(fields);
+
+      // Add related fields if includes are specified
+      if (include.length > 0) {
+        selectFields = this.addRelatedFields(selectFields, include);
+      }
 
       let query, params;
 
       if (this.uuidEnabled) {
-        query = `SELECT ${selectFields} FROM ${this.tableName} WHERE id = UUID_TO_BIN(?)`;
+        query = `SELECT ${selectFields} FROM ${this.tableName}`;
+
+        // Add joins based on include parameter
+        if (include.length > 0) {
+          query += this.buildJoins(include);
+        }
+
+        query += ` WHERE ${this.tableName}.id = UUID_TO_BIN(?)`;
         params = [id];
       } else {
         query = `SELECT ${selectFields} FROM ${this.tableName} WHERE id = ?`;
@@ -84,7 +97,65 @@ export class CrudService {
     }
   }
 
-  // READ - Find all records with pagination, search, and filtering
+  // Helper to add related fields to SELECT
+  addRelatedFields(selectFields, include) {
+    const relatedFields = {
+      department: {
+        company: [
+          "company_name",
+          "company_name_amharic",
+          "company_email",
+          "company_phone",
+        ],
+        college: ["college_name", "college_name_amharic"],
+        manager: ["first_name", "last_name", "email", "phone"],
+      },
+      college: {
+        company: ["company_name", "company_name_amharic", "company_email"],
+      },
+      // Add more tables as needed
+    };
+
+    let additionalFields = [];
+
+    include.forEach((relation) => {
+      const fields = relatedFields[this.tableName]?.[relation];
+      if (fields) {
+        fields.forEach((field) => {
+          additionalFields.push(`${relation}.${field} as ${relation}_${field}`);
+        });
+      }
+    });
+
+    return additionalFields.length > 0
+      ? `${selectFields}, ${additionalFields.join(", ")}`
+      : selectFields;
+  }
+
+  buildJoins(include) {
+    const joinClauses = {
+      department: {
+        company: "LEFT JOIN company ON department.company_id = company.id",
+        college: "LEFT JOIN college ON department.college_id = college.id",
+        manager: "LEFT JOIN employee ON department.manager_id = employee.id",
+      },
+      college: {
+        company: "LEFT JOIN company ON college.company_id = company.id",
+      },
+      // Add more tables as needed
+    };
+
+    let joins = "";
+
+    include.forEach((relation) => {
+      const joinClause = joinClauses[this.tableName]?.[relation];
+      if (joinClause) {
+        joins += ` ${joinClause}`;
+      }
+    });
+
+    return joins;
+  }
   async findAll(options = {}) {
     try {
       const {
@@ -96,13 +167,29 @@ export class CrudService {
         sortBy = "created_at",
         sortOrder = "DESC",
         fields = ["*"],
+        include = [], // New: include related data
       } = options;
 
       const offset = (page - 1) * limit;
-      const selectFields = this.getSelectFields(fields);
+      let selectFields = this.getSelectFields(fields);
+
+      // Add related fields if includes are specified
+      if (include.length > 0) {
+        selectFields = this.addRelatedFields(selectFields, include);
+      }
 
       let query = `SELECT ${selectFields} FROM ${this.tableName}`;
       let countQuery = `SELECT COUNT(*) as total FROM ${this.tableName}`;
+
+      // Add joins for count query too if needed for WHERE conditions
+      if (include.length > 0) {
+        query += this.buildJoins(include);
+        // For count query, only add joins if they affect the WHERE clause
+        if (Object.keys(filters).some((key) => key.includes("."))) {
+          countQuery += this.buildJoins(include);
+        }
+      }
+
       const params = [];
       const countParams = [];
 

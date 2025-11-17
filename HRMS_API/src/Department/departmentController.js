@@ -336,6 +336,228 @@ const departmentCustomController = {
       });
     }
   },
+
+  getDepartmentWithDetails: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { include = "company,college,manager" } = req.query;
+
+      const includeArray = include
+        .split(",")
+        .filter((item) => item.trim() !== "");
+
+      let query = `
+        SELECT 
+          BIN_TO_UUID(d.id) as id,
+          BIN_TO_UUID(d.company_id) as company_id,
+          BIN_TO_UUID(d.college_id) as college_id,
+          BIN_TO_UUID(d.manager_id) as manager_id,
+          d.department_name,
+          d.department_name_amharic,
+          d.department_description,
+          d.department_description_amharic,
+          d.department_status,
+          d.created_at,
+          d.updated_at
+      `;
+
+      // Add related fields based on include parameter
+      if (includeArray.includes("company")) {
+        query += `,
+          comp.company_name,
+          comp.company_name_amharic,
+          comp.company_email,
+          comp.company_phone,
+          comp.company_address
+        `;
+      }
+
+      if (includeArray.includes("college")) {
+        query += `,
+          c.college_name,
+          c.college_name_amharic,
+          c.college_description
+        `;
+      }
+
+      // if (includeArray.includes("manager")) {
+      //   query += `,
+      //     e.first_name as manager_first_name,
+      //     e.last_name as manager_last_name,
+      //     e.email as manager_email,
+      //     e.phone as manager_phone
+      //   `;
+      // }
+
+      query += `
+        FROM department d
+      `;
+
+      // Add joins based on include parameter
+      if (includeArray.includes("company")) {
+        query += ` LEFT JOIN company comp ON d.company_id = comp.id`;
+      }
+
+      if (includeArray.includes("college")) {
+        query += ` LEFT JOIN college c ON d.college_id = c.id`;
+      }
+
+      // if (includeArray.includes("manager")) {
+      //   // query += ` LEFT JOIN employee e ON d.manager_id = e.id`;
+      // }
+
+      query += ` WHERE d.id = UUID_TO_BIN(?)`;
+
+      const [departments] = await pool.execute(query, [id]);
+
+      if (departments.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: "Department not found",
+        });
+      }
+
+      res.json({
+        success: true,
+        data: departments[0],
+      });
+    } catch (error) {
+      console.error("Get department with details error:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to fetch department details",
+        message: error.message,
+      });
+    }
+  },
+
+  // Get all departments with optional relationships
+  getAllDepartmentsWithRelations: async (req, res) => {
+    try {
+      const {
+        page = 1,
+        limit = 10,
+        include = "company,college",
+        company_id,
+        college_id,
+        status,
+      } = req.query;
+
+      const offset = (page - 1) * limit;
+      const includeArray = include
+        .split(",")
+        .filter((item) => item.trim() !== "");
+
+      let query = `
+        SELECT 
+          BIN_TO_UUID(d.id) as id,
+          BIN_TO_UUID(d.company_id) as company_id,
+          BIN_TO_UUID(d.college_id) as college_id,
+          BIN_TO_UUID(d.manager_id) as manager_id,
+          d.department_name,
+          d.department_name_amharic,
+          d.department_status,
+          d.created_at
+      `;
+
+      let countQuery = `SELECT COUNT(*) as total FROM department d`;
+      const params = [];
+      const countParams = [];
+
+      // Add WHERE conditions for filters
+      const whereConditions = [];
+
+      if (company_id) {
+        whereConditions.push("d.company_id = UUID_TO_BIN(?)");
+        params.push(company_id);
+        countParams.push(company_id);
+      }
+
+      if (college_id) {
+        whereConditions.push("d.college_id = UUID_TO_BIN(?)");
+        params.push(college_id);
+        countParams.push(college_id);
+      }
+
+      if (status && ["active", "inactive"].includes(status)) {
+        whereConditions.push("d.department_status = ?");
+        params.push(status);
+        countParams.push(status);
+      }
+
+      // Add related fields based on include parameter
+      if (includeArray.includes("company")) {
+        query += `,
+          comp.company_name,
+          comp.company_name_amharic
+        `;
+        countQuery += ` LEFT JOIN company comp ON d.company_id = comp.id`;
+      }
+
+      if (includeArray.includes("college")) {
+        query += `,
+          c.college_name,
+          c.college_name_amharic
+        `;
+        if (!includeArray.includes("company")) {
+          countQuery += ` LEFT JOIN college c ON d.college_id = c.id`;
+        }
+      }
+
+      if (includeArray.includes("manager")) {
+        query += `,
+          e.first_name as manager_first_name,
+          e.last_name as manager_last_name
+        `;
+      }
+
+      query += ` FROM department d`;
+
+      // Add joins for main query
+      if (includeArray.includes("company")) {
+        query += ` LEFT JOIN company comp ON d.company_id = comp.id`;
+      }
+
+      if (includeArray.includes("college")) {
+        query += ` LEFT JOIN college c ON d.college_id = c.id`;
+      }
+
+      if (includeArray.includes("manager")) {
+        query += ` LEFT JOIN employee e ON d.manager_id = e.id`;
+      }
+
+      // Add WHERE clause if conditions exist
+      if (whereConditions.length > 0) {
+        const whereClause = ` WHERE ${whereConditions.join(" AND ")}`;
+        query += whereClause;
+        countQuery += whereClause;
+      }
+
+      query += ` ORDER BY d.department_name ASC LIMIT ? OFFSET ?`;
+      params.push(parseInt(limit), offset);
+
+      const [departments] = await pool.execute(query, params);
+      const [countResult] = await pool.execute(countQuery, countParams);
+
+      res.json({
+        success: true,
+        data: departments,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total: countResult[0].total,
+          pages: Math.ceil(countResult[0].total / limit),
+        },
+      });
+    } catch (error) {
+      console.error("Get all departments with relations error:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to fetch departments",
+        message: error.message,
+      });
+    }
+  },
 };
 
 export default departmentCustomController;

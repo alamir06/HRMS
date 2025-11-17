@@ -3,6 +3,7 @@ import { CrudController } from "./CommonController.js";
 import { CrudService } from "./CommonServices.js";
 import { authenticateToken, authorize } from "../../middleware/auth.js";
 
+
 export const createCrudRouter = (config) => {
   const {
     routePath,

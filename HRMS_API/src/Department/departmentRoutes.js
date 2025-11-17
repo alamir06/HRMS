@@ -58,4 +58,17 @@ departmentRouter.post(
   departmentCustomController.bulkUpdateDepartmentStatus
 );
 
+departmentRouter.get(
+  "/:id/with-details",
+  // authenticateToken,
+  // authorize("admin", "super_admin", "hr_manager", "user"),
+  departmentCustomController.getDepartmentWithDetails
+);
+
+departmentRouter.get(
+  "/with-relations/all",
+  // authenticateToken,
+  // authorize("admin", "super_admin", "hr_manager", "user"),
+  departmentCustomController.getAllDepartmentsWithRelations
+);
 export { departmentRouter };

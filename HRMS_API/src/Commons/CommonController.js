@@ -26,9 +26,11 @@ export class CrudController {
     }
   };
 
-  // Get all records
+  // Get all records with include support
   findAll = async (req, res) => {
     try {
+      const { include } = req.query;
+
       const options = {
         page: req.query.page || 1,
         limit: req.query.limit || 10,
@@ -39,9 +41,12 @@ export class CrudController {
         filters: { ...req.query },
         sortBy: req.query.sortBy || "created_at",
         sortOrder: req.query.sortOrder || "DESC",
+        include: include
+          ? include.split(",").filter((item) => item.trim() !== "")
+          : [],
       };
 
-      // Remove pagination and sorting params from filters
+      // Remove pagination, sorting, and include params from filters
       [
         "page",
         "limit",
@@ -49,15 +54,22 @@ export class CrudController {
         "searchFields",
         "sortBy",
         "sortOrder",
+        "include",
       ].forEach((param) => {
         delete options.filters[param];
       });
 
       const result = await this.service.findAll(options);
 
+      // Transform the data to nest related fields under their respective objects
+      const transformedData = this.transformResponseWithIncludes(
+        result.data,
+        options.include
+      );
+
       res.json({
         success: true,
-        data: result.data,
+        data: transformedData,
         pagination: result.pagination,
       });
     } catch (error) {
@@ -65,21 +77,32 @@ export class CrudController {
     }
   };
 
-  // Get record by ID
+  // Get record by ID with include support
   findById = async (req, res) => {
     try {
       const { id } = req.params;
+      const { include } = req.query;
 
       // Validate ID if schema provided
       if (this.validationSchema?.id) {
         this.validationSchema.id.parse({ id });
       }
 
-      const result = await this.service.findById(id);
+      const includeArray = include
+        ? include.split(",").filter((item) => item.trim() !== "")
+        : [];
+
+      const result = await this.service.findById(id, ["*"], includeArray);
+
+      // Transform the data to nest related fields under their respective objects
+      const transformedData = this.transformSingleResponseWithIncludes(
+        result,
+        includeArray
+      );
 
       res.json({
         success: true,
-        data: result,
+        data: transformedData,
       });
     } catch (error) {
       this.handleError(res, error, "Find by ID operation failed");
@@ -133,6 +156,47 @@ export class CrudController {
       this.handleError(res, error, "Delete operation failed");
     }
   };
+
+  // Transform single response to nest related data
+  transformSingleResponseWithIncludes(data, includeArray) {
+    if (!data || includeArray.length === 0) {
+      return data;
+    }
+
+    const transformed = { ...data };
+
+    includeArray.forEach((relation) => {
+      const relationData = {};
+      const prefix = `${relation}_`;
+
+      // Extract all fields for this relation
+      Object.keys(data).forEach((key) => {
+        if (key.startsWith(prefix)) {
+          const fieldName = key.slice(prefix.length);
+          relationData[fieldName] = data[key];
+          delete transformed[key];
+        }
+      });
+
+      // Only add the relation object if we found data for it
+      if (Object.keys(relationData).length > 0) {
+        transformed[relation] = relationData;
+      }
+    });
+
+    return transformed;
+  }
+
+  // Transform array response to nest related data
+  transformResponseWithIncludes(dataArray, includeArray) {
+    if (!dataArray || !Array.isArray(dataArray) || includeArray.length === 0) {
+      return dataArray;
+    }
+
+    return dataArray.map((item) =>
+      this.transformSingleResponseWithIncludes(item, includeArray)
+    );
+  }
 
   // Common error handler
   handleError(res, error, defaultMessage) {
