@@ -5,14 +5,14 @@ import morgan from 'morgan';
 import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
 import pool from "./config/database.js";
-
+import path from "path";
 // Routes
 import appRouter from './routes/index.js';
 
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT;
 
 // Make Database Pool Available Globally
 app.locals.pool = pool;
@@ -47,6 +47,8 @@ app.use((req, res, next) => {
   }
   next();
 });
+
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 // Main Routes
 app.use('/api', appRouter);
@@ -94,7 +96,6 @@ app.get('/api', (req, res) => {
 // Error handling middleware (AFTER routes)
 app.use((err, req, res, next) => {
   console.error('Error:', err);
-
   if (err.code === 'ER_DUP_ENTRY') {
     return res.status(400).json({
       error: 'Duplicate entry',

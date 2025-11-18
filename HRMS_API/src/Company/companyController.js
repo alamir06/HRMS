@@ -14,7 +14,6 @@ const companyCustomController = {
       const [recentCompanies] = await pool.query(
         "SELECT COUNT(*) as recent FROM company WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)"
       );
-
       res.json({
         success: true,
         data: {
@@ -295,8 +294,6 @@ const companyCustomController = {
       });
     }
   },
-
-  // 6. Get Companies by Establishment Year
   getCompaniesByYear: async (req, res) => {
     try {
       const { year } = req.params;

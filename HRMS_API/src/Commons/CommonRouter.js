@@ -2,6 +2,7 @@ import express from "express";
 import { CrudController } from "./CommonController.js";
 import { CrudService } from "./CommonServices.js";
 import { authenticateToken, authorize } from "../../middleware/auth.js";
+import { tableSchemaService } from "../../Commons/TableSchemaService.js";
 
 
 export const createCrudRouter = (config) => {
@@ -13,10 +14,10 @@ export const createCrudRouter = (config) => {
     uuidEnabled = true,
     uuidFields,
     // authMiddleware = authenticateToken,
-    createRoles = ["admin", "super_admin"],
+    createRoles = ["HR_MANAGER", "DEAN", "employee", "HEAD", "FINANCE_OFFICER"],
     readRoles = null, // null means all authenticated users
-    updateRoles = ["admin", "super_admin"],
-    deleteRoles = ["super_admin"],
+    updateRoles = ["HR_MANAGER", "DEAN", "employee", "HEAD", "FINANCE_OFFICER"],
+    deleteRoles = ["HR_MANAGER"],
     customRoutes = [],
   } = config;
 
@@ -46,6 +47,26 @@ export const createCrudRouter = (config) => {
   //   if (!roles) return []; // No authorization required
   //   return [authorize(...roles)];
   // };
+const validateInclude = (req, res, next) => {
+  const { include } = req.query;
+  if (include) {
+    const includeArray = include
+      .split(",")
+      .filter((item) => item.trim() !== "");
+    const validation = service.validateIncludes(includeArray);
+
+    if (!validation.isValid) {
+      return res.status(400).json({
+        success: false,
+        error: `Invalid include parameters: ${validation.invalidIncludes.join(
+          ", "
+        )}`,
+        validIncludes: validation.validRelations,
+      });
+    }
+  }
+  next();
+};
 
   // Standard CRUD routes
   router.post("/", [

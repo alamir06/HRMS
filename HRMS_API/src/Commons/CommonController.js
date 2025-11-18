@@ -5,11 +5,8 @@ export class CrudController {
     this.service = service;
     this.validationSchema = validationSchema;
   }
-
-  // Create record with validation
   create = async (req, res) => {
     try {
-      // Use validation schema if provided
       const validatedData = this.validationSchema?.create
         ? this.validationSchema.create.parse(req.body)
         : req.body;
@@ -25,12 +22,9 @@ export class CrudController {
       this.handleError(res, error, "Create operation failed");
     }
   };
-
-  // Get all records with include support
   findAll = async (req, res) => {
     try {
       const { include } = req.query;
-
       const options = {
         page: req.query.page || 1,
         limit: req.query.limit || 10,
@@ -45,8 +39,6 @@ export class CrudController {
           ? include.split(",").filter((item) => item.trim() !== "")
           : [],
       };
-
-      // Remove pagination, sorting, and include params from filters
       [
         "page",
         "limit",
@@ -60,8 +52,6 @@ export class CrudController {
       });
 
       const result = await this.service.findAll(options);
-
-      // Transform the data to nest related fields under their respective objects
       const transformedData = this.transformResponseWithIncludes(
         result.data,
         options.include
@@ -77,29 +67,21 @@ export class CrudController {
     }
   };
 
-  // Get record by ID with include support
   findById = async (req, res) => {
     try {
       const { id } = req.params;
       const { include } = req.query;
-
-      // Validate ID if schema provided
       if (this.validationSchema?.id) {
         this.validationSchema.id.parse({ id });
       }
-
       const includeArray = include
         ? include.split(",").filter((item) => item.trim() !== "")
         : [];
-
       const result = await this.service.findById(id, ["*"], includeArray);
-
-      // Transform the data to nest related fields under their respective objects
       const transformedData = this.transformSingleResponseWithIncludes(
         result,
         includeArray
       );
-
       res.json({
         success: true,
         data: transformedData,
@@ -109,23 +91,16 @@ export class CrudController {
     }
   };
 
-  // Update record with validation
   update = async (req, res) => {
     try {
       const { id } = req.params;
-
-      // Validate ID if schema provided
       if (this.validationSchema?.id) {
         this.validationSchema.id.parse({ id });
       }
-
-      // Use validation schema if provided
       const validatedData = this.validationSchema?.update
         ? this.validationSchema.update.parse(req.body)
         : req.body;
-
       const result = await this.service.update(id, validatedData);
-
       res.json({
         success: true,
         message: "Record updated successfully",
@@ -136,18 +111,13 @@ export class CrudController {
     }
   };
 
-  // Delete record
   delete = async (req, res) => {
     try {
       const { id } = req.params;
-
-      // Validate ID if schema provided
       if (this.validationSchema?.id) {
         this.validationSchema.id.parse({ id });
       }
-
       await this.service.delete(id);
-
       res.json({
         success: true,
         message: "Record deleted successfully",
@@ -157,19 +127,14 @@ export class CrudController {
     }
   };
 
-  // Transform single response to nest related data
   transformSingleResponseWithIncludes(data, includeArray) {
     if (!data || includeArray.length === 0) {
       return data;
     }
-
     const transformed = { ...data };
-
     includeArray.forEach((relation) => {
       const relationData = {};
       const prefix = `${relation}_`;
-
-      // Extract all fields for this relation
       Object.keys(data).forEach((key) => {
         if (key.startsWith(prefix)) {
           const fieldName = key.slice(prefix.length);
@@ -177,8 +142,6 @@ export class CrudController {
           delete transformed[key];
         }
       });
-
-      // Only add the relation object if we found data for it
       if (Object.keys(relationData).length > 0) {
         transformed[relation] = relationData;
       }
@@ -186,8 +149,6 @@ export class CrudController {
 
     return transformed;
   }
-
-  // Transform array response to nest related data
   transformResponseWithIncludes(dataArray, includeArray) {
     if (!dataArray || !Array.isArray(dataArray) || includeArray.length === 0) {
       return dataArray;
@@ -197,12 +158,8 @@ export class CrudController {
       this.transformSingleResponseWithIncludes(item, includeArray)
     );
   }
-
-  // Common error handler
   handleError(res, error, defaultMessage) {
     console.error(`${defaultMessage}:`, error);
-
-    // Zod validation errors
     if (error.name === "ZodError") {
       return res.status(400).json({
         success: false,
@@ -213,32 +170,24 @@ export class CrudController {
         })),
       });
     }
-
-    // Not found errors
     if (error.message.includes("not found")) {
       return res.status(404).json({
         success: false,
         error: error.message,
       });
     }
-
-    // Duplicate entry errors
     if (error.code === "ER_DUP_ENTRY") {
       return res.status(409).json({
         success: false,
         error: "Duplicate entry found",
       });
     }
-
-    // Foreign key constraint errors
     if (error.code === "ER_ROW_IS_REFERENCED_2") {
       return res.status(409).json({
         success: false,
         error: "Cannot delete record. It is being used by other records.",
       });
     }
-
-    // Default error
     res.status(500).json({
       success: false,
       error: defaultMessage,

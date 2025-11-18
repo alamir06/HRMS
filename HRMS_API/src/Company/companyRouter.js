@@ -12,16 +12,14 @@ const companyCrudRouter = createCrudRouter({
   validationSchema: companyValidationSchema,
   uuidEnabled: true,
   uuidFields: ["id"],
-  createRoles: ["admin", "super_admin"],
-  readRoles: null, // Public read access
-  updateRoles: ["admin", "super_admin"],
+  createRoles: ["HR_MANAGER", "DEAN", 'employee', 'HEAD', 'FINANCE_OFFICER'],
+  readRoles: null,
+  updateRoles: ["HR_MANAGER", "DEAN", 'employee', 'HEAD', 'FINANCE_OFFICER'],
   deleteRoles: ["super_admin"],
 });
 
 companyRouter.use("/", companyCrudRouter);
 
-
-// Statistics and Analytics
 companyRouter.get(
   "/stats/dashboard",
   authenticateToken,
@@ -32,12 +30,11 @@ companyRouter.get(
 // Search Operations
 companyRouter.get(
   "/search/advanced",
-  // authenticateToken,
-  // authorize("admin", "super_admin", "hr_manager", "user"),
+  authenticateToken,
+  authorize("admin", "super_admin", "hr_manager", "user"),
   companyCustomController.advancedSearch
 );
 
-// Bulk Operations
 companyRouter.post(
   "/bulk/update-status",
   authenticateToken,
@@ -45,7 +42,6 @@ companyRouter.post(
   companyCustomController.bulkUpdateStatus
 );
 
-// Export Operations
 companyRouter.get(
   "/export",
   authenticateToken,
@@ -53,7 +49,6 @@ companyRouter.get(
   companyCustomController.exportCompanies
 );
 
-// Validation Operations
 companyRouter.get(
   "/validate",
   authenticateToken,
@@ -61,7 +56,6 @@ companyRouter.get(
   companyCustomController.validateCompany
 );
 
-// Analytics by Year
 companyRouter.get(
   "/analytics/year/:year",
   authenticateToken,

@@ -360,7 +360,6 @@ const departmentCustomController = {
           d.created_at,
           d.updated_at
       `;
-
       // Add related fields based on include parameter
       if (includeArray.includes("company")) {
         query += `,

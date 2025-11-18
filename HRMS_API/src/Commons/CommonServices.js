@@ -1,16 +1,14 @@
 import pool from "../../config/database.js";
+import { tableSchemaService } from "../../Commons/TableSchemaService.js";
 
 export class CrudService {
-  constructor(
-    tableName,
-    idField = "id",
-    uuidEnabled = true,
-    uuidFields = ["id"]
-  ) {
+  constructor(tableName, idField = "id", uuidEnabled = true, uuidFields) {
     this.tableName = tableName;
     this.idField = idField;
     this.uuidEnabled = uuidEnabled;
-    this.uuidFields = uuidFields || ["id"]; // Default to ['id'] if not provided
+
+    // Use provided uuidFields or get from schema service
+    this.uuidFields = uuidFields || tableSchemaService.getUuidFields(tableName);
   }
 
   async create(data, fields = ["*"]) {
@@ -58,14 +56,17 @@ export class CrudService {
   }
 
   // READ - Find record by ID
-  // In CrudService - Enhanced findById method
   async findById(id, fields = ["*"], include = []) {
     try {
       let selectFields = this.getSelectFields(fields);
 
       // Add related fields if includes are specified
       if (include.length > 0) {
-        selectFields = this.addRelatedFields(selectFields, include);
+        selectFields = tableSchemaService.addRelatedFields(
+          this.tableName,
+          selectFields,
+          include
+        );
       }
 
       let query, params;
@@ -75,7 +76,7 @@ export class CrudService {
 
         // Add joins based on include parameter
         if (include.length > 0) {
-          query += this.buildJoins(include);
+          query += tableSchemaService.buildJoins(this.tableName, include);
         }
 
         query += ` WHERE ${this.tableName}.id = UUID_TO_BIN(?)`;
@@ -97,65 +98,7 @@ export class CrudService {
     }
   }
 
-  // Helper to add related fields to SELECT
-  addRelatedFields(selectFields, include) {
-    const relatedFields = {
-      department: {
-        company: [
-          "company_name",
-          "company_name_amharic",
-          "company_email",
-          "company_phone",
-        ],
-        college: ["college_name", "college_name_amharic"],
-        manager: ["first_name", "last_name", "email", "phone"],
-      },
-      college: {
-        company: ["company_name", "company_name_amharic", "company_email"],
-      },
-      // Add more tables as needed
-    };
-
-    let additionalFields = [];
-
-    include.forEach((relation) => {
-      const fields = relatedFields[this.tableName]?.[relation];
-      if (fields) {
-        fields.forEach((field) => {
-          additionalFields.push(`${relation}.${field} as ${relation}_${field}`);
-        });
-      }
-    });
-
-    return additionalFields.length > 0
-      ? `${selectFields}, ${additionalFields.join(", ")}`
-      : selectFields;
-  }
-
-  buildJoins(include) {
-    const joinClauses = {
-      department: {
-        company: "LEFT JOIN company ON department.company_id = company.id",
-        college: "LEFT JOIN college ON department.college_id = college.id",
-        manager: "LEFT JOIN employee ON department.manager_id = employee.id",
-      },
-      college: {
-        company: "LEFT JOIN company ON college.company_id = company.id",
-      },
-      // Add more tables as needed
-    };
-
-    let joins = "";
-
-    include.forEach((relation) => {
-      const joinClause = joinClauses[this.tableName]?.[relation];
-      if (joinClause) {
-        joins += ` ${joinClause}`;
-      }
-    });
-
-    return joins;
-  }
+  // READ - Find all records with pagination, search, and filtering
   async findAll(options = {}) {
     try {
       const {
@@ -167,7 +110,7 @@ export class CrudService {
         sortBy = "created_at",
         sortOrder = "DESC",
         fields = ["*"],
-        include = [], // New: include related data
+        include = [],
       } = options;
 
       const offset = (page - 1) * limit;
@@ -175,7 +118,11 @@ export class CrudService {
 
       // Add related fields if includes are specified
       if (include.length > 0) {
-        selectFields = this.addRelatedFields(selectFields, include);
+        selectFields = tableSchemaService.addRelatedFields(
+          this.tableName,
+          selectFields,
+          include
+        );
       }
 
       let query = `SELECT ${selectFields} FROM ${this.tableName}`;
@@ -183,10 +130,10 @@ export class CrudService {
 
       // Add joins for count query too if needed for WHERE conditions
       if (include.length > 0) {
-        query += this.buildJoins(include);
+        query += tableSchemaService.buildJoins(this.tableName, include);
         // For count query, only add joins if they affect the WHERE clause
         if (Object.keys(filters).some((key) => key.includes("."))) {
-          countQuery += this.buildJoins(include);
+          countQuery += tableSchemaService.buildJoins(this.tableName, include);
         }
       }
 
@@ -322,7 +269,7 @@ export class CrudService {
     }
   }
 
-  // Helper method to select fields with UUID conversion - SINGLE VERSION
+  // Helper method to select fields with UUID conversion
   getSelectFields(fields = ["*"]) {
     if (!this.uuidEnabled) {
       return fields.join(", ");
@@ -338,7 +285,7 @@ export class CrudService {
     }
 
     // For "*" - Handle all tables with explicit column listing
-    const tableColumns = this.getAllColumnNames();
+    const tableColumns = tableSchemaService.getAllColumnNames(this.tableName);
 
     if (tableColumns[0] === "*") {
       // Fallback if we don't have specific columns
@@ -357,74 +304,16 @@ export class CrudService {
 
   // Helper to check if a field is a UUID field
   isUuidField(fieldName) {
-    const uuidFields = {
-      college: ["id", "company_id"],
-      company: ["id"],
-      hr_roles: ["id"],
-      department: ["id", "company_id", "college_id", "manager_id"],
-      // Add new tables here as you create them
-    };
-
-    return (
-      uuidFields[this.tableName]?.includes(fieldName) || fieldName === "id"
-    );
+    return tableSchemaService.isUuidField(this.tableName, fieldName);
   }
 
-  // Helper to get all column names for the table - CORRECTED
-  getAllColumnNames() {
-    // Define column names for common tables (just the column names, no BIN_TO_UUID)
-    const tableSchemas = {
-      company: [
-        "id",
-        "company_name",
-        "company_name_amharic",
-        "company_address",
-        "company_address_amharic",
-        "company_phone",
-        "company_email",
-        "company_website",
-        "company_logo",
-        "company_established_date",
-        "company_tin_number",
-        "created_at",
-        "updated_at",
-      ],
-      hr_roles: [
-        "id",
-        "role_name",
-        "role_name_amharic",
-        "role_code",
-        "role_description",
-        "role_description_amharic",
-        "role_permissions",
-        "status",
-        "created_at",
-      ],
-      college: [
-        "id",
-        "company_id",
-        "college_name",
-        "college_name_amharic",
-        "college_description",
-        "college_description_amharic",
-        "created_at",
-        "updated_at",
-      ],
-      department: [
-        "id",
-        "company_id",
-        "college_id",
-        "department_name",
-        "department_name_amharic",
-        "department_description",
-        "department_description_amharic",
-        "manager_id",
-        "department_status",
-        "created_at",
-        "updated_at",
-      ],
-    };
+  // Get valid relations for this table
+  getValidRelations() {
+    return tableSchemaService.getValidRelations(this.tableName);
+  }
 
-    return tableSchemas[this.tableName] || [];
+  // Validate include parameters
+  validateIncludes(includeArray) {
+    return tableSchemaService.validateIncludes(this.tableName, includeArray);
   }
 }
