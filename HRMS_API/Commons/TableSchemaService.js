@@ -125,76 +125,44 @@ export class TableSchemaService {
         },
       },
       // Add to tableSchemas object in TableSchemaService.js
-      employee: {
-        columns: [
-          "id",
-          "employee_code",
-          "company_id",
-          "employee_category_id",
-          "employee_type",
-          "department_id",
-          "designation_id",
-          "manager_id",
-          "hire_date",
-          "employment_type",
-          "employment_status",
-          "termination_date",
-          "created_at",
-          "updated_at",
-        ],
-        uuidFields: [
-          "id",
-          "company_id",
-          "employee_category_id",
-          "department_id",
-          "designation_id",
-          "manager_id",
-        ],
-        relations: {
-          company: {
-            join: "LEFT JOIN company ON employee.company_id = company.id",
-            fields: ["company_name", "company_name_amharic"],
-          },
-          department: {
-            join: "LEFT JOIN department ON employee.department_id = department.id",
-            fields: ["department_name", "department_name_amharic"],
-          },
-          designation: {
-            join: "LEFT JOIN designations ON employee.designation_id = designations.id",
-            fields: ["title", "title_amharic", "grade_level"],
-          },
-          manager: {
-            join: "LEFT JOIN employee manager ON employee.manager_id = manager.id",
-            fields: ["employee_code"],
-          },
-          personal: {
-            join: "LEFT JOIN employee_personal ON employee.id = employee_personal.employee_id",
-            fields: [
-              "first_name",
-              "first_name_amharic",
-              "middle_name",
-              "middle_name_amharic",
-              "last_name",
-              "last_name_amharic",
-              "gender",
-              "profile_picture",
-            ],
-          },
-          employment: {
-            join: "LEFT JOIN employee_employment ON employee.id = employee_employment.employee_id",
-            fields: ["official_email", "official_phone", "salary"],
-          },
-          academic: {
-            join: "LEFT JOIN employee_academic ON employee.id = employee_academic.employee_id",
-            fields: [
-              "academic_rank",
-              "academic_rank_amharic",
-              "academic_status",
-            ],
-          },
-        },
-      },
-
+   // Update the employee schema in TableSchemaService.js
+employee: {
+  columns: [
+    "id",
+    "employee_code",
+    "company_id",
+    "employee_category",
+    "employee_type",
+    "department_id",
+    "designation_id",
+    "manager_id",
+    "hire_date",
+    "employment_type",
+    "employment_status",
+    "termination_date",
+    "created_at",
+    "updated_at"
+  ],
+  uuidFields: [
+    "id",
+    "company_id",
+    "department_id",
+    "designation_id",
+    "manager_id"
+  ],
+  relations: {
+    // ... existing relations ...
+    documents: {
+      join: "LEFT JOIN employee_documents ON employee.id = employee_documents.employee_id",
+      fields: ["document_type", "document_name", "file_path", "is_verified"]
+    },
+    education: {
+      join: "LEFT JOIN employee_education ON employee.id = employee_education.employee_id",
+      fields: ["institution_name", "qualification", "field_of_study", "grade"]
+    }
+    // ... rest of existing relations ...
+  }
+},
       employee_personal: {
         columns: [
           "id",
@@ -221,6 +189,75 @@ export class TableSchemaService {
           employee: {
             join: "LEFT JOIN employee ON employee_personal.employee_id = employee.id",
             fields: ["employee_code", "employment_status"],
+          },
+        },
+      },
+      // In TableSchemaService.js, add to tableSchemas object
+      employee_documents: {
+        columns: [
+          "id",
+          "employee_id",
+          "document_type",
+          "document_name",
+          "document_name_amharic",
+          "file_name",
+          "file_path",
+          "file_size",
+          "mime_type",
+          "issue_date",
+          "expiry_date",
+          "issuing_authority",
+          "description",
+          "description_amharic",
+          "is_verified",
+          "verified_by",
+          "verified_at",
+          "created_at",
+          "updated_at",
+        ],
+        uuidFields: ["id", "employee_id", "verified_by"],
+        relations: {
+          employee: {
+            join: "LEFT JOIN employee ON employee_documents.employee_id = employee.id",
+            fields: ["employee_code", "employment_status"],
+          },
+          verifier: {
+            join: "LEFT JOIN employee verifier ON employee_documents.verified_by = verifier.id",
+            fields: ["employee_code"],
+          },
+        },
+      },
+
+      employee_education: {
+        columns: [
+          "id",
+          "employee_id",
+          "institution_name",
+          "institution_name_amharic",
+          "qualification",
+          "qualification_amharic",
+          "field_of_study",
+          "field_of_study_amharic",
+          "start_date",
+          "end_date",
+          "graduation_date",
+          "grade",
+          "description",
+          "description_amharic",
+          "document_id",
+          "is_verified",
+          "created_at",
+          "updated_at",
+        ],
+        uuidFields: ["id", "employee_id", "document_id"],
+        relations: {
+          employee: {
+            join: "LEFT JOIN employee ON employee_education.employee_id = employee.id",
+            fields: ["employee_code", "employment_status"],
+          },
+          document: {
+            join: "LEFT JOIN employee_documents ON employee_education.document_id = employee_documents.id",
+            fields: ["document_name", "file_path"],
           },
         },
       },

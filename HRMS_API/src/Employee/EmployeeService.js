@@ -22,20 +22,21 @@ export class EmployeeService extends CrudService {
 
       // 1. Insert into employee table with generated UUID
       const employeeQuery = `
-        INSERT INTO employee (
-          id, employee_code, company_id, employee_category, employee_type,
-          department_id, designation_id, manager_id, hire_date,
-          employment_type, employment_status, termination_date
-        ) VALUES (UUID_TO_BIN(?), ?, UUID_TO_BIN(?), ?, ?, UUID_TO_BIN(?), 
-                 UUID_TO_BIN(?), UUID_TO_BIN(?), ?, ?, ?, ?)
-      `;
+      INSERT INTO employee (
+        id, employee_code, company_id, employee_type, employee_category,
+        employee_role, department_id, designation_id, manager_id, hire_date,
+        employment_type, employment_status, termination_date
+      ) VALUES (UUID_TO_BIN(?), ?, UUID_TO_BIN(?), ?, ?, ?, UUID_TO_BIN(?), 
+               UUID_TO_BIN(?), UUID_TO_BIN(?), ?, ?, ?, ?)
+    `;
 
       await connection.query(employeeQuery, [
-        employeeUUID, // Use generated UUID
+        employeeUUID,
         employeeData.employee_code,
         employeeData.company_id,
-        employeeData.employee_category,
         employeeData.employee_type,
+        employeeData.employee_category,
+        employeeData.employee_role || "employee",
         employeeData.department_id,
         employeeData.designation_id,
         employeeData.manager_id || null,
@@ -47,17 +48,17 @@ export class EmployeeService extends CrudService {
 
       // 2. Insert into employee_personal using the same UUID
       const personalQuery = `
-        INSERT INTO employee_personal (
-          employee_id, first_name, first_name_amharic, middle_name,
-          middle_name_amharic, last_name, last_name_amharic, gender,
-          date_of_birth, personal_email, personal_phone, emergency_contact_name,
-          emergency_contact_name_amharic, emergency_contact_phone, address,
-          address_amharic, profile_picture
-        ) VALUES (UUID_TO_BIN(?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `;
+      INSERT INTO employee_personal (
+        employee_id, first_name, first_name_amharic, middle_name,
+        middle_name_amharic, last_name, last_name_amharic, gender,
+        date_of_birth, personal_email, personal_phone, emergency_contact_name,
+        emergency_contact_name_amharic, emergency_contact_phone, profile_picture,
+        address, address_amharic
+      ) VALUES (UUID_TO_BIN(?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
 
       await connection.query(personalQuery, [
-        employeeUUID, // Use the same UUID
+        employeeUUID,
         personal.first_name,
         personal.first_name_amharic || null,
         personal.middle_name || null,
@@ -71,18 +72,18 @@ export class EmployeeService extends CrudService {
         personal.emergency_contact_name || null,
         personal.emergency_contact_name_amharic || null,
         personal.emergency_contact_phone || null,
+        personal.profile_picture || null,
         personal.address || null,
         personal.address_amharic || null,
-        personal.profile_picture || null,
       ]);
 
       // 3. Insert into employee_employment if provided
       if (employment) {
         const employmentQuery = `
-          INSERT INTO employee_employment (
-            employee_id, official_email, official_phone, salary, qualification, qualification_amharic
-          ) VALUES (UUID_TO_BIN(?), ?, ?, ?, ?, ?)
-        `;
+        INSERT INTO employee_employment (
+          employee_id, official_email, official_phone, salary, qualification, qualification_amharic
+        ) VALUES (UUID_TO_BIN(?), ?, ?, ?, ?, ?)
+      `;
 
         await connection.query(employmentQuery, [
           employeeUUID,
@@ -94,14 +95,14 @@ export class EmployeeService extends CrudService {
         ]);
       }
 
-      // 4. Insert type-specific data
+      // 4. Insert type-specific data - FIXED THIS PART
       if (employeeData.employee_category === "academic" && academic) {
         const academicQuery = `
-          INSERT INTO employee_academic (
-            employee_id, college_id, academic_rank, academic_rank_amharic,
-            academic_status, field_of_specialization, field_of_specialization_amharic
-          ) VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), ?, ?, ?, ?, ?)
-        `;
+        INSERT INTO employee_academic (
+          employee_id, college_id, academic_rank, academic_rank_amharic,
+          academic_status, field_of_specialization, field_of_specialization_amharic
+        ) VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), ?, ?, ?, ?, ?)
+      `;
 
         await connection.query(academicQuery, [
           employeeUUID,
@@ -113,30 +114,43 @@ export class EmployeeService extends CrudService {
           academic.field_of_specialization_amharic || null,
         ]);
       }
+
+      // FIXED: Use correct column names for employee_hr table
       if (employeeData.employee_category === "hr_officer" && hr) {
         const hrQuery = `
-          INSERT INTO employee_hr (employee_id, hr_role_id) 
-          VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?))
-        `;
+        INSERT INTO employee_hr (
+          employee_id, hr_specialization, hr_level, certifications
+        ) VALUES (UUID_TO_BIN(?), ?, ?, ?)
+      `;
 
-        await connection.query(hrQuery, [employeeUUID, hr.hr_role_id]);
+        await connection.query(hrQuery, [
+          employeeUUID,
+          hr.hr_specialization || "generalist",
+          hr.hr_level || "officer",
+          hr.certifications ? JSON.stringify(hr.certifications) : null,
+        ]);
       }
 
+      // FIXED: Use correct column names for employee_outsource table
       if (employeeData.employee_category === "outsource" && outsource) {
         const outsourceQuery = `
-          INSERT INTO employee_outsource (employee_id, outsourcing_company_id) 
-          VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?))
-        `;
+        INSERT INTO employee_outsource (
+          employee_id, outsourcing_company_id, contract_start_date, contract_end_date, service_type
+        ) VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), ?, ?, ?)
+      `;
 
         await connection.query(outsourceQuery, [
           employeeUUID,
           outsource.outsourcing_company_id,
+          outsource.contract_start_date || null,
+          outsource.contract_end_date || null,
+          outsource.service_type,
         ]);
       }
 
       await connection.commit();
 
-      // Return basic employee data instead of calling getEmployeeWithDetails to avoid ambiguous column error
+      // Return basic employee data
       return await this.getEmployeeBasic(employeeUUID);
     } catch (error) {
       await connection.rollback();
@@ -516,7 +530,7 @@ export class EmployeeService extends CrudService {
         }
       }
 
-      // Update HR data
+  
       if (
         hr &&
         Object.keys(hr).length > 0 &&
@@ -528,18 +542,41 @@ export class EmployeeService extends CrudService {
         );
 
         if (existing.length > 0) {
-          const hrQuery = `
-          UPDATE employee_hr 
-          SET hr_role_id = UUID_TO_BIN(?)
-          WHERE employee_id = UUID_TO_BIN(?)
-        `;
-          await connection.query(hrQuery, [hr.hr_role_id, employeeId]);
+          const hrFields = [];
+          const hrValues = [];
+
+          Object.keys(hr).forEach((key) => {
+            if (
+              ["hr_specialization", "hr_level", "certifications"].includes(key)
+            ) {
+              hrFields.push(`${key} = ?`);
+              if (key === "certifications" && hr[key]) {
+                hrValues.push(JSON.stringify(hr[key]));
+              } else {
+                hrValues.push(hr[key]);
+              }
+            }
+          });
+
+          if (hrFields.length > 0) {
+            const hrQuery = `
+        UPDATE employee_hr 
+        SET ${hrFields.join(", ")}
+        WHERE employee_id = UUID_TO_BIN(?)
+      `;
+            await connection.query(hrQuery, [...hrValues, employeeId]);
+          }
         } else {
           const hrQuery = `
-          INSERT INTO employee_hr (employee_id, hr_role_id) 
-          VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?))
-        `;
-          await connection.query(hrQuery, [employeeId, hr.hr_role_id]);
+      INSERT INTO employee_hr (employee_id, hr_specialization, hr_level, certifications) 
+      VALUES (UUID_TO_BIN(?), ?, ?, ?)
+    `;
+          await connection.query(hrQuery, [
+            employeeId,
+            hr.hr_specialization || "generalist",
+            hr.hr_level || "officer",
+            hr.certifications ? JSON.stringify(hr.certifications) : null,
+          ]);
         }
       }
 
@@ -793,6 +830,187 @@ export class EmployeeService extends CrudService {
       }
     } catch (error) {
       throw error;
+    }
+  }
+
+  // In EmployeeService.js - add these methods
+
+  async addEmployeeEducation(employeeId, educationData) {
+    const connection = await pool.getConnection();
+
+    try {
+      await connection.beginTransaction();
+
+      const query = `
+      INSERT INTO employee_education (
+        employee_id, institution_name, institution_name_amharic,
+        qualification, qualification_amharic, field_of_study, field_of_study_amharic,
+        start_date, end_date, graduation_date, grade, description, description_amharic,
+        document_id
+      ) VALUES (UUID_TO_BIN(?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, UUID_TO_BIN(?))
+    `;
+
+      const [result] = await connection.query(query, [
+        employeeId,
+        educationData.institution_name,
+        educationData.institution_name_amharic || null,
+        educationData.qualification,
+        educationData.qualification_amharic || null,
+        educationData.field_of_study || null,
+        educationData.field_of_study_amharic || null,
+        educationData.start_date,
+        educationData.end_date || null,
+        educationData.graduation_date || null,
+        educationData.grade || null,
+        educationData.description || null,
+        educationData.description_amharic || null,
+        educationData.document_id || null,
+      ]);
+
+      await connection.commit();
+
+      return {
+        id: result.insertId,
+        message: "Education record added successfully",
+      };
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
+  }
+
+  async getEmployeeEducation(employeeId) {
+    try {
+      const query = `
+      SELECT 
+        BIN_TO_UUID(id) as id,
+        BIN_TO_UUID(employee_id) as employee_id,
+        institution_name,
+        institution_name_amharic,
+        qualification,
+        qualification_amharic,
+        field_of_study,
+        field_of_study_amharic,
+        start_date,
+        end_date,
+        graduation_date,
+        grade,
+        description,
+        description_amharic,
+        BIN_TO_UUID(document_id) as document_id,
+        is_verified,
+        created_at,
+        updated_at
+      FROM employee_education 
+      WHERE employee_id = UUID_TO_BIN(?)
+      ORDER BY start_date DESC
+    `;
+
+      const [education] = await pool.query(query, [employeeId]);
+      return education;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Enhanced employee creation with document support
+  async createEmployeeWithDocuments(fullData) {
+    const connection = await pool.getConnection();
+
+    try {
+      await connection.beginTransaction();
+
+      const {
+        personal,
+        employment,
+        academic,
+        hr,
+        outsource,
+        documents,
+        education,
+        ...employeeData
+      } = fullData;
+
+      // Generate UUID for the new employee
+      const employeeUUID = uuidv4();
+
+      // 1. Create basic employee (your existing code)
+      // ... existing employee creation code ...
+
+      // 2. Create documents if provided
+      if (documents && documents.length > 0) {
+        for (const doc of documents) {
+          // Handle document creation - you might need to adjust this based on your file handling
+          const documentQuery = `
+          INSERT INTO employee_documents (
+            employee_id, document_type, document_name, document_name_amharic,
+            file_name, file_path, file_size, mime_type, issue_date, expiry_date,
+            issuing_authority, description, description_amharic
+          ) VALUES (UUID_TO_BIN(?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+
+          await connection.query(documentQuery, [
+            employeeUUID,
+            doc.document_type,
+            doc.document_name,
+            doc.document_name_amharic || null,
+            doc.file_name,
+            doc.file_path,
+            doc.file_size || null,
+            doc.mime_type || null,
+            doc.issue_date || null,
+            doc.expiry_date || null,
+            doc.issuing_authority || null,
+            doc.description || null,
+            doc.description_amharic || null,
+          ]);
+        }
+      }
+
+      // 3. Create education records if provided
+      if (education && education.length > 0) {
+        for (const edu of education) {
+          await connection.query(
+            `INSERT INTO employee_education (
+            employee_id, institution_name, institution_name_amharic,
+            qualification, qualification_amharic, field_of_study, field_of_study_amharic,
+            start_date, end_date, graduation_date, grade, description, description_amharic,
+            document_id
+          ) VALUES (UUID_TO_BIN(?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, UUID_TO_BIN(?))`,
+            [
+              employeeUUID,
+              edu.institution_name,
+              edu.institution_name_amharic || null,
+              edu.qualification,
+              edu.qualification_amharic || null,
+              edu.field_of_study || null,
+              edu.field_of_study_amharic || null,
+              edu.start_date,
+              edu.end_date || null,
+              edu.graduation_date || null,
+              edu.grade || null,
+              edu.description || null,
+              edu.description_amharic || null,
+              edu.document_id || null,
+            ]
+          );
+        }
+      }
+
+      await connection.commit();
+
+      // Return employee with all details
+      return await this.getEmployeeWithDetails(employeeUUID, [
+        "documents",
+        "education",
+      ]);
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
     }
   }
 }

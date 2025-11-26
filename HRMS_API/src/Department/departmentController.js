@@ -442,22 +442,52 @@ const departmentCustomController = {
         status,
       } = req.query;
 
-      const offset = (page - 1) * limit;
+      // Convert to numbers and validate
+      const pageInt = parseInt(page);
+      const limitInt = parseInt(limit);
+      const offset = (pageInt - 1) * limitInt;
+
+      console.log(
+        "Debug - Page:",
+        page,
+        "PageInt:",
+        pageInt,
+        "Type:",
+        typeof pageInt
+      );
+      console.log(
+        "Debug - Limit:",
+        limit,
+        "LimitInt:",
+        limitInt,
+        "Type:",
+        typeof limitInt
+      );
+      console.log("Debug - Offset:", offset, "Type:", typeof offset);
+
+      // Validate numbers
+      if (isNaN(pageInt) || isNaN(limitInt) || pageInt < 1 || limitInt < 1) {
+        return res.status(400).json({
+          success: false,
+          error: "Invalid page or limit parameters",
+        });
+      }
+
       const includeArray = include
         .split(",")
         .filter((item) => item.trim() !== "");
 
       let query = `
-        SELECT 
-          BIN_TO_UUID(d.id) as id,
-          BIN_TO_UUID(d.company_id) as company_id,
-          BIN_TO_UUID(d.college_id) as college_id,
-          BIN_TO_UUID(d.manager_id) as manager_id,
-          d.department_name,
-          d.department_name_amharic,
-          d.department_status,
-          d.created_at
-      `;
+      SELECT 
+        BIN_TO_UUID(d.id) as id,
+        BIN_TO_UUID(d.company_id) as company_id,
+        BIN_TO_UUID(d.college_id) as college_id,
+        BIN_TO_UUID(d.manager_id) as manager_id,
+        d.department_name,
+        d.department_name_amharic,
+        d.department_status,
+        d.created_at
+    `;
 
       let countQuery = `SELECT COUNT(*) as total FROM department d`;
       const params = [];
@@ -487,17 +517,17 @@ const departmentCustomController = {
       // Add related fields based on include parameter
       if (includeArray.includes("company")) {
         query += `,
-          comp.company_name,
-          comp.company_name_amharic
-        `;
+        comp.company_name,
+        comp.company_name_amharic
+      `;
         countQuery += ` LEFT JOIN company comp ON d.company_id = comp.id`;
       }
 
       if (includeArray.includes("college")) {
         query += `,
-          c.college_name,
-          c.college_name_amharic
-        `;
+        c.college_name,
+        c.college_name_amharic
+      `;
         if (!includeArray.includes("company")) {
           countQuery += ` LEFT JOIN college c ON d.college_id = c.id`;
         }
@@ -505,9 +535,9 @@ const departmentCustomController = {
 
       if (includeArray.includes("manager")) {
         query += `,
-          e.first_name as manager_first_name,
-          e.last_name as manager_last_name
-        `;
+        e.first_name as manager_first_name,
+        e.last_name as manager_last_name
+      `;
       }
 
       query += ` FROM department d`;
@@ -533,23 +563,44 @@ const departmentCustomController = {
       }
 
       query += ` ORDER BY d.department_name ASC LIMIT ? OFFSET ?`;
-      params.push(parseInt(limit), offset);
 
-      const [departments] = await pool.execute(query, params);
-      const [countResult] = await pool.execute(countQuery, countParams);
+      // Convert to numbers explicitly and ensure they're valid
+      const finalLimit = Number(limitInt);
+      const finalOffset = Number(offset);
+
+      console.log("Debug - Final Params:", {
+        limit: finalLimit,
+        offset: finalOffset,
+        allParams: [...params, finalLimit, finalOffset],
+      });
+
+      // Push the final numeric values
+      params.push(finalLimit, finalOffset);
+
+      console.log("Debug - Final Query:", query);
+      console.log("Debug - Params to execute:", params);
+
+      const [departments] = await pool.query(query, params);
+      const [countResult] = await pool.query(countQuery, countParams);
 
       res.json({
         success: true,
         data: departments,
         pagination: {
-          page: parseInt(page),
-          limit: parseInt(limit),
+          page: pageInt,
+          limit: limitInt,
           total: countResult[0].total,
-          pages: Math.ceil(countResult[0].total / limit),
+          pages: Math.ceil(countResult[0].total / limitInt),
         },
       });
     } catch (error) {
       console.error("Get all departments with relations error:", error);
+      console.error("Error details:", {
+        code: error.code,
+        errno: error.errno,
+        sqlState: error.sqlState,
+        sqlMessage: error.sqlMessage,
+      });
       res.status(500).json({
         success: false,
         error: "Failed to fetch departments",

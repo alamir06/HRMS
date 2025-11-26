@@ -6,7 +6,7 @@ import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
 import pool from "./config/database.js";
 import path from "path";
-// Routes
+//By Group1:Routes
 import appRouter from './routes/index.js';
 
 dotenv.config();
@@ -14,10 +14,10 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT;
 
-// Make Database Pool Available Globally
+//By Group1:Make Database Pool Available Globally
 app.locals.pool = pool;
 
-// Rate Limiting
+//By Group1:Rate Limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: process.env.NODE_ENV === 'production' ? 100 : 1000,
@@ -26,7 +26,7 @@ const limiter = rateLimit({
   legacyHeaders: false,
 });
 
-// Middleware
+//By Group1:Middleware
 app.use(helmet());
 app.use(cors({
   origin: process.env.CLIENT_URL,
@@ -40,7 +40,7 @@ app.use(limiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Request logging middleware
+//By Group1:Request logging middleware
 app.use((req, res, next) => {
   if (process.env.NODE_ENV === 'development') {
     console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
@@ -50,10 +50,10 @@ app.use((req, res, next) => {
 
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
-// Main Routes
+//By Group1:Main Routes
 app.use('/api', appRouter);
 
-// Health check endpoint
+//By Group1:Health check endpoint
 app.get('/health', async (req, res) => {
   try {
     const connection = await pool.getConnection();
@@ -77,7 +77,7 @@ app.get('/health', async (req, res) => {
   }
 });
 
-// API info endpoint
+//By Group1:API info endpoint
 app.get('/api', (req, res) => {
   res.json({
     name: 'HRMS API',
@@ -93,7 +93,7 @@ app.get('/api', (req, res) => {
   });
 });
 
-// Error handling middleware (AFTER routes)
+//By Group1:Error handling middleware (AFTER routes)
 app.use((err, req, res, next) => {
   console.error('Error:', err);
   if (err.code === 'ER_DUP_ENTRY') {
@@ -116,7 +116,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-// 404 handler (LAST middleware)
+//By Group1:404 handler (LAST middleware)
 app.use((req, res) => {
   res.status(404).json({
     error: 'Route not found',
@@ -126,7 +126,7 @@ app.use((req, res) => {
   });
 });
 
-// Test database connection
+//By Group1:Test database connection
 async function testConnection() {
   try {
     const connection = await pool.getConnection();
@@ -139,7 +139,7 @@ async function testConnection() {
   }
 }
 
-// Graceful shutdown
+//By Group1:Graceful shutdown
 process.on('SIGINT', async () => {
   console.log('\nShutting down server gracefully...');
   await pool.end();
@@ -153,7 +153,7 @@ process.on('SIGTERM', async () => {
   process.exit(0);
 });
 
-// Start server
+//By Group1:Start server
 async function startServer() {
   const dbConnected = await testConnection();
   if (!dbConnected) {
@@ -170,7 +170,7 @@ async function startServer() {
   });
 }
 
-// Handle uncaught exceptions
+//By Group1:Handle uncaught exceptions
 process.on('uncaughtException', (error) => {
   console.error('Uncaught Exception:', error);
   process.exit(1);
@@ -181,7 +181,7 @@ process.on('unhandledRejection', (reason, promise) => {
   process.exit(1);
 });
 
-// Start the application
+//By Group1:Start the application
 startServer().catch(error => {
   console.error('Failed to start server:', error);
   process.exit(1);

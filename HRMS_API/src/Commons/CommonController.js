@@ -5,6 +5,7 @@ export class CrudController {
     this.service = service;
     this.validationSchema = validationSchema;
   }
+
   create = async (req, res) => {
     try {
       const validatedData = this.validationSchema?.create
@@ -22,12 +23,31 @@ export class CrudController {
       this.handleError(res, error, "Create operation failed");
     }
   };
+
+  bulkCreate = async (req, res) => {
+    try {
+      const validatedData = this.validationSchema?.bulk
+        ? this.validationSchema.bulk.parse(req.body)
+        : req.body;
+
+      const result = await this.service.bulkCreate(validatedData.items || validatedData);
+      
+      res.status(201).json({
+        success: true,
+        message: `${result.length} records created successfully`,
+        data: result,
+      });
+    } catch (error) {
+      this.handleError(res, error, "Bulk create operation failed");
+    }
+  };
+
   findAll = async (req, res) => {
     try {
       const { include } = req.query;
       const options = {
-        page: req.query.page || 1,
-        limit: req.query.limit || 10,
+        page: parseInt(req.query.page) || 1,
+        limit: parseInt(req.query.limit) || 10,
         search: req.query.search,
         searchFields: req.query.searchFields
           ? req.query.searchFields.split(",")
@@ -39,6 +59,8 @@ export class CrudController {
           ? include.split(",").filter((item) => item.trim() !== "")
           : [],
       };
+
+      // Remove pagination and sorting params from filters
       [
         "page",
         "limit",
@@ -71,17 +93,21 @@ export class CrudController {
     try {
       const { id } = req.params;
       const { include } = req.query;
+      
       if (this.validationSchema?.id) {
         this.validationSchema.id.parse({ id });
       }
+
       const includeArray = include
         ? include.split(",").filter((item) => item.trim() !== "")
         : [];
+
       const result = await this.service.findById(id, ["*"], includeArray);
       const transformedData = this.transformSingleResponseWithIncludes(
         result,
         includeArray
       );
+
       res.json({
         success: true,
         data: transformedData,
@@ -94,13 +120,17 @@ export class CrudController {
   update = async (req, res) => {
     try {
       const { id } = req.params;
+      
       if (this.validationSchema?.id) {
         this.validationSchema.id.parse({ id });
       }
+
       const validatedData = this.validationSchema?.update
         ? this.validationSchema.update.parse(req.body)
         : req.body;
+
       const result = await this.service.update(id, validatedData);
+
       res.json({
         success: true,
         message: "Record updated successfully",
@@ -114,10 +144,13 @@ export class CrudController {
   delete = async (req, res) => {
     try {
       const { id } = req.params;
+      
       if (this.validationSchema?.id) {
         this.validationSchema.id.parse({ id });
       }
+
       await this.service.delete(id);
+
       res.json({
         success: true,
         message: "Record deleted successfully",
@@ -127,14 +160,56 @@ export class CrudController {
     }
   };
 
+  count = async (req, res) => {
+    try {
+      const filters = { ...req.query };
+      
+      // Remove pagination and sorting params from filters
+      ['page', 'limit', 'search', 'searchFields', 'sortBy', 'sortOrder', 'include'].forEach(
+        param => delete filters[param]
+      );
+
+      const count = await this.service.count(filters);
+      
+      res.json({
+        success: true,
+        data: { count }
+      });
+    } catch (error) {
+      this.handleError(res, error, "Count operation failed");
+    }
+  };
+
+  exists = async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      if (this.validationSchema?.id) {
+        this.validationSchema.id.parse({ id });
+      }
+
+      const exists = await this.service.exists(id);
+      
+      res.json({
+        success: true,
+        data: { exists }
+      });
+    } catch (error) {
+      this.handleError(res, error, "Exists check failed");
+    }
+  };
+
   transformSingleResponseWithIncludes(data, includeArray) {
-    if (!data || includeArray.length === 0) {
+    if (!data || !includeArray || includeArray.length === 0) {
       return data;
     }
+
     const transformed = { ...data };
+    
     includeArray.forEach((relation) => {
       const relationData = {};
       const prefix = `${relation}_`;
+      
       Object.keys(data).forEach((key) => {
         if (key.startsWith(prefix)) {
           const fieldName = key.slice(prefix.length);
@@ -142,6 +217,7 @@ export class CrudController {
           delete transformed[key];
         }
       });
+
       if (Object.keys(relationData).length > 0) {
         transformed[relation] = relationData;
       }
@@ -149,8 +225,9 @@ export class CrudController {
 
     return transformed;
   }
+
   transformResponseWithIncludes(dataArray, includeArray) {
-    if (!dataArray || !Array.isArray(dataArray) || includeArray.length === 0) {
+    if (!dataArray || !Array.isArray(dataArray) || !includeArray || includeArray.length === 0) {
       return dataArray;
     }
 
@@ -158,8 +235,11 @@ export class CrudController {
       this.transformSingleResponseWithIncludes(item, includeArray)
     );
   }
+
   handleError(res, error, defaultMessage) {
     console.error(`${defaultMessage}:`, error);
+
+    // Zod validation errors
     if (error.name === "ZodError") {
       return res.status(400).json({
         success: false,
@@ -167,31 +247,52 @@ export class CrudController {
         details: error.errors.map((err) => ({
           field: err.path.join("."),
           message: err.message,
+          code: err.code,
         })),
       });
     }
-    if (error.message.includes("not found")) {
+
+    // Not found errors
+    if (error.message.includes("not found") || error.message.includes("Record not found")) {
       return res.status(404).json({
         success: false,
         error: error.message,
       });
     }
+
+    // Duplicate entry errors
     if (error.code === "ER_DUP_ENTRY") {
       return res.status(409).json({
         success: false,
         error: "Duplicate entry found",
+        message: error.message,
       });
     }
-    if (error.code === "ER_ROW_IS_REFERENCED_2") {
+
+    // Foreign key constraint errors
+    if (error.code === "ER_ROW_IS_REFERENCED_2" || error.code === "ER_NO_REFERENCED_ROW_2") {
       return res.status(409).json({
         success: false,
-        error: "Cannot delete record. It is being used by other records.",
+        error: "Cannot complete operation due to relationship constraints",
+        message: error.message,
       });
     }
+
+    // Database connection errors
+    if (error.code === "ECONNREFUSED" || error.code === "ETIMEDOUT") {
+      return res.status(503).json({
+        success: false,
+        error: "Database service unavailable",
+        message: "Please try again later",
+      });
+    }
+
+    // Default server error
     res.status(500).json({
       success: false,
       error: defaultMessage,
-      message: error.message,
+      message: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error',
+      ...(process.env.NODE_ENV === 'development' && { stack: error.stack })
     });
   }
 }

@@ -8,7 +8,43 @@ const phoneSchema = z
 const dateSchema = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format");
+const documentSchema = z.object({
+  document_type: z.enum([
+    "id_document",
+    "education",
+    "certification",
+    "contract",
+    "other",
+  ]),
+  document_name: z.string().min(1, "Document name is required"),
+  document_name_amharic: z.string().optional().nullable(),
+  file_name: z.string().min(1, "File name is required"),
+  file_path: z.string().min(1, "File path is required"),
+  file_size: z.number().positive().optional().nullable(),
+  mime_type: z.string().optional().nullable(),
+  issue_date: dateSchema.optional().nullable(),
+  expiry_date: dateSchema.optional().nullable(),
+  issuing_authority: z.string().optional().nullable(),
+  description: z.string().optional().nullable(),
+  description_amharic: z.string().optional().nullable(),
+});
 
+// Education schema
+const educationSchema = z.object({
+  institution_name: z.string().min(1, "Institution name is required"),
+  institution_name_amharic: z.string().optional().nullable(),
+  qualification: z.string().min(1, "Qualification is required"),
+  qualification_amharic: z.string().optional().nullable(),
+  field_of_study: z.string().optional().nullable(),
+  field_of_study_amharic: z.string().optional().nullable(),
+  start_date: dateSchema,
+  end_date: dateSchema.optional().nullable(),
+  graduation_date: dateSchema.optional().nullable(),
+  grade: z.string().optional().nullable(),
+  description: z.string().optional().nullable(),
+  description_amharic: z.string().optional().nullable(),
+  document_id: z.string().uuid("Invalid document ID").optional().nullable(),
+});
 // Base employee schema
 const employeeBaseSchema = z.object({
   employee_code: z.string().min(1, "Employee code is required"),
@@ -129,6 +165,8 @@ const employeeBaseSchema = z.object({
     })
     .optional()
     .nullable(),
+  documents: z.array(documentSchema).optional().nullable(),
+  education: z.array(educationSchema).optional().nullable(),
 });
 
 export const employeeValidationSchema = {
@@ -140,6 +178,7 @@ export const employeeValidationSchema = {
     id: z.string().uuid("Invalid employee ID format"),
   }),
 };
+
 
 // For backward compatibility
 export const createEmployeeSchema = employeeValidationSchema.create;

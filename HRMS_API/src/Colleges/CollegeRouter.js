@@ -56,8 +56,8 @@ collegeRouter.get('/validate/name',
 
 // Get college with company details
 collegeRouter.get('/:id/with-company',
-  authenticateToken,
-  authorize('admin', 'super_admin', 'hr_manager', 'user'),
+  // authenticateToken,
+  // authorize('admin', 'super_admin', 'hr_manager', 'user'),
   collegeCustomController.getCollegeWithCompany
 );
 

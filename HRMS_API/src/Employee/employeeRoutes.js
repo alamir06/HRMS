@@ -10,7 +10,7 @@ import {
 
 const employeeRouter = express.Router();
 
-// CRUD Routes
+// ========== EMPLOYEE CRUD ROUTES ==========
 employeeRouter.post(
   "/",
   validateEmployee(createEmployeeSchema),
@@ -27,25 +27,84 @@ employeeRouter.get(
 
 employeeRouter.put(
   "/:id",
-  validateEmployee(employeeIdSchema), // Validate the ID parameter first
-  validateEmployee(updateEmployeeSchema), // Then validate the request body
+  validateEmployee(employeeIdSchema),
+  validateEmployee(updateEmployeeSchema),
   employeeController.update
 );
-// File upload routes
+
+// ========== PROFILE PICTURE ROUTES ==========
 employeeRouter.post(
   "/:id/profile-picture",
-  validateEmployee(employeeIdSchema), // Validate ID first
-  fileUploadService.uploadSingle("profile_picture"),
+  validateEmployee(employeeIdSchema),
+  fileUploadService.uploadSingleImage("profile_picture"),
   employeeController.uploadProfilePicture
 );
 
 employeeRouter.delete(
   "/:id/profile-picture",
-  validateEmployee(employeeIdSchema), // Validate ID first
+  validateEmployee(employeeIdSchema),
   employeeController.deleteProfilePicture
 );
 
-// Custom routes
+// ========== DOCUMENT ROUTES ==========
+// Single document upload
+employeeRouter.post(
+  "/:id/documents",
+  validateEmployee(employeeIdSchema),
+  fileUploadService.uploadSingleDocument("document"),
+  employeeController.uploadDocument
+);
+
+// Multiple documents upload
+employeeRouter.post(
+  "/:id/documents/bulk",
+  validateEmployee(employeeIdSchema),
+  fileUploadService.uploadMultipleDocuments("documents", 10),
+  employeeController.uploadMultipleDocuments
+);
+
+// Get employee documents
+employeeRouter.get(
+  "/:id/documents",
+  validateEmployee(employeeIdSchema),
+  employeeController.getDocuments
+);
+
+// Update document info
+employeeRouter.put("/documents/:documentId", employeeController.updateDocument);
+
+// Delete document
+employeeRouter.delete(
+  "/documents/:documentId",
+  employeeController.deleteDocument
+);
+
+// Verify document
+employeeRouter.patch(
+  "/documents/:documentId/verify",
+  employeeController.verifyDocument
+);
+
+// Expiring documents alert
+employeeRouter.get(
+  "/documents/expiring-soon",
+  employeeController.getExpiringDocuments
+);
+
+// ========== EDUCATION ROUTES ==========
+employeeRouter.post(
+  "/:id/education",
+  validateEmployee(employeeIdSchema),
+  employeeController.addEducation
+);
+
+employeeRouter.get(
+  "/:id/education",
+  validateEmployee(employeeIdSchema),
+  employeeController.getEducation
+);
+
+// ========== SEARCH ROUTES ==========
 employeeRouter.get("/search/advanced", employeeController.findAll);
 
 export default employeeRouter;

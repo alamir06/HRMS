@@ -6,25 +6,56 @@ import fs from "fs";
 export class FileUploadService {
   constructor() {
     this.uploadDir = "uploads/";
-    this.allowedMimeTypes = [
-      "image/jpeg",
-      "image/png",
-      "image/gif",
-      "image/webp",
-    ];
-    this.maxFileSize = 5 * 1024 * 1024; // 5MB
 
-    // Create uploads directory if it doesn't exist
-    if (!fs.existsSync(this.uploadDir)) {
-      fs.mkdirSync(this.uploadDir, { recursive: true });
-    }
+    // Image configurations
+    this.imageConfig = {
+      allowedMimeTypes: ["image/jpeg", "image/png", "image/gif", "image/webp"],
+      maxFileSize: 5 * 1024 * 1024, // 5MB
+      subdirectory: "images/",
+    };
+
+    // Document configurations
+    this.documentConfig = {
+      allowedMimeTypes: [
+        "application/pdf",
+        "image/jpeg",
+        "image/png",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/vnd.ms-excel",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      ],
+      maxFileSize: 10 * 1024 * 1024, // 10MB
+      subdirectory: "documents/",
+    };
+
+    // Create upload directories if they don't exist
+    this.createUploadDirectories();
   }
 
-  // Configure multer for file upload
-  getMulterConfig() {
+  createUploadDirectories() {
+    const directories = [
+      this.uploadDir,
+      path.join(this.uploadDir, this.imageConfig.subdirectory),
+      path.join(this.uploadDir, this.documentConfig.subdirectory),
+    ];
+
+    directories.forEach((dir) => {
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+    });
+  }
+
+  // Configure multer for specific file type
+  getMulterConfig(config, fileType = "image") {
     const storage = multer.diskStorage({
       destination: (req, file, cb) => {
-        cb(null, this.uploadDir);
+        const subdir =
+          fileType === "document"
+            ? this.documentConfig.subdirectory
+            : this.imageConfig.subdirectory;
+        cb(null, path.join(this.uploadDir, subdir));
       },
       filename: (req, file, cb) => {
         const uniqueName = `${uuidv4()}${path.extname(file.originalname)}`;
@@ -33,12 +64,14 @@ export class FileUploadService {
     });
 
     const fileFilter = (req, file, cb) => {
-      if (this.allowedMimeTypes.includes(file.mimetype)) {
+      if (config.allowedMimeTypes.includes(file.mimetype)) {
         cb(null, true);
       } else {
         cb(
           new Error(
-            "Invalid file type. Only JPEG, PNG, GIF, and WebP are allowed."
+            `Invalid file type. Allowed types: ${config.allowedMimeTypes.join(
+              ", "
+            )}`
           ),
           false
         );
@@ -49,30 +82,54 @@ export class FileUploadService {
       storage: storage,
       fileFilter: fileFilter,
       limits: {
-        fileSize: this.maxFileSize,
+        fileSize: config.maxFileSize,
       },
     });
   }
 
-  // Upload single file
-  uploadSingle(fieldName) {
-    return this.getMulterConfig().single(fieldName);
+  // Image upload methods
+  uploadSingleImage(fieldName) {
+    return this.getMulterConfig(this.imageConfig, "image").single(fieldName);
   }
 
-  // Upload multiple files
-  uploadMultiple(fieldName, maxCount = 5) {
-    return this.getMulterConfig().array(fieldName, maxCount);
+  uploadMultipleImages(fieldName, maxCount = 5) {
+    return this.getMulterConfig(this.imageConfig, "image").array(
+      fieldName,
+      maxCount
+    );
   }
 
-  // Generate file URL (for local storage - replace with cloud URL when deployed)
-  generateFileUrl(filename) {
-    return `/uploads/${filename}`;
+  // Document upload methods
+  uploadSingleDocument(fieldName) {
+    return this.getMulterConfig(this.documentConfig, "document").single(
+      fieldName
+    );
+  }
+
+  uploadMultipleDocuments(fieldName, maxCount = 10) {
+    return this.getMulterConfig(this.documentConfig, "document").array(
+      fieldName,
+      maxCount
+    );
+  }
+
+  // Generate file URL
+  generateFileUrl(filename, fileType = "image") {
+    const subdir =
+      fileType === "document"
+        ? this.documentConfig.subdirectory
+        : this.imageConfig.subdirectory;
+    return `/uploads/${subdir}${filename}`;
   }
 
   // Delete file from storage
-  deleteFile(filename) {
+  deleteFile(filename, fileType = "image") {
     return new Promise((resolve, reject) => {
-      const filePath = path.join(this.uploadDir, filename);
+      const subdir =
+        fileType === "document"
+          ? this.documentConfig.subdirectory
+          : this.imageConfig.subdirectory;
+      const filePath = path.join(this.uploadDir, subdir, filename);
 
       fs.unlink(filePath, (err) => {
         if (err) {
@@ -89,20 +146,74 @@ export class FileUploadService {
   }
 
   // Validate file
-  validateFile(file) {
+  validateFile(file, fileType = "image") {
     if (!file) {
       throw new Error("No file provided");
     }
 
-    if (!this.allowedMimeTypes.includes(file.mimetype)) {
-      throw new Error("Invalid file type");
+    const config =
+      fileType === "document" ? this.documentConfig : this.imageConfig;
+
+    if (!config.allowedMimeTypes.includes(file.mimetype)) {
+      throw new Error(
+        `Invalid file type. Allowed types: ${config.allowedMimeTypes.join(
+          ", "
+        )}`
+      );
     }
 
-    if (file.size > this.maxFileSize) {
-      throw new Error("File size exceeds limit");
+    if (file.size > config.maxFileSize) {
+      throw new Error(
+        `File size exceeds limit of ${config.maxFileSize / 1024 / 1024}MB`
+      );
     }
 
     return true;
+  }
+
+  // Get file info
+  getFileInfo(file, fileType = "image") {
+    const config =
+      fileType === "document" ? this.documentConfig : this.imageConfig;
+
+    return {
+      originalName: file.originalname,
+      fileName: file.filename,
+      filePath: this.generateFileUrl(file.filename, fileType),
+      fileSize: file.size,
+      mimeType: file.mimetype,
+      extension: path.extname(file.originalname).toLowerCase(),
+    };
+  }
+
+  // Check if file exists
+  fileExists(filename, fileType = "image") {
+    const subdir =
+      fileType === "document"
+        ? this.documentConfig.subdirectory
+        : this.imageConfig.subdirectory;
+    const filePath = path.join(this.uploadDir, subdir, filename);
+
+    return fs.existsSync(filePath);
+  }
+
+  // Get file statistics
+  getFileStats(filename, fileType = "image") {
+    return new Promise((resolve, reject) => {
+      const subdir =
+        fileType === "document"
+          ? this.documentConfig.subdirectory
+          : this.imageConfig.subdirectory;
+      const filePath = path.join(this.uploadDir, subdir, filename);
+
+      fs.stat(filePath, (err, stats) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(stats);
+        }
+      });
+    });
   }
 }
 
