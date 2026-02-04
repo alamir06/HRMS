@@ -10,6 +10,8 @@ const collegeCrudRouter = createCrudRouter({
   tableName: "college",
   validationSchema: collegeValidationSchema,
   uuidEnabled: true,
+  displayNameField: "college_name",
+  entityLabel: "college",
   uuidFields: ["id", "company_id"],
   createRoles: ["admin", "super_admin", "hr_manager"],
   readRoles: null,

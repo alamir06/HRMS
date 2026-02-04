@@ -8,6 +8,7 @@ import pool from "./config/database.js";
 import path from "path";
 //By Group1:Routes
 import appRouter from './routes/index.js';
+import { seedDefaultHrManager } from "./src/Auth/authService.js";
 
 dotenv.config();
 
@@ -160,6 +161,8 @@ async function startServer() {
     console.error('Cannot start server without database connection');
     process.exit(1);
   }
+
+  await seedDefaultHrManager();
 
   app.listen(PORT, () => {
     console.log(`HRMS Server running on port ${PORT}`);

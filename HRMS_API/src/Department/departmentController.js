@@ -20,14 +20,17 @@ const departmentCustomController = {
           d.department_status,
           c.college_name,
           comp.company_name,
-          e.first_name as manager_first_name,
-          e.last_name as manager_last_name,
+          mp.first_name as manager_first_name,
+          mp.last_name as manager_last_name,
+          ee.official_email as manager_email,
           d.created_at,
           d.updated_at
         FROM department d
         LEFT JOIN college c ON d.college_id = c.id
         LEFT JOIN company comp ON d.company_id = comp.id
         LEFT JOIN employee e ON d.manager_id = e.id
+        LEFT JOIN employee_personal mp ON d.manager_id = mp.employee_id
+        LEFT JOIN employee_employment ee ON d.manager_id = ee.employee_id
         WHERE d.company_id = UUID_TO_BIN(?)
       `;
 
@@ -115,13 +118,16 @@ const departmentCustomController = {
           d.department_description,
           d.department_status,
           c.college_name,
-          e.first_name as manager_first_name,
-          e.last_name as manager_last_name,
+          mp.first_name as manager_first_name,
+          mp.last_name as manager_last_name,
+          ee.official_email as manager_email,
           d.created_at,
           d.updated_at
         FROM department d
         LEFT JOIN college c ON d.college_id = c.id
         LEFT JOIN employee e ON d.manager_id = e.id
+        LEFT JOIN employee_personal mp ON d.manager_id = mp.employee_id
+        LEFT JOIN employee_employment ee ON d.manager_id = ee.employee_id
         WHERE d.college_id = UUID_TO_BIN(?)
         ${
           status && ["active", "inactive"].includes(status)
@@ -535,9 +541,13 @@ const departmentCustomController = {
 
       if (includeArray.includes("manager")) {
         query += `,
-        e.first_name as manager_first_name,
-        e.last_name as manager_last_name
+        mp.first_name as manager_first_name,
+        mp.last_name as manager_last_name,
+        ee.official_email as manager_email
       `;
+        countQuery += ` LEFT JOIN employee e ON d.manager_id = e.id`;
+        countQuery += ` LEFT JOIN employee_personal mp ON d.manager_id = mp.employee_id`;
+        countQuery += ` LEFT JOIN employee_employment ee ON d.manager_id = ee.employee_id`;
       }
 
       query += ` FROM department d`;
@@ -553,6 +563,8 @@ const departmentCustomController = {
 
       if (includeArray.includes("manager")) {
         query += ` LEFT JOIN employee e ON d.manager_id = e.id`;
+        query += ` LEFT JOIN employee_personal mp ON d.manager_id = mp.employee_id`;
+        query += ` LEFT JOIN employee_employment ee ON d.manager_id = ee.employee_id`;
       }
 
       // Add WHERE clause if conditions exist
@@ -568,17 +580,8 @@ const departmentCustomController = {
       const finalLimit = Number(limitInt);
       const finalOffset = Number(offset);
 
-      console.log("Debug - Final Params:", {
-        limit: finalLimit,
-        offset: finalOffset,
-        allParams: [...params, finalLimit, finalOffset],
-      });
-
       // Push the final numeric values
       params.push(finalLimit, finalOffset);
-
-      console.log("Debug - Final Query:", query);
-      console.log("Debug - Params to execute:", params);
 
       const [departments] = await pool.query(query, params);
       const [countResult] = await pool.query(countQuery, countParams);

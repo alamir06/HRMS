@@ -30,11 +30,7 @@ export const departmentValidationSchema = {
       .max(1000, "Amharic description must be less than 1000 characters")
       .optional()
       .nullable(),
-    manager_id: z
-      .string()
-      .uuid("Invalid manager ID format")
-      .optional()
-      .nullable(),
+    manager_id: z.string().uuid().nullable().optional(),
     department_status: z.enum(["active", "inactive"]).default("active"),
   }),
 

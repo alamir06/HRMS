@@ -14,21 +14,20 @@ CREATE TABLE company (
     company_logo VARCHAR(255),
     company_established_date DATE,
     company_tin_number VARCHAR(50),
+    status ENUM('active', 'inactive') DEFAULT 'active',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- OUTSOURCING COMPANIES
+-- OUTSOURCING VENDORS
 CREATE TABLE outsourcing_companies (
     id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
     company_name VARCHAR(255) NOT NULL,
     company_name_amharic VARCHAR(255),
-    company_contact_person VARCHAR(255),
-    company_contact_person_amharic VARCHAR(255),
-    company_email VARCHAR(150),
-    company_phone VARCHAR(20),
     company_address TEXT,
     company_address_amharic TEXT,
+    company_phone VARCHAR(20),
+    company_email VARCHAR(150),
     company_service_type ENUM('security', 'cleaning', 'it', 'catering', 'maintenance', 'other') NOT NULL,
     company_contract_start_date DATE,
     company_contract_end_date DATE,
@@ -90,8 +89,8 @@ CREATE TABLE employee (
     employee_type ENUM('academic', 'hr_officer', 'outsource') NOT NULL,
     employee_category ENUM('hr_officer', 'academic', 'outsource') NOT NULL,
     employee_role ENUM('HR_MANAGER', 'DEAN', 'employee', 'HEAD', 'HR_OFFICER', 'RECRUITER', 'PAYROLL_OFFICER') DEFAULT 'employee',
-    department_id BINARY(16) NOT NULL,
-    designation_id BINARY(16) NOT NULL,
+    department_id BINARY(16)  NULL,
+    designation_id BINARY(16)  NULL,
     manager_id BINARY(16),
     hire_date DATE NOT NULL,
     employment_type ENUM('full_time', 'part_time', 'contract', 'intern') NOT NULL,
@@ -110,29 +109,30 @@ CREATE TABLE employee_personal (
     middle_name_amharic VARCHAR(100),
     last_name VARCHAR(100) NOT NULL,
     last_name_amharic VARCHAR(100),
-    gender ENUM('male', 'female', 'other'),
+    gender VARCHAR(20),
     date_of_birth DATE,
     personal_email VARCHAR(150),
     personal_phone VARCHAR(20),
-    emergency_contact_name VARCHAR(100),
-    emergency_contact_name_amharic VARCHAR(100),
+    emergency_contact_name VARCHAR(150),
+    emergency_contact_name_amharic VARCHAR(150),
     emergency_contact_phone VARCHAR(20),
-    profile_picture VARCHAR(255) NULL,
+    profile_picture VARCHAR(255),
     address TEXT,
     address_amharic TEXT,
-    FOREIGN KEY (employee_id) REFERENCES employee(id) ON DELETE CASCADE
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- Optional table
 CREATE TABLE employee_employment (
     id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
     employee_id BINARY(16) NOT NULL,
-    official_email VARCHAR(150) UNIQUE NOT NULL,
+    official_email VARCHAR(150),
     official_phone VARCHAR(20),
-    salary DECIMAL(12,2),
-    qualification VARCHAR(100),
-    qualification_amharic VARCHAR(100),
-    FOREIGN KEY (employee_id) REFERENCES employee(id) ON DELETE CASCADE
+    salary DECIMAL(10,2),
+    qualification VARCHAR(150),
+    qualification_amharic VARCHAR(150),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 CREATE TABLE employee_academic (
@@ -147,14 +147,6 @@ CREATE TABLE employee_academic (
     FOREIGN KEY (employee_id) REFERENCES employee(id) ON DELETE CASCADE
 );
 
-CREATE TABLE employee_hr (
-    id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
-    employee_id BINARY(16) NOT NULL,
-    hr_specialization ENUM('recruitment', 'payroll', 'training', 'employee_relations', 'compliance', 'generalist') DEFAULT 'generalist',
-    hr_level ENUM('officer', 'supervisor', 'manager', 'director') DEFAULT 'officer',
-    certifications JSON,
-    FOREIGN KEY (employee_id) REFERENCES employee(id) ON DELETE CASCADE
-);
 -- HR-SPECIFIC INFORMATION
 CREATE TABLE employee_hr (
     id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
@@ -234,6 +226,8 @@ CREATE TABLE users(
     password_hash VARCHAR(255) NOT NULL,
     preferred_language ENUM('en', 'am') DEFAULT 'am',
     last_login TIMESTAMP NULL,
+    must_change_password BOOLEAN DEFAULT FALSE,
+    password_changed_at TIMESTAMP NULL,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -659,6 +653,11 @@ CREATE INDEX idx_employee_manager ON employee(manager_id);
 CREATE INDEX idx_employee_status ON employee(employment_status);
 CREATE INDEX idx_employee_type ON employee(employee_type);
 CREATE INDEX idx_employee_role ON employee(employee_role);
+CREATE INDEX idx_employee_company ON employee(company_id);
+CREATE INDEX idx_company_status ON company(status);
+CREATE INDEX idx_college_company ON college(company_id);
+CREATE INDEX idx_department_company ON department(company_id);
+CREATE INDEX idx_designation_department ON designations(department_id);
 CREATE INDEX idx_attendance_employee_date ON attendance(employee_id, date);
 CREATE INDEX idx_leave_request_employee ON leave_request(employee_id);
 CREATE INDEX idx_leave_request_status ON leave_request(status);
@@ -683,6 +682,12 @@ ALTER TABLE employee_employment ADD UNIQUE KEY unique_employee_employment (emplo
 ALTER TABLE employee_academic ADD UNIQUE KEY unique_employee_academic (employee_id);
 ALTER TABLE employee_hr ADD UNIQUE KEY unique_employee_hr (employee_id);
 ALTER TABLE employee_outsource ADD UNIQUE KEY unique_employee_outsource (employee_id);
+ALTER TABLE company ADD CONSTRAINT unique_company_email UNIQUE (company_email);
+ALTER TABLE company ADD CONSTRAINT unique_company_phone UNIQUE (company_phone);
+ALTER TABLE college ADD CONSTRAINT unique_college_per_company UNIQUE (company_id, college_name);
+ALTER TABLE department ADD CONSTRAINT unique_department_per_company UNIQUE (company_id, department_name);
+ALTER TABLE designations ADD CONSTRAINT unique_designation_per_department UNIQUE (department_id, title);
+
 
 -- VALIDATION TRIGGERS
 DELIMITER //

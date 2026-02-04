@@ -1,5 +1,84 @@
 import pool from "../../config/database.js";
 import { tableSchemaService } from "../../Commons/TableSchemaService.js";
+import { v4 as uuidv4 } from "uuid";
+
+const resolveFetch = async () => {
+  if (typeof fetch === "function") {
+    return fetch;
+  }
+
+  try {
+    const module = await import("node-fetch");
+    return module.default;
+  } catch (error) {
+    console.error("Failed to load fetch implementation", error);
+    return null;
+  }
+};
+
+export const buildJobAnnouncement = (job) => {
+  if (!job?.title) {
+    return null;
+  }
+
+  const sections = [`New job: ${job.title}`];
+
+  if (job.vacancies) {
+    sections.push(`Vacancies: ${job.vacancies}`);
+  }
+
+  if (job.closingDate) {
+    sections.push(`Apply before: ${job.closingDate}`);
+  }
+
+  if (job.description) {
+    sections.push("", job.description);
+  }
+
+  if (job.requirements) {
+    sections.push("", "Requirements:", job.requirements);
+  }
+
+  return sections.join("\n");
+};
+
+export const createTelegramNotifier = () => {
+  const botToken = process.env.TELEGRAM_BOT_TOKEN;
+  const chatId = process.env.TELEGRAM_CHANNEL_ID || process.env.TELEGRAM_CHAT_ID;
+  const enabled = Boolean(botToken && chatId);
+
+  return {
+    async notifyJobPosting(job) {
+      if (!enabled) {
+        return;
+      }
+
+      const message = buildJobAnnouncement(job);
+      if (!message) {
+        return;
+      }
+
+      const fetchImpl = await resolveFetch();
+      if (!fetchImpl) {
+        return;
+      }
+
+      try {
+        await fetchImpl(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            chat_id: chatId,
+            text: message,
+            disable_web_page_preview: true,
+          }),
+        });
+      } catch (error) {
+        console.error("Telegram notification failed", error);
+      }
+    },
+  };
+};
 
 export class CrudService {
   constructor(config) {
@@ -9,7 +88,7 @@ export class CrudService {
       uuidEnabled = true,
       uuidFields,
       softDeleteEnabled = false,
-      softDeleteField = 'deleted_at'
+      softDeleteField = "deleted_at",
     } = config;
 
     this.tableName = tableName;
@@ -17,79 +96,64 @@ export class CrudService {
     this.uuidEnabled = uuidEnabled;
     this.softDeleteEnabled = softDeleteEnabled;
     this.softDeleteField = softDeleteField;
-
-    // Use provided uuidFields or get from schema service
     this.uuidFields = uuidFields || tableSchemaService.getUuidFields(tableName);
   }
 
   async create(data, fields = ["*"], connection = null) {
     const db = connection || pool;
-    
+
     try {
+      if (this.uuidEnabled && !data[this.idField]) {
+        data[this.idField] = uuidv4();
+      }
+
       const columns = [];
       const placeholders = [];
       const values = [];
+      const primaryId = data[this.idField] || null;
 
       for (const [key, value] of Object.entries(data)) {
         columns.push(key);
 
-        if (this.uuidFields.includes(key) && value) {
-          // Use UUID_TO_BIN for UUID fields
-          placeholders.push(`UUID_TO_BIN(?)`);
-          values.push(value);
+        if (this.uuidFields.includes(key) && value !== null && value !== undefined) {
+          placeholders.push("UUID_TO_BIN(?)");
         } else {
-          placeholders.push(`?`);
-          values.push(value);
+          placeholders.push("?");
         }
+
+        values.push(value);
       }
 
-      const query = `INSERT INTO ${this.tableName} (${columns.join(
-        ", "
-      )}) VALUES (${placeholders.join(", ")})`;
+      const query = `
+        INSERT INTO ${this.tableName} (${columns.join(", ")})
+        VALUES (${placeholders.join(", ")})
+      `;
+      await db.query(query, values);
 
-      const [result] = await db.query(query, values);
-
-      // Return the created record
-      if (this.uuidEnabled) {
-        const [rows] = await db.query(
-          `SELECT BIN_TO_UUID(id) as id FROM ${this.tableName} WHERE id = ?`,
-          [result.insertId]
-        );
-
-        if (rows.length > 0) {
-          return await this.findById(rows[0].id, fields, [], db);
-        } else {
-          // Fallback: get the last inserted record
-          const [lastRecords] = await db.query(
-            `SELECT BIN_TO_UUID(id) as id FROM ${this.tableName} ORDER BY created_at DESC LIMIT 1`
-          );
-          
-          if (lastRecords.length > 0) {
-            return await this.findById(lastRecords[0].id, fields, [], db);
-          } else {
-            throw new Error("Failed to retrieve created record");
-          }
-        }
-      } else {
-        return await this.findById(result.insertId, fields, [], db);
-      }
+      return await this.findById(primaryId, fields, [], db);
     } catch (error) {
+      if (error.code === "ER_DUP_ENTRY") {
+        throw {
+          type: "DUPLICATE",
+          field: this.extractDuplicateField?.(error) || "unknown",
+        };
+      }
       throw error;
     }
   }
 
   async bulkCreate(dataArray, fields = ["*"]) {
     const connection = await pool.getConnection();
-    
+
     try {
       await connection.beginTransaction();
-      
+
       const results = [];
       for (const data of dataArray) {
         const result = await this.create(data, fields, connection);
         results.push(result);
       }
-      
+
       await connection.commit();
       return results;
     } catch (error) {
@@ -102,11 +166,10 @@ export class CrudService {
 
   async findById(id, fields = ["*"], include = [], connection = null) {
     const db = connection || pool;
-    
+
     try {
       let selectFields = this.getSelectFields(fields);
 
-      // Add related fields if includes are specified
       if (include.length > 0) {
         selectFields = tableSchemaService.addRelatedFields(
           this.tableName,
@@ -115,33 +178,23 @@ export class CrudService {
         );
       }
 
-      let query, params;
-
-      // Build base query with soft delete check
-      let baseQuery = `SELECT ${selectFields} FROM ${this.tableName}`;
-
-      // Add joins based on include parameter
+      let query = `SELECT ${selectFields} FROM ${this.tableName}`;
       if (include.length > 0) {
-        baseQuery += tableSchemaService.buildJoins(this.tableName, include);
+        query += tableSchemaService.buildJoins(this.tableName, include);
       }
 
-      // Add WHERE clause with soft delete check
-      let whereClause = '';
-      if (this.softDeleteEnabled) {
-        whereClause = ` WHERE ${this.tableName}.${this.softDeleteField} IS NULL`;
-      } else {
-        whereClause = ` WHERE 1=1`;
-      }
+      const params = [id];
+      let whereClause = this.softDeleteEnabled
+        ? ` WHERE ${this.tableName}.${this.softDeleteField} IS NULL`
+        : " WHERE 1=1";
 
       if (this.uuidEnabled) {
         whereClause += ` AND ${this.tableName}.${this.idField} = UUID_TO_BIN(?)`;
-        params = [id];
       } else {
         whereClause += ` AND ${this.tableName}.${this.idField} = ?`;
-        params = [id];
       }
 
-      query = baseQuery + whereClause;
+      query += whereClause;
 
       const [records] = await db.query(query, params);
 
@@ -172,7 +225,6 @@ export class CrudService {
       const offset = (page - 1) * limit;
       let selectFields = this.getSelectFields(fields);
 
-      // Add related fields if includes are specified
       if (include.length > 0) {
         selectFields = tableSchemaService.addRelatedFields(
           this.tableName,
@@ -184,30 +236,29 @@ export class CrudService {
       let query = `SELECT ${selectFields} FROM ${this.tableName}`;
       let countQuery = `SELECT COUNT(*) as total FROM ${this.tableName}`;
 
-      // Add joins for both queries
       if (include.length > 0) {
         query += tableSchemaService.buildJoins(this.tableName, include);
         countQuery += tableSchemaService.buildJoins(this.tableName, include);
       }
 
-      const { clause: whereClause, params: whereParams } = this.buildWhereClause(filters, search, searchFields);
+      const { clause: whereClause, params: whereParams } = this.buildWhereClause(
+        filters,
+        search,
+        searchFields
+      );
       const countParams = [...whereParams];
 
-      // Add WHERE clause if conditions exist
       if (whereClause) {
         query += ` ${whereClause}`;
         countQuery += ` ${whereClause}`;
       }
 
-      // Add sorting
       const safeSortBy = this.validateSortField(sortBy);
       query += ` ORDER BY ${safeSortBy} ${sortOrder.toUpperCase()}`;
+      query += " LIMIT ? OFFSET ?";
 
-      // Add pagination
-      query += ` LIMIT ? OFFSET ?`;
       const queryParams = [...whereParams, limit, offset];
 
-      // Execute queries
       const [records] = await pool.query(query, queryParams);
       const [countResult] = await pool.query(countQuery, countParams);
 
@@ -216,8 +267,8 @@ export class CrudService {
       return {
         data: records,
         pagination: {
-          page: parseInt(page),
-          limit: parseInt(limit),
+          page: Number(page),
+          limit: Number(limit),
           total,
           pages: Math.ceil(total / limit),
         },
@@ -228,35 +279,34 @@ export class CrudService {
   }
 
   async update(id, data, fields = ["*"]) {
+    if (!Object.keys(data).length) {
+      throw new Error("No fields provided for update");
+    }
+
     try {
       const setClause = Object.keys(data)
         .map((key) => `${key} = ?`)
         .join(", ");
       const values = [...Object.values(data)];
 
-      let query, queryParams;
-
-      // Build WHERE clause with soft delete check
-      let whereClause = '';
+      let whereClause = "";
       if (this.softDeleteEnabled) {
         whereClause = ` AND ${this.softDeleteField} IS NULL`;
       }
 
+      let query;
       if (this.uuidEnabled) {
         query = `UPDATE ${this.tableName} SET ${setClause} WHERE ${this.idField} = UUID_TO_BIN(?)${whereClause}`;
-        queryParams = [...values, id];
       } else {
         query = `UPDATE ${this.tableName} SET ${setClause} WHERE ${this.idField} = ?${whereClause}`;
-        queryParams = [...values, id];
       }
 
-      const [result] = await pool.execute(query, queryParams);
+      const [result] = await pool.execute(query, [...values, id]);
 
       if (result.affectedRows === 0) {
         throw new Error("Record not found");
       }
 
-      // Return updated record
       return await this.findById(id, fields);
     } catch (error) {
       throw error;
@@ -269,12 +319,10 @@ export class CrudService {
 
       if (this.softDeleteEnabled) {
         query = `UPDATE ${this.tableName} SET ${this.softDeleteField} = NOW() WHERE ${this.idField} = ?`;
+      } else if (this.uuidEnabled) {
+        query = `DELETE FROM ${this.tableName} WHERE ${this.idField} = UUID_TO_BIN(?)`;
       } else {
-        if (this.uuidEnabled) {
-          query = `DELETE FROM ${this.tableName} WHERE ${this.idField} = UUID_TO_BIN(?)`;
-        } else {
-          query = `DELETE FROM ${this.tableName} WHERE ${this.idField} = ?`;
-        }
+        query = `DELETE FROM ${this.tableName} WHERE ${this.idField} = ?`;
       }
 
       const [result] = await pool.execute(query, [id]);
@@ -283,10 +331,10 @@ export class CrudService {
         throw new Error("Record not found");
       }
 
-      return { 
-        message: this.softDeleteEnabled 
-          ? "Record soft deleted successfully" 
-          : "Record deleted successfully" 
+      return {
+        message: this.softDeleteEnabled
+          ? "Record soft deleted successfully"
+          : "Record deleted successfully",
       };
     } catch (error) {
       throw error;
@@ -295,14 +343,12 @@ export class CrudService {
 
   async exists(id) {
     try {
-      let query;
-
-      // Build WHERE clause with soft delete check
-      let whereClause = '';
+      let whereClause = "";
       if (this.softDeleteEnabled) {
         whereClause = ` AND ${this.softDeleteField} IS NULL`;
       }
 
+      let query;
       if (this.uuidEnabled) {
         query = `SELECT 1 FROM ${this.tableName} WHERE ${this.idField} = UUID_TO_BIN(?)${whereClause}`;
       } else {
@@ -320,9 +366,8 @@ export class CrudService {
     try {
       let query = `SELECT COUNT(*) as total FROM ${this.tableName}`;
 
-      // Build WHERE clause with soft delete check
       const { clause: whereClause, params } = this.buildWhereClause(filters);
-      
+
       if (whereClause) {
         query += ` ${whereClause}`;
       }
@@ -338,12 +383,10 @@ export class CrudService {
     const conditions = [];
     const params = [];
 
-    // Add soft delete condition if enabled
     if (this.softDeleteEnabled) {
       conditions.push(`${this.tableName}.${this.softDeleteField} IS NULL`);
     }
 
-    // Add search conditions
     if (search && searchFields.length > 0) {
       const searchConditions = searchFields.map((field) => `${field} LIKE ?`);
       conditions.push(`(${searchConditions.join(" OR ")})`);
@@ -353,51 +396,53 @@ export class CrudService {
       });
     }
 
-    // Add filter conditions
     Object.entries(filters).forEach(([key, value]) => {
-      if (value === undefined || value === null || value === "") return;
+      if (value === undefined || value === null || value === "") {
+        return;
+      }
 
-      // Handle operator syntax: field__operator=value
-      if (key.includes('__')) {
-        const [field, operator] = key.split('__');
-        
+      if (key.includes("__")) {
+        const [field, operator] = key.split("__");
+
         switch (operator) {
-          case 'gt':
+          case "gt":
             conditions.push(`${field} > ?`);
             params.push(value);
             break;
-          case 'gte':
+          case "gte":
             conditions.push(`${field} >= ?`);
             params.push(value);
             break;
-          case 'lt':
+          case "lt":
             conditions.push(`${field} < ?`);
             params.push(value);
             break;
-          case 'lte':
+          case "lte":
             conditions.push(`${field} <= ?`);
             params.push(value);
             break;
-          case 'like':
+          case "like":
             conditions.push(`${field} LIKE ?`);
             params.push(`%${value}%`);
             break;
-          case 'in':
-            const values = Array.isArray(value) ? value : value.split(',');
-            const placeholders = values.map(() => '?').join(',');
+          case "in": {
+            const values = Array.isArray(value) ? value : value.split(",");
+            const placeholders = values.map(() => "?").join(",");
             conditions.push(`${field} IN (${placeholders})`);
             params.push(...values);
             break;
-          case 'not_in':
-            const notInValues = Array.isArray(value) ? value : value.split(',');
-            const notInPlaceholders = notInValues.map(() => '?').join(',');
-            conditions.push(`${field} NOT IN (${notInPlaceholders})`);
-            params.push(...notInValues);
+          }
+          case "not_in": {
+            const values = Array.isArray(value) ? value : value.split(",");
+            const placeholders = values.map(() => "?").join(",");
+            conditions.push(`${field} NOT IN (${placeholders})`);
+            params.push(...values);
             break;
-          case 'null':
+          }
+          case "null":
             conditions.push(`${field} IS NULL`);
             break;
-          case 'not_null':
+          case "not_null":
             conditions.push(`${field} IS NOT NULL`);
             break;
           default:
@@ -405,26 +450,24 @@ export class CrudService {
             params.push(value);
         }
       } else {
-        // Simple equality
         conditions.push(`${key} = ?`);
         params.push(value);
       }
     });
 
     return {
-      clause: conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '',
-      params
+      clause: conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "",
+      params,
     };
   }
 
   validateSortField(field) {
-    // Basic SQL injection protection
     const validFieldRegex = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
-    
+
     if (!validFieldRegex.test(field)) {
-      return 'created_at'; // Default safe field
+      return "created_at";
     }
-    
+
     return field;
   }
 
@@ -433,7 +476,6 @@ export class CrudService {
       return fields.join(", ");
     }
 
-    // For specific fields
     if (fields[0] !== "*") {
       return fields
         .map((field) =>
@@ -442,27 +484,22 @@ export class CrudService {
         .join(", ");
     }
 
-    // For "*" - Handle all tables with explicit column listing
     const tableColumns = tableSchemaService.getAllColumnNames(this.tableName);
 
     if (tableColumns[0] === "*") {
-      // Fallback if we don't have specific columns
       return `BIN_TO_UUID(${this.idField}) as ${this.idField}, ${this.tableName}.*`;
-    } else {
-      // Convert all UUID fields and include all other columns
-      const convertedColumns = tableColumns.map((col) => {
-        if (this.isUuidField(col)) {
-          return `BIN_TO_UUID(${col}) as ${col}`;
-        }
-        return col;
-      });
-      return convertedColumns.join(", ");
     }
+
+    return tableColumns
+      .map((col) =>
+        this.isUuidField(col) ? `BIN_TO_UUID(${col}) as ${col}` : col
+      )
+      .join(", ");
   }
 
   isUuidField(fieldName) {
-    const cleanFieldName = fieldName.includes('.') 
-      ? fieldName.split('.')[1] 
+    const cleanFieldName = fieldName.includes(".")
+      ? fieldName.split(".")[1]
       : fieldName;
     return this.uuidFields.includes(cleanFieldName);
   }
@@ -475,3 +512,4 @@ export class CrudService {
     return tableSchemaService.validateIncludes(this.tableName, includeArray);
   }
 }
+

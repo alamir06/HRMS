@@ -45,6 +45,7 @@ const companyCustomController = {
         establishedAfter,
         establishedBefore,
         tinNumber,
+        status,
         page = 1,
         limit = 10,
       } = req.query;
@@ -60,7 +61,8 @@ const companyCustomController = {
           company_phone,
           company_address,
           company_established_date,
-          company_tin_number
+          company_tin_number,
+          status
         FROM company 
         WHERE 1=1
       `;
@@ -116,6 +118,13 @@ const companyCustomController = {
         countQuery += ` AND company_tin_number LIKE ?`;
         params.push(`%${tinNumber}%`);
         countParams.push(`%${tinNumber}%`);
+      }
+
+      if (status && ["active", "inactive"].includes(status)) {
+        query += ` AND status = ?`;
+        countQuery += ` AND status = ?`;
+        params.push(status);
+        countParams.push(status);
       }
 
       query += ` ORDER BY company_name ASC LIMIT ? OFFSET ?`;
@@ -207,6 +216,7 @@ const companyCustomController = {
           company_website,
           company_established_date,
           company_tin_number,
+          status,
           created_at
         FROM company 
         ORDER BY company_name

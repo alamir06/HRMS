@@ -11,6 +11,8 @@ const departmentCrudRouter = createCrudRouter({
   tableName: "department",
   validationSchema: departmentValidationSchema,
   uuidEnabled: true,
+  displayNameField: "department_name",
+  entityLabel: "department",
   uuidFields: ["id", "company_id", "college_id", "manager_id"],
   createRoles: ["admin", "super_admin", "hr_manager"],
   readRoles: null,

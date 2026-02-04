@@ -12,8 +12,8 @@ export const companyValidationSchema = {
     company_logo: z.string().max(255).optional().nullable(),
     company_established_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format"),
     company_tin_number: z.string().min(1, "TIN number is required").max(50),
+    status: z.enum(["active", "inactive"]).optional(),
   }),
-
 
   update: z.object({
     company_name: z
@@ -49,6 +49,7 @@ export const companyValidationSchema = {
       .min(1, "TIN number is required")
       .max(50)
       .optional(),
+    status: z.enum(["active", "inactive"]).optional(),
   }),
 
   // For ID validation

@@ -11,6 +11,8 @@ export const createCrudRouter = (config) => {
     idField = "id",
     uuidEnabled = true,
     uuidFields,
+    displayNameField = null, 
+    entityLabel = "Record", 
     softDeleteEnabled = false,
     softDeleteField = "deleted_at",
     enableBulkOperations = false,
@@ -42,11 +44,16 @@ export const createCrudRouter = (config) => {
   };
 
   const service = new CrudService(serviceConfig);
-  const controller = new CrudController(service, validationSchema);
+  const controller = new CrudController(
+    service, 
+    validationSchema,
+    {
+    displayNameField,
+    entityLabel,
+  }
+  );
 
   // ID validation middleware
-  // In your createCrudRouter function, replace the UUID validation:
-
   const validateId = (req, res, next) => {
     const { id } = req.params;
     if (!id) {
@@ -58,7 +65,6 @@ export const createCrudRouter = (config) => {
 
     // Basic UUID validation if UUID enabled
     if (uuidEnabled) {
-      // Accept UUID versions 1, 4, and 5
       const uuidRegex =
         /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
       if (!uuidRegex.test(id)) {
@@ -111,6 +117,7 @@ export const createCrudRouter = (config) => {
   //   if (!roles) return []; // No authorization required
   //   return [authorize(...roles)];
   // };
+
 
   // Standard CRUD routes
   router.post(

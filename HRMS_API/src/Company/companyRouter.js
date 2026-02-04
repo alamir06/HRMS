@@ -11,12 +11,14 @@ const companyCrudRouter = createCrudRouter({
   routePath: "/",
   tableName: "company",
   validationSchema: companyValidationSchema,
+  displayNameField: "company_name",
+  entityLabel: "Company",
   uuidEnabled: true,
   uuidFields: ["id"],
   createRoles: ["HR_MANAGER", "DEAN", "employee", "HEAD", "FINANCE_OFFICER"],
   readRoles: null,
   updateRoles: ["HR_MANAGER", "DEAN", "employee", "HEAD", "FINANCE_OFFICER"],
-  deleteRoles: ["suHR_MANAGERper_admin"],
+  deleteRoles: ["HR_MANAGERper_admin"],
 });
 
 companyRouter.use("/", companyCrudRouter);

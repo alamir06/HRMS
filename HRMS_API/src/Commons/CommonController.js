@@ -1,37 +1,46 @@
 import { CrudService } from "./CommonServices.js";
+import { ZodError } from "zod";
 
 export class CrudController {
-  constructor(service, validationSchema) {
+  constructor(service, validationSchema,options={}) {
     this.service = service;
     this.validationSchema = validationSchema;
+    this.displayNameField = options.displayNameField;
+    this.entityLabel = options.entityLabel || "Record";
   }
 
-  create = async (req, res) => {
-    try {
-      const validatedData = this.validationSchema?.create
-        ? this.validationSchema.create.parse(req.body)
-        : req.body;
-
-      const result = await this.service.create(validatedData);
-
-      res.status(201).json({
-        success: true,
-        message: "Record created successfully",
-        data: result,
+create = async (req, res) => {
+  try {
+    const validatedData = this.validationSchema?.create
+      ? this.validationSchema.create.parse(req.body)
+      : req.body;
+    const result = await this.service.create(validatedData);
+    const displayName =
+      this.displayNameField && validatedData[this.displayNameField]
+        ? `'${validatedData[this.displayNameField]}'`
+        : "";
+    res.status(201).json({
+      success: true,
+      message: `${this.entityLabel} ${displayName} created successfully`,
+      data: result,
+    });
+  } catch (error) {
+    if (error.type === "DUPLICATE") {
+      return res.status(409).json({
+        success: false,
+        message: `${this.entityLabel} with this ${error.field} already exists`,
       });
-    } catch (error) {
-      this.handleError(res, error, "Create operation failed");
     }
-  };
+    this.handleError(res, error, `${this.entityLabel} creation failed`);
+  }
+};
 
-  bulkCreate = async (req, res) => {
+bulkCreate = async (req, res) => {
     try {
       const validatedData = this.validationSchema?.bulk
         ? this.validationSchema.bulk.parse(req.body)
         : req.body;
-
       const result = await this.service.bulkCreate(validatedData.items || validatedData);
-      
       res.status(201).json({
         success: true,
         message: `${result.length} records created successfully`,
@@ -236,63 +245,37 @@ export class CrudController {
     );
   }
 
-  handleError(res, error, defaultMessage) {
-    console.error(`${defaultMessage}:`, error);
-
-    // Zod validation errors
-    if (error.name === "ZodError") {
-      return res.status(400).json({
-        success: false,
-        error: "Validation failed",
-        details: error.errors.map((err) => ({
-          field: err.path.join("."),
-          message: err.message,
-          code: err.code,
-        })),
-      });
-    }
-
-    // Not found errors
-    if (error.message.includes("not found") || error.message.includes("Record not found")) {
-      return res.status(404).json({
-        success: false,
-        error: error.message,
-      });
-    }
-
-    // Duplicate entry errors
-    if (error.code === "ER_DUP_ENTRY") {
-      return res.status(409).json({
-        success: false,
-        error: "Duplicate entry found",
-        message: error.message,
-      });
-    }
-
-    // Foreign key constraint errors
-    if (error.code === "ER_ROW_IS_REFERENCED_2" || error.code === "ER_NO_REFERENCED_ROW_2") {
-      return res.status(409).json({
-        success: false,
-        error: "Cannot complete operation due to relationship constraints",
-        message: error.message,
-      });
-    }
-
-    // Database connection errors
-    if (error.code === "ECONNREFUSED" || error.code === "ETIMEDOUT") {
-      return res.status(503).json({
-        success: false,
-        error: "Database service unavailable",
-        message: "Please try again later",
-      });
-    }
-
-    // Default server error
-    res.status(500).json({
+handleError(res, error, defaultMessage) {
+  if (error instanceof ZodError) {
+    return res.status(400).json({
       success: false,
-      error: defaultMessage,
-      message: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error',
-      ...(process.env.NODE_ENV === 'development' && { stack: error.stack })
+      message: "Validation failed",
+      errors: error.errors.map(err => ({
+        field: err.path.join("."),
+        message: err.message,
+      })),
     });
   }
+
+  if (error.code === "ER_DUP_ENTRY") {
+    return res.status(409).json({
+      success: false,
+      message: "Duplicate record exists",
+    });
+  }
+
+  if (error.code === "ER_NO_REFERENCED_ROW_2") {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid reference provided",
+      details: error.sqlMessage,
+    });
+  }
+
+  console.error(error);
+  return res.status(500).json({
+    success: false,
+    message: defaultMessage,
+  });
+}
 }
