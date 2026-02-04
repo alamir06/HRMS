@@ -18,6 +18,17 @@ export const authValidation = {
       .string()
       .min(4, "Username must be at least 4 characters")
       .regex(/^[a-zA-Z0-9._-]+$/, "Username may include letters, numbers, ., _ or -"),
+    system_role: z
+      .enum([
+        'HR_MANAGER',
+        'DEAN',
+        'employee',
+        'HEAD',
+        'HR_OFFICER',
+        'RECRUITER',
+        'PAYROLL_OFFICER',
+      ])
+      .optional(),
     temporary_password: passwordSchema.optional(),
     send_email: z.boolean().optional().default(true),
   }),

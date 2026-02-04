@@ -223,6 +223,7 @@ CREATE TABLE users(
     id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
     employee_id BINARY(16) UNIQUE NOT NULL,
     username VARCHAR(100) UNIQUE NOT NULL,
+    system_role ENUM('HR_MANAGER', 'DEAN', 'employee', 'HEAD', 'HR_OFFICER', 'RECRUITER', 'PAYROLL_OFFICER') DEFAULT 'employee',
     password_hash VARCHAR(255) NOT NULL,
     preferred_language ENUM('en', 'am') DEFAULT 'am',
     last_login TIMESTAMP NULL,

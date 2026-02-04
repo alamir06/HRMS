@@ -16,7 +16,7 @@ export const createCrudRouter = (config) => {
     softDeleteEnabled = false,
     softDeleteField = "deleted_at",
     enableBulkOperations = false,
-    // authMiddleware = authenticateToken,
+    authMiddleware = authenticateToken,
     createRoles = ["HR_MANAGER", "DEAN", "employee", "HEAD", "FINANCE_OFFICER"],
     readRoles = null, // null means all authenticated users
     updateRoles = ["HR_MANAGER", "DEAN", "employee", "HEAD", "FINANCE_OFFICER"],
@@ -108,22 +108,22 @@ export const createCrudRouter = (config) => {
   };
 
   // Apply authentication to all routes if specified
-  // if (authMiddleware) {
-  //   router.use(authMiddleware);
-  // }
+  if (authMiddleware) {
+    router.use(authMiddleware);
+  }
 
   // Apply role-based authorization
-  // const applyAuthorization = (roles) => {
-  //   if (!roles) return []; // No authorization required
-  //   return [authorize(...roles)];
-  // };
+  const applyAuthorization = (roles) => {
+    if (!roles) return []; // No authorization required
+    return [authorize(...roles)];
+  };
 
 
   // Standard CRUD routes
   router.post(
     "/",
     [
-      // ...applyAuthorization(createRoles),
+      ...applyAuthorization(createRoles),
       ...middleware.create,
     ],
     controller.create
@@ -134,7 +134,7 @@ export const createCrudRouter = (config) => {
     router.post(
       "/bulk",
       [
-        // ...applyAuthorization(createRoles),
+        ...applyAuthorization(createRoles),
         ...middleware.create,
       ],
       controller.bulkCreate
@@ -145,7 +145,7 @@ export const createCrudRouter = (config) => {
     "/",
     [
       validateInclude,
-      // ...applyAuthorization(readRoles),
+      ...applyAuthorization(readRoles),
       ...middleware.list,
     ],
     controller.findAll
@@ -154,7 +154,7 @@ export const createCrudRouter = (config) => {
   router.get(
     "/count",
     [
-      // ...applyAuthorization(readRoles),
+      ...applyAuthorization(readRoles),
       ...middleware.count,
     ],
     controller.count
@@ -165,7 +165,7 @@ export const createCrudRouter = (config) => {
     [
       validateId,
       validateInclude,
-      // ...applyAuthorization(readRoles),
+      ...applyAuthorization(readRoles),
       ...middleware.read,
     ],
     controller.findById
@@ -175,7 +175,7 @@ export const createCrudRouter = (config) => {
     "/:id/exists",
     [
       validateId,
-      // ...applyAuthorization(readRoles),
+      ...applyAuthorization(readRoles),
       ...middleware.read,
     ],
     controller.exists
@@ -185,7 +185,7 @@ export const createCrudRouter = (config) => {
     "/:id",
     [
       validateId,
-      // ...applyAuthorization(updateRoles),
+      ...applyAuthorization(updateRoles),
       ...middleware.update,
     ],
     controller.update
@@ -195,7 +195,7 @@ export const createCrudRouter = (config) => {
     "/:id",
     [
       validateId,
-      // ...applyAuthorization(updateRoles),
+      ...applyAuthorization(updateRoles),
       ...middleware.update,
     ],
     controller.update
@@ -222,7 +222,7 @@ export const createCrudRouter = (config) => {
     } = route;
 
     const routeHandlers = [
-      // ...applyAuthorization(roles),
+      ...applyAuthorization(roles),
       ...routeMiddleware,
       handler,
     ].filter(Boolean);

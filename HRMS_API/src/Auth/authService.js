@@ -16,6 +16,7 @@ export const findUserByIdentifier = async (identifier) => {
        BIN_TO_UUID(u.id) AS id,
        BIN_TO_UUID(u.employee_id) AS employee_id,
        u.username,
+       u.system_role AS system_role,
        u.password_hash,
        u.is_active,
        u.must_change_password,
@@ -57,7 +58,7 @@ export const changeUserPassword = async ({ userId, newPassword, mustChange = fal
   );
 };
 
-export const createUserAccount = async ({ employeeId, username }) => {
+export const createUserAccount = async ({ employeeId, username, systemRole = 'employee' }) => {
   const connection = await pool.getConnection();
   try {
     await connection.beginTransaction();
@@ -99,6 +100,7 @@ export const createUserAccount = async ({ employeeId, username }) => {
          id,
          employee_id,
          username,
+         system_role,
          password_hash,
          must_change_password,
          is_active
@@ -107,10 +109,11 @@ export const createUserAccount = async ({ employeeId, username }) => {
          UUID_TO_BIN(?),
          ?,
          ?,
+         ?,
          TRUE,
          TRUE
        )`,
-      [userId, employeeId, username, passwordHash]
+      [userId, employeeId, username, systemRole, passwordHash]
     );
 
     await connection.commit();
@@ -119,6 +122,7 @@ export const createUserAccount = async ({ employeeId, username }) => {
       userId,
       employeeRole: employeeRows[0].employee_role,
       temporaryPassword: password,
+      systemRole,
     };
   } catch (error) {
     await connection.rollback();
@@ -232,14 +236,14 @@ const ensureSeedEmployee = async (connection, { companyId, firstName, lastName, 
 };
 
 export const seedDefaultHrManager = async () => {
-  const username = process.env.SEED_HR_MANAGER_USERNAME || "hr.manager";
-  const email = process.env.SEED_HR_MANAGER_EMAIL || "hr.manager@example.com";
-  const firstName = process.env.SEED_HR_MANAGER_FIRST_NAME || "Primary";
-  const lastName = process.env.SEED_HR_MANAGER_LAST_NAME || "Manager";
-  const companyName = process.env.SEED_COMPANY_NAME || "Default HRMS Organization";
-  const companyAddress = process.env.SEED_COMPANY_ADDRESS || null;
-  const companyPhone = process.env.SEED_COMPANY_PHONE || null;
-  const seededPassword = process.env.SEED_HR_MANAGER_PASSWORD || "ChangeMe123!";
+  const username = process.env.SEED_HR_MANAGER_USERNAME;
+  const email = process.env.SEED_HR_MANAGER_EMAIL ;
+  const firstName = process.env.SEED_HR_MANAGER_FIRST_NAME;
+  const lastName = process.env.SEED_HR_MANAGER_LAST_NAME;
+  const companyName = process.env.SEED_COMPANY_NAME ;
+  const companyAddress = process.env.SEED_COMPANY_ADDRESS ;
+  const companyPhone = process.env.SEED_COMPANY_PHONE ;
+  const seededPassword = process.env.SEED_HR_MANAGER_PASSWORD ;
 
   const connection = await pool.getConnection();
 
@@ -285,6 +289,7 @@ export const seedDefaultHrManager = async () => {
          id,
          employee_id,
          username,
+         system_role,
          password_hash,
          must_change_password,
          is_active
@@ -293,10 +298,11 @@ export const seedDefaultHrManager = async () => {
          UUID_TO_BIN(?),
          ?,
          ?,
+         ?,
          TRUE,
          TRUE
        )`,
-      [userId, employeeId, username, passwordHash]
+      [userId, employeeId, username, 'HR_MANAGER', passwordHash]
     );
 
     await connection.commit();

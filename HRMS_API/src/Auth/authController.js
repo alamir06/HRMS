@@ -10,7 +10,7 @@ import {
 import { sendEmail } from "../../utils/emailService.js";
 
 const signToken = ({ userId, employeeId, role }) => {
-  const secret = process.env.JWT_SECRET || "hrms-secret";
+  const secret = process.env.JWT_SECRET;
   const expiresIn = process.env.JWT_EXPIRES_IN || "1d";
   return jwt.sign({ userId, employeeId, role }, secret, { expiresIn });
 };
@@ -30,7 +30,7 @@ export const login = async (req, res, next) => {
       return res.status(401).json({ success: false, error: "Invalid credentials" });
     }
 
-    const token = signToken({ userId: user.id, employeeId: user.employee_id, role: user.employee_role });
+    const token = signToken({ userId: user.id, employeeId: user.employee_id, role: user.system_role || user.employee_role });
     await recordSuccessfulLogin(user.id);
 
     res.json({
@@ -41,7 +41,7 @@ export const login = async (req, res, next) => {
           id: user.id,
           employeeId: user.employee_id,
           username: user.username,
-          role: user.employee_role,
+          role: user.system_role || user.employee_role,
           employmentStatus: user.employment_status,
           mustChangePassword: Boolean(user.must_change_password),
           name: [user.first_name, user.middle_name, user.last_name].filter(Boolean).join(" ") || user.username,
@@ -54,12 +54,15 @@ export const login = async (req, res, next) => {
 };
 
 export const createSystemUser = async (req, res, next) => {
-  const { employee_id, username, temporary_password, send_email } = req.body;
+  const { employee_id, username, temporary_password, send_email, system_role } = req.body;
 
   try {
+    const roleToAssign = system_role || 'employee';
+
     const result = await createUserAccount({
       employeeId: employee_id,
       username,
+      systemRole: roleToAssign,
     });
 
     const password = temporary_password || result.temporaryPassword;
@@ -72,15 +75,257 @@ export const createSystemUser = async (req, res, next) => {
     let emailStatus = null;
 
     if (send_email !== false && contact?.email) {
-      const subject = "Your HRMS account credentials";
+      const subject = "Your HRMS Account Credentials";
+      
+      // HTML email template with styling
+      const html = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HRMS Account Credentials</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        .email-container {
+            background-color: #ffffff;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: white;
+        }
+        .content {
+            padding: 30px;
+        }
+        .welcome-text {
+            color: #2ecc71;
+            font-size: 18px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        .credentials-box {
+            background-color: #f8f9fa;
+            border-left: 4px solid #2ecc71;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .credential-item {
+            margin: 15px 0;
+            padding: 10px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .credential-item:last-child {
+            border-bottom: none;
+        }
+        .label {
+            font-weight: 600;
+            color: #2c3e50;
+            display: inline-block;
+            width: 160px;
+        }
+        .value {
+            color: #34495e;
+            font-weight: 500;
+        }
+        .password-highlight {
+            background-color: #e8f5e9;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-weight: bold;
+            color: #27ae60;
+            font-family: monospace;
+            font-size: 16px;
+            letter-spacing: 1px;
+        }
+        .role-badge {
+            display: inline-block;
+            background-color: #3498db;
+            color: white;
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        .important-note {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 25px 0;
+        }
+        .important-note h3 {
+            color: #e67e22;
+            margin-top: 0;
+        }
+        .button-container {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .login-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+            color: white;
+            padding: 14px 32px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        .login-button:hover {
+            background: linear-gradient(135deg, #27ae60 0%, #219653 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(39, 174, 96, 0.3);
+        }
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #7f8c8d;
+            font-size: 14px;
+            border-top: 1px solid #ecf0f1;
+            background-color: #f8f9fa;
+        }
+        .contact-info {
+            margin-top: 10px;
+            font-size: 13px;
+        }
+        .security-note {
+            color: #e74c3c;
+            font-weight: 600;
+            margin-top: 20px;
+            padding: 12px;
+            background-color: #fff5f5;
+            border-radius: 5px;
+            text-align: center;
+            border: 1px solid #ffdddd;
+        }
+        .greeting {
+            font-size: 16px;
+            color: #555;
+            margin-bottom: 20px;
+        }
+        @media (max-width: 600px) {
+            .content {
+                padding: 20px;
+            }
+            .credential-item {
+                display: block;
+            }
+            .label {
+                width: 100%;
+                margin-bottom: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <div class="logo">HRMS</div>
+            <h1>Your Account Has Been Created</h1>
+        </div>
+        
+        <div class="content">
+            <div class="greeting">
+                Hello ${contact.name || "Valued Employee"},
+            </div>
+            
+            <div class="welcome-text">
+                Welcome to the HRMS Platform! Your account has been successfully created.
+            </div>
+            
+            <div class="credentials-box">
+                <div class="credential-item">
+                    <span class="label">Username:</span>
+                    <span class="value">${username}</span>
+                </div>
+                
+                <div class="credential-item">
+                    <span class="label">Temporary Password:</span>
+                    <div class="password-highlight">${password}</div>
+                </div>
+                
+                <div class="credential-item">
+                    <span class="label">Account Role:</span>
+                    <span class="value">${result.systemRole || 'employee'}</span>
+                    <span class="role-badge">${(result.systemRole || 'employee').toUpperCase()}</span>
+                </div>
+            </div>
+            
+            <div class="important-note">
+                <h3>🔐 Important Security Notice</h3>
+                <p>For your security, please change your temporary password immediately after your first login. This helps protect your account and sensitive information.</p>
+            </div>
+            
+            <div class="security-note">
+                ⚠️ Do not share your credentials with anyone. HRMS staff will never ask for your password.
+            </div>
+            
+            <div class="button-container">
+                <a href="#" class="login-button">Access HRMS Portal</a>
+            </div>
+            
+            <p style="text-align: center; color: #666; font-size: 14px;">
+                Use the button above or visit the HRMS portal to log in with your credentials.
+            </p>
+        </div>
+        
+        <div class="footer">
+            <p>This is an automated message from the HR Management System.</p>
+            <div class="contact-info">
+                Need help? Contact your HR department or system administrator.
+            </div>
+            <p style="margin-top: 15px; font-size: 12px; color: #95a5a6;">
+                © ${new Date().getFullYear()} HRMS Platform. All rights reserved.
+            </p>
+        </div>
+    </div>
+</body>
+</html>
+      `;
+
+      // Plain text version as fallback
       const text = `Hello ${contact.name || ""},\n\n` +
-        `An HR Manager created an account for you on the HRMS platform.\n\n` +
+        `An account was created for you on the HRMS platform.\n\n` +
         `Username: ${username}\n` +
-        `Temporary Password: ${password}\n\n` +
-        `Please log in and change your password immediately.`;
+        `Temporary Password: ${password}\n` +
+        `Role: ${result.systemRole || 'employee'}\n\n` +
+        `Please log in and change your password immediately.\n\n` +
+        `This is an automated message from the HR Management System.`;
 
       try {
-        await sendEmail({ to: contact.email, subject, text });
+        await sendEmail({ 
+          to: contact.email, 
+          subject, 
+          text, 
+          html // Added HTML version
+        });
         emailStatus = { delivered: true, to: contact.email };
       } catch (emailError) {
         console.error("Failed to send credential email", emailError);
@@ -93,7 +338,8 @@ export const createSystemUser = async (req, res, next) => {
       message: "User account created",
       data: {
         userId: result.userId,
-        employeeRole: result.employeeRole,
+        employeeRole: result.employeeRole || 'EMPLOYEE',
+        systemRole: result.systemRole,
         emailStatus,
         temporaryPassword: emailStatus?.delivered ? undefined : password,
       },

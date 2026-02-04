@@ -10,13 +10,14 @@ import {
   employeeIdSchema,
 } from "./employeeValidation.js";
 
+
 const employeeRouter = express.Router();
 
 // ========== EMPLOYEE CRUD ROUTES ==========
 employeeRouter.post(
   "/",
-  // authenticateToken,
-  // authorize("HR_MANAGER", "HR_OFFICE"),
+  authenticateToken,
+  authorize("HR_MANAGER", "HR_OFFICER"),
   validateEmployee(createEmployeeSchema),
   employeeController.create
 );
