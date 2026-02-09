@@ -8,14 +8,50 @@ export class EmployeeService extends CrudService {
     super("employee", "id", true);
   }
 
+  async assignAsDepartmentManagerIfNeeded(connection, employeeId) {
+    // Find designation assigned to this employee (1:1)
+    const [designationRows] = await connection.query(
+      `SELECT des.id,
+              des.title,
+              BIN_TO_UUID(des.department_id) AS department_id,
+              BIN_TO_UUID(des.college_id) AS college_id,
+              d.department_type
+         FROM designations des
+         LEFT JOIN department d ON des.department_id = d.id
+        WHERE des.employee_id = UUID_TO_BIN(?)
+        LIMIT 1`,
+      [employeeId]
+    );
+
+    if (!designationRows.length) return;
+
+    const { title, department_id: deptId, department_type: deptType } = designationRows[0];
+    const t = (title || "").toLowerCase();
+    const isAcademic = deptType === "academic";
+    const isHead = t.includes("head");
+    const isManager = t.includes("manager");
+    const isDea = t.includes("dea") || t.includes("dean");
+
+    // College-level DEA/Dean has no department manager to set
+    if (!deptId || isDea) return;
+
+    const shouldAssign = (isAcademic && isHead) || (!isAcademic && (isManager || !isHead));
+
+    if (shouldAssign) {
+      await connection.query(
+        `UPDATE department SET manager_id = UUID_TO_BIN(?) WHERE id = UUID_TO_BIN(?)`,
+        [employeeId, deptId]
+      );
+    }
+  }
+
   async createEmployee(fullData) {
     const connection = await pool.getConnection();
 
     try {
       await connection.beginTransaction();
 
-      const { personal, employment, academic, hr, outsource, ...employeeData } =
-        fullData;
+      const { personal, employment, academic, hr, outsource, ...employeeData } = fullData;
 
       // Generate UUID for the new employee
       const employeeUUID = uuidv4();
@@ -24,10 +60,10 @@ export class EmployeeService extends CrudService {
       const employeeQuery = `
       INSERT INTO employee (
         id, employee_code, company_id, employee_type, employee_category,
-        employee_role, department_id, designation_id, manager_id, hire_date,
+        employee_role, department_id, manager_id, hire_date,
         employment_type, employment_status, termination_date
       ) VALUES (UUID_TO_BIN(?), ?, UUID_TO_BIN(?), ?, ?, ?, UUID_TO_BIN(?), 
-               UUID_TO_BIN(?), UUID_TO_BIN(?), ?, ?, ?, ?)
+               UUID_TO_BIN(?), ?, ?, ?, ?)
     `;
 
       await connection.query(employeeQuery, [
@@ -38,7 +74,6 @@ export class EmployeeService extends CrudService {
         employeeData.employee_category,
         employeeData.employee_role || "employee",
         employeeData.department_id,
-        employeeData.designation_id,
         employeeData.manager_id || null,
         employeeData.hire_date,
         employeeData.employment_type,
@@ -148,6 +183,9 @@ export class EmployeeService extends CrudService {
         ]);
       }
 
+      // If designation exists for this employee, assign as department manager when applicable
+      await this.assignAsDepartmentManagerIfNeeded(connection, employeeUUID);
+
       await connection.commit();
 
       // Return basic employee data
@@ -171,7 +209,6 @@ export class EmployeeService extends CrudService {
           employee_type,
           BIN_TO_UUID(company_id) as company_id,
           BIN_TO_UUID(department_id) as department_id,
-          BIN_TO_UUID(designation_id) as designation_id,
           BIN_TO_UUID(manager_id) as manager_id,
           hire_date,
           employment_type,
@@ -206,7 +243,6 @@ export class EmployeeService extends CrudService {
           e.employee_type,
           BIN_TO_UUID(e.company_id) as company_id,
           BIN_TO_UUID(e.department_id) as department_id,
-          BIN_TO_UUID(e.designation_id) as designation_id,
           BIN_TO_UUID(e.manager_id) as manager_id,
           e.hire_date,
           e.employment_type,
@@ -247,7 +283,7 @@ export class EmployeeService extends CrudService {
         LEFT JOIN employee_employment ee ON e.id = ee.employee_id
         LEFT JOIN company c ON e.company_id = c.id
         LEFT JOIN department d ON e.department_id = d.id
-        LEFT JOIN designations des ON e.designation_id = des.id
+        LEFT JOIN designations des ON des.employee_id = e.id
         WHERE e.id = UUID_TO_BIN(?)
       `;
 
@@ -612,6 +648,8 @@ export class EmployeeService extends CrudService {
           ]);
         }
       }
+
+      await this.assignAsDepartmentManagerIfNeeded(connection, employeeId);
 
       await connection.commit();
 

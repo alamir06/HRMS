@@ -36,32 +36,22 @@ All endpoints are rooted at `/api`. Unless otherwise noted, identifiers are UUID
 - **Flow:** HR manager logs in, creates users for deans/heads/officers, system emails credentials (if SMTP configured), users must change password on first login when `must_change_password` is true.
 
 ## Company & Structure
+
 ### Company
 - **Table:** `company`
-- **Router:** `/companies`
-- **Create Body Fields:**
-  - `company_name` (string, required)
-  - `company_address` (string, required)
-  - `company_phone` (string, required)
-  - `company_email` (email, required)
-  - `company_established_date` (`YYYY-MM-DD`, required)
-  - `company_tin_number` (string, required)
-  - Optional: `company_name_amharic`, `company_address_amharic`, `company_website`, `company_logo`, `status`
-- **Additional Flows:** dashboard stats `/companies/stats/dashboard`, bulk status update `/companies/bulk/update-status`, exports `/companies/export`, validation `/companies/validate`.
+- **Router:** (disabled)
+- **Note:** Single-organization deployment. A default company is created/ensured on server startup using `SEED_COMPANY_*` env vars (see `README.md`).
 
 ### College
 - **Table:** `college`
 - **Router:** `/colleges`
-- **Create Body:** requires `company_id`, `college_name`; optional Amharic and description fields.
+- **Create Body:** `college_name` required; `company_id` optional in single-tenant mode (server defaults it).
 - **Key Flows:** list by company `/colleges/company/:companyId`, bulk create `/colleges/bulk/create`, stats `/colleges/stats/dashboard`.
 
 ### Department
 - **Table:** `department`
 - **Router:** `/departments`
-- **Create Body:**
-  - `company_id` (UUID, required)
-  - `department_name` (string, required)
-  - Optional: `college_id`, Amharic fields, `department_description`, `manager_id`, `department_status`
+- **Create Body:** `department_name` required; `company_id` optional in single-tenant mode (server defaults it).
 - **Flows:** lookup by company `/departments/company/:companyId`, by college `/departments/college/:collegeId`, assign manager `/departments/:id/manager`.
 
 ### Designation
@@ -71,14 +61,13 @@ All endpoints are rooted at `/api`. Unless otherwise noted, identifiers are UUID
 - **Flows:** fetch by department `/designations/department/:departmentId`, statistics `/designations/stats/dashboard`.
 
 ## Employee Management
-- **Tables:** `employee`, `employee_personal`, `employee_employment`, `employee_academic`, `employee_hr`, `employee_outsource`, `employee_documents`, `employee_education`
+- **Create Body:** `employee_code` required; `company_id` is optional in single-tenant mode (server defaults it).
 - **Router:** `/employees`
 - **Create Body (abridged):**
 ```json
 {
   "employee_code": "EMP-001",
   "company_id": "UUID",
-  "employee_category": "hr_officer",
   "department_id": "UUID",
   "designation_id": "UUID",
   "hire_date": "2025-01-01",

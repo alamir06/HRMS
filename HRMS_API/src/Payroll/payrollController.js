@@ -120,7 +120,7 @@ const buildBaseSelect = (whereClause = "") => `
     e.employment_type,
     e.employment_status,
     BIN_TO_UUID(e.department_id) AS department_id,
-    BIN_TO_UUID(e.designation_id) AS designation_id,
+    BIN_TO_UUID(ds.employee_id) AS designation_id,
     d.department_name,
     ds.title AS designation_title,
     CONCAT_WS(' ', ep.first_name, ep.middle_name, ep.last_name) AS employee_name,
@@ -129,7 +129,7 @@ const buildBaseSelect = (whereClause = "") => `
   LEFT JOIN employee e ON p.employee_id = e.id
   LEFT JOIN employee_personal ep ON e.id = ep.employee_id
   LEFT JOIN department d ON e.department_id = d.id
-  LEFT JOIN designations ds ON e.designation_id = ds.id
+  LEFT JOIN designations ds ON ds.employee_id = e.id
   LEFT JOIN users u ON p.generated_by = u.id
   ${whereClause}
 `;

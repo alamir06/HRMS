@@ -57,11 +57,6 @@ const employeeBaseSchema = z.object({
   }),
   employee_type: z.string().optional(),
   department_id: z.string().uuid("Invalid department ID format").optional().nullable(),
-  designation_id: z
-    .string()
-    .uuid("Invalid designation ID format")
-    .nullable()
-    .optional(),
   manager_id: z
     .string()
     .uuid("Invalid manager ID format")

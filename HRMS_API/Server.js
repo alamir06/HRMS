@@ -8,7 +8,7 @@ import pool from "./config/database.js";
 import path from "path";
 //By Group1:Routes
 import appRouter from './routes/index.js';
-import { seedDefaultHrManager } from "./src/Auth/authService.js";
+import { seedDefaultCompany, seedDefaultHrManager } from "./src/Auth/authService.js";
 
 dotenv.config();
 
@@ -27,15 +27,19 @@ const limiter = rateLimit({
   legacyHeaders: false,
 });
 
+
+const allowedOrigins = process.env.NODE_ENV === 'production'
+  ? [process.env.CLIENT_URL]
+  : ['http://localhost:3000', 'http://localhost:5173'];
+
 //By Group1:Middleware
 app.use(helmet());
 app.use(cors({
-  origin: process.env.CLIENT_URL,
+  origin: allowedOrigins,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
-
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 app.use(limiter);
 app.use(express.json({ limit: '10mb' }));
@@ -162,6 +166,10 @@ async function startServer() {
     process.exit(1);
   }
 
+  const companySeedResult = await seedDefaultCompany();
+  if (!companySeedResult?.createdOrUpdated) {
+    throw companySeedResult?.error || new Error('Failed to seed default company');
+  }
   await seedDefaultHrManager();
 
   app.listen(PORT, () => {

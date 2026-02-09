@@ -3,6 +3,7 @@ import { createCrudRouter } from "../Commons/CommonRouter.js";
 import { departmentValidationSchema } from "./departmentValidation.js";
 import { authenticateToken, authorize } from "../../middleware/auth.js";
 import departmentCustomController from "./departmentController.js";
+import { ensureDefaultCompanyIdInBody } from "../Commons/defaultCompany.js";
 
 const departmentRouter = express.Router();
 
@@ -14,17 +15,25 @@ const departmentCrudRouter = createCrudRouter({
   displayNameField: "department_name",
   entityLabel: "department",
   uuidFields: ["id", "company_id", "college_id", "manager_id"],
-  createRoles: ["admin", "super_admin", "hr_manager"],
+  createRoles: ["HR_MANAGER"],
   readRoles: null,
-  updateRoles: ["admin", "super_admin", "hr_manager"],
-  deleteRoles: ["super_admin"],
+  updateRoles: ["HR_MANAGER"],
+  deleteRoles: ["HR_MANAGER"],
+  middleware: {
+    create: [ensureDefaultCompanyIdInBody()],
+    read: [],
+    update: [],
+    delete: [],
+    list: [],
+    count: [],
+  },
 });
 
 departmentRouter.use("/", departmentCrudRouter);
 departmentRouter.get(
   "/company/:companyId",
   authenticateToken,
-  authorize("admin", "super_admin", "hr_manager", "user"),
+  authorize("HR_MANAGER"),
   departmentCustomController.getDepartmentsByCompany
 );
 
@@ -32,7 +41,7 @@ departmentRouter.get(
 departmentRouter.get(
   "/college/:collegeId",
   authenticateToken,
-  authorize("admin", "super_admin", "hr_manager", "user"),
+  authorize("HR_MANAGER"),
   departmentCustomController.getDepartmentsByCollege
 );
 
@@ -40,7 +49,7 @@ departmentRouter.get(
 departmentRouter.get(
   "/stats/dashboard",
   authenticateToken,
-  authorize("admin", "super_admin", "hr_manager"),
+  authorize("HR_MANAGER"),
   departmentCustomController.getDepartmentStats
 );
 
@@ -48,7 +57,7 @@ departmentRouter.get(
 departmentRouter.patch(
   "/:id/manager",
   authenticateToken,
-  authorize("admin", "super_admin", "hr_manager"),
+  authorize("HR_MANAGER"),
   departmentCustomController.updateDepartmentManager
 );
 
@@ -56,21 +65,21 @@ departmentRouter.patch(
 departmentRouter.post(
   "/bulk/update-status",
   authenticateToken,
-  authorize("admin", "super_admin"),
+  authorize("HR_MANAGER"),
   departmentCustomController.bulkUpdateDepartmentStatus
 );
 
 departmentRouter.get(
   "/:id/with-details",
-  // authenticateToken,
-  // authorize("admin", "super_admin", "hr_manager", "user"),
+  authenticateToken,
+  authorize("HR_MANAGER"),
   departmentCustomController.getDepartmentWithDetails
 );
 
 departmentRouter.get(
   "/with-relations/all",
-  // authenticateToken,
-  // authorize("admin", "super_admin", "hr_manager", "user"),
+  authenticateToken,
+  authorize("HR_MANAGER"),
   departmentCustomController.getAllDepartmentsWithRelations
 );
 export { departmentRouter };

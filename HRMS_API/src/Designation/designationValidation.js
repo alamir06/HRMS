@@ -2,10 +2,17 @@ import { z } from "zod";
 
 export const designationValidationSchema = {
   create: z.object({
+    employee_id: z
+      .string()
+      .uuid("Invalid employee ID format"),
     department_id: z
       .string()
       .uuid("Invalid department ID format")
-      .min(1, "Department ID is required"),
+      .optional(),
+    college_id: z
+      .string()
+      .uuid("Invalid college ID format")
+      .optional(),
     title: z
       .string()
       .min(1, "Title is required")
@@ -44,7 +51,9 @@ export const designationValidationSchema = {
   }),
 
   update: z.object({
+    employee_id: z.string().uuid("Invalid employee ID format").optional(),
     department_id: z.string().uuid("Invalid department ID format").optional(),
+    college_id: z.string().uuid("Invalid college ID format").optional(),
     title: z
       .string()
       .min(1, "Title is required")
@@ -109,3 +118,80 @@ export const validateDesignation = (schema) => {
     }
   };
 };
+
+// Conditional validation rules based on `title` intent
+designationValidationSchema.create = designationValidationSchema.create.superRefine((data, ctx) => {
+  const title = (data.title || "").toLowerCase();
+  const hasDept = Boolean(data.department_id);
+  const hasCollege = Boolean(data.college_id);
+  const hasEmployee = Boolean(data.employee_id);
+  const isDea = title.includes("dea") || title.includes("dean");
+  const isHead = title.includes("head") || title.includes("department head");
+
+  if (!hasEmployee) {
+    ctx.addIssue({ path: ["employee_id"], code: z.ZodIssueCode.custom, message: "employee_id is required" });
+  }
+
+  if (isDea) {
+    if (!hasCollege) {
+      ctx.addIssue({ path: ["college_id"], code: z.ZodIssueCode.custom, message: "college_id is required for dean/DEA designations" });
+    }
+    if (hasDept) {
+      ctx.addIssue({ path: ["department_id"], code: z.ZodIssueCode.custom, message: "department_id must be omitted for dean/DEA designations" });
+    }
+    return;
+  }
+
+  if (isHead) {
+    // Academic department head: require both college_id and department_id
+    if (!hasDept) {
+      ctx.addIssue({ path: ["department_id"], code: z.ZodIssueCode.custom, message: "department_id is required for department head designations" });
+    }
+    if (!hasCollege) {
+      ctx.addIssue({ path: ["college_id"], code: z.ZodIssueCode.custom, message: "college_id is required for department head designations" });
+    }
+    return;
+  }
+
+  // Default: other designations require a department_id
+  if (!hasDept) {
+    ctx.addIssue({ path: ["department_id"], code: z.ZodIssueCode.custom, message: "department_id is required for this designation" });
+  }
+});
+
+designationValidationSchema.update = designationValidationSchema.update.superRefine((data, ctx) => {
+  const title = data.title ? (data.title || "").toLowerCase() : null;
+  const hasDept = "department_id" in data && Boolean(data.department_id);
+  const hasCollege = "college_id" in data && Boolean(data.college_id);
+  const hasEmployee = "employee_id" in data && Boolean(data.employee_id);
+  const isDea = title && (title.includes("dea") || title.includes("dean"));
+  const isHead = title && (title.includes("head") || title.includes("department head"));
+
+  if (!hasEmployee) {
+    ctx.addIssue({ path: ["employee_id"], code: z.ZodIssueCode.custom, message: "employee_id is required" });
+  }
+
+  if (isDea) {
+    if (!hasCollege) {
+      ctx.addIssue({ path: ["college_id"], code: z.ZodIssueCode.custom, message: "college_id is required for dean/DEA designations" });
+    }
+    if (hasDept) {
+      ctx.addIssue({ path: ["department_id"], code: z.ZodIssueCode.custom, message: "department_id must be omitted for dean/DEA designations" });
+    }
+    return;
+  }
+
+  if (isHead) {
+    if (!hasDept) {
+      ctx.addIssue({ path: ["department_id"], code: z.ZodIssueCode.custom, message: "department_id is required for department head designations" });
+    }
+    if (!hasCollege) {
+      ctx.addIssue({ path: ["college_id"], code: z.ZodIssueCode.custom, message: "college_id is required for department head designations" });
+    }
+    return;
+  }
+
+  if (!title && !hasDept && !hasCollege) {
+    ctx.addIssue({ path: ["department_id"], code: z.ZodIssueCode.custom, message: "department_id is required for this designation" });
+  }
+});

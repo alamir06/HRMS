@@ -3,6 +3,7 @@ import { employeeController } from "./EmployeeController.js";
 import { fileUploadService } from "../../Commons/FileUploadService.js";
 import { validateEmployee } from "./employeeValidation.js";
 import { authenticateToken, authorize } from '../../middleware/auth.js';
+import { ensureDefaultCompanyIdInBody } from "../Commons/defaultCompany.js";
 
 import {
   createEmployeeSchema,
@@ -18,6 +19,7 @@ employeeRouter.post(
   "/",
   authenticateToken,
   authorize("HR_MANAGER", "HR_OFFICER"),
+  ensureDefaultCompanyIdInBody(),
   validateEmployee(createEmployeeSchema),
   employeeController.create
 );

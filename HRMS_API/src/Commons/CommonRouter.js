@@ -17,10 +17,10 @@ export const createCrudRouter = (config) => {
     softDeleteField = "deleted_at",
     enableBulkOperations = false,
     authMiddleware = authenticateToken,
-    createRoles = ["HR_MANAGER", "DEAN", "employee", "HEAD", "FINANCE_OFFICER"],
-    readRoles = null, // null means all authenticated users
-    updateRoles = ["HR_MANAGER", "DEAN", "employee", "HEAD", "FINANCE_OFFICER"],
-    deleteRoles = ["HR_MANAGER"],
+    createRoles,
+    readRoles,
+    updateRoles,
+    deleteRoles,
     customRoutes = [],
     middleware = {
       create: [],

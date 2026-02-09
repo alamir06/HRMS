@@ -132,14 +132,167 @@ export const createUserAccount = async ({ employeeId, username, systemRole = 'em
   }
 };
 
-const ensureCompany = async (connection, { name, address, phone }) => {
-  const [rows] = await connection.execute(
-    "SELECT BIN_TO_UUID(id) AS id FROM company WHERE company_name = ? LIMIT 1",
-    [name]
-  );
+const ensureCompany = async (
+  connection,
+  {
+    id,
+    name,
+    nameAmharic,
+    address,
+    addressAmharic,
+    phone,
+    email,
+    website,
+    logo,
+    establishedDate,
+    tinNumber,
+    status,
+  }
+) => {
+  if (!name) {
+    throw new Error("Company name is required to seed default company");
+  }
 
-  if (rows.length) {
-    return rows[0].id;
+  const [[countRow]] = await connection.execute(
+    "SELECT COUNT(*) AS companyCount FROM company"
+  );
+  const companyCount = Number(countRow?.companyCount || 0);
+
+  if (companyCount > 1) {
+    throw new Error(
+      "Multiple companies found in database. This deployment is configured for single-company mode; delete extra rows from `company` table and restart."
+    );
+  }
+
+  if (id) {
+    const [rows] = await connection.execute(
+      "SELECT 1 FROM company WHERE id = UUID_TO_BIN(?) LIMIT 1",
+      [id]
+    );
+
+    if (!rows.length) {
+      if (companyCount === 1) {
+        throw new Error(
+          "SEED_COMPANY_ID does not match the existing company row. Update SEED_COMPANY_ID to the existing company id (or clear the company table) and restart."
+        );
+      }
+
+      await connection.execute(
+        `INSERT INTO company (
+           id,
+           company_name,
+           company_name_amharic,
+           company_address,
+           company_address_amharic,
+           company_phone,
+           company_email,
+           company_website,
+           company_logo,
+           company_established_date,
+           company_tin_number,
+           status
+         ) VALUES (
+           UUID_TO_BIN(?),
+           ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+         )`,
+        [
+          id,
+          name,
+          nameAmharic || null,
+          address || null,
+          addressAmharic || null,
+          phone || null,
+          email || null,
+          website || null,
+          logo || null,
+          establishedDate || null,
+          tinNumber || null,
+          status || "active",
+        ]
+      );
+
+      return id;
+    }
+
+    // Update the targeted row with any provided values.
+    await connection.execute(
+      `UPDATE company
+          SET company_name = ?,
+              company_name_amharic = COALESCE(?, company_name_amharic),
+              company_address = COALESCE(?, company_address),
+              company_address_amharic = COALESCE(?, company_address_amharic),
+              company_phone = COALESCE(?, company_phone),
+              company_email = COALESCE(?, company_email),
+              company_website = COALESCE(?, company_website),
+              company_logo = COALESCE(?, company_logo),
+              company_established_date = COALESCE(?, company_established_date),
+              company_tin_number = COALESCE(?, company_tin_number),
+              status = COALESCE(?, status),
+              updated_at = CURRENT_TIMESTAMP
+        WHERE id = UUID_TO_BIN(?)`,
+      [
+        name,
+        nameAmharic || null,
+        address || null,
+        addressAmharic || null,
+        phone || null,
+        email || null,
+        website || null,
+        logo || null,
+        establishedDate || null,
+        tinNumber || null,
+        status || null,
+        id,
+      ]
+    );
+
+    return id;
+  }
+
+  // Single-company mode without explicit ID:
+  // - If one company already exists, update it (even if the name changes)
+  // - If none exists, insert the new company
+  if (companyCount === 1) {
+    const [rows] = await connection.execute(
+      "SELECT BIN_TO_UUID(id) AS id FROM company LIMIT 1"
+    );
+    const existingId = rows?.[0]?.id;
+    if (!existingId) {
+      throw new Error("Expected a single company row but none was found");
+    }
+
+    await connection.execute(
+      `UPDATE company
+          SET company_name = ?,
+              company_name_amharic = COALESCE(?, company_name_amharic),
+              company_address = COALESCE(?, company_address),
+              company_address_amharic = COALESCE(?, company_address_amharic),
+              company_phone = COALESCE(?, company_phone),
+              company_email = COALESCE(?, company_email),
+              company_website = COALESCE(?, company_website),
+              company_logo = COALESCE(?, company_logo),
+              company_established_date = COALESCE(?, company_established_date),
+              company_tin_number = COALESCE(?, company_tin_number),
+              status = COALESCE(?, status),
+              updated_at = CURRENT_TIMESTAMP
+        WHERE id = UUID_TO_BIN(?)`,
+      [
+        name,
+        nameAmharic || null,
+        address || null,
+        addressAmharic || null,
+        phone || null,
+        email || null,
+        website || null,
+        logo || null,
+        establishedDate || null,
+        tinNumber || null,
+        status || null,
+        existingId,
+      ]
+    );
+
+    return existingId;
   }
 
   const companyId = uuidv4();
@@ -147,18 +300,82 @@ const ensureCompany = async (connection, { name, address, phone }) => {
     `INSERT INTO company (
        id,
        company_name,
+       company_name_amharic,
        company_address,
-       company_phone
+       company_address_amharic,
+       company_phone,
+       company_email,
+       company_website,
+       company_logo,
+       company_established_date,
+       company_tin_number,
+       status
      ) VALUES (
        UUID_TO_BIN(?),
-       ?,
-       ?,
-       ?
+       ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
      )`,
-    [companyId, name, address || null, phone || null]
+    [
+      companyId,
+      name,
+      nameAmharic || null,
+      address || null,
+      addressAmharic || null,
+      phone || null,
+      email || null,
+      website || null,
+      logo || null,
+      establishedDate || null,
+      tinNumber || null,
+      status || "active",
+    ]
   );
 
   return companyId;
+};
+
+export const seedDefaultCompany = async () => {
+  const rawCompanyId = process.env.SEED_COMPANY_ID || "";
+  const companyId = rawCompanyId && rawCompanyId.trim() ? rawCompanyId.trim() : null;
+  const companyName = process.env.SEED_COMPANY_NAME;
+
+  if (!companyName) {
+    console.error(
+      "SEED_COMPANY_NAME is required in single-company deployments. Provide all company attributes via .env and restart."
+    );
+    return {
+      createdOrUpdated: false,
+      error: new Error("Missing SEED_COMPANY_NAME"),
+    };
+  }
+
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    const id = await ensureCompany(connection, {
+      id: companyId,
+      name: companyName,
+      nameAmharic: process.env.SEED_COMPANY_NAME_AMHARIC,
+      address: process.env.SEED_COMPANY_ADDRESS,
+      addressAmharic: process.env.SEED_COMPANY_ADDRESS_AMHARIC,
+      phone: process.env.SEED_COMPANY_PHONE,
+      email: process.env.SEED_COMPANY_EMAIL,
+      website: process.env.SEED_COMPANY_WEBSITE,
+      logo: process.env.SEED_COMPANY_LOGO,
+      establishedDate: process.env.SEED_COMPANY_ESTABLISHED_DATE,
+      tinNumber: process.env.SEED_COMPANY_TIN_NUMBER,
+      status: process.env.SEED_COMPANY_STATUS,
+    });
+
+    await connection.commit();
+    return { createdOrUpdated: true, companyId: id };
+  } catch (error) {
+    await connection.rollback();
+    console.error("Failed to seed default company", error);
+    return { createdOrUpdated: false, error };
+  } finally {
+    connection.release();
+  }
 };
 
 const ensureSeedEmployee = async (connection, { companyId, firstName, lastName, email }) => {
@@ -237,13 +454,28 @@ const ensureSeedEmployee = async (connection, { companyId, firstName, lastName, 
 
 export const seedDefaultHrManager = async () => {
   const username = process.env.SEED_HR_MANAGER_USERNAME;
-  const email = process.env.SEED_HR_MANAGER_EMAIL ;
+  const email = process.env.SEED_HR_MANAGER_EMAIL;
   const firstName = process.env.SEED_HR_MANAGER_FIRST_NAME;
   const lastName = process.env.SEED_HR_MANAGER_LAST_NAME;
-  const companyName = process.env.SEED_COMPANY_NAME ;
-  const companyAddress = process.env.SEED_COMPANY_ADDRESS ;
-  const companyPhone = process.env.SEED_COMPANY_PHONE ;
-  const seededPassword = process.env.SEED_HR_MANAGER_PASSWORD ;
+  const companyName = process.env.SEED_COMPANY_NAME || "Default Organization";
+  const companyAddress = process.env.SEED_COMPANY_ADDRESS;
+  const companyPhone = process.env.SEED_COMPANY_PHONE;
+  const rawExplicitCompanyId = process.env.SEED_COMPANY_ID || "";
+  const explicitCompanyId = rawExplicitCompanyId && rawExplicitCompanyId.trim() ? rawExplicitCompanyId.trim() : null;
+  const seededPassword = process.env.SEED_HR_MANAGER_PASSWORD || "ChangeMe123!";
+
+  if (!username || !email || !firstName || !lastName) {
+    console.warn(
+      "HR manager seeding skipped. Missing required data.",
+      {
+        SEED_HR_MANAGER_USERNAME: Boolean(username),
+        SEED_HR_MANAGER_EMAIL: Boolean(email),
+        SEED_HR_MANAGER_FIRST_NAME: Boolean(firstName),
+        SEED_HR_MANAGER_LAST_NAME: Boolean(lastName),
+      }
+    );
+    return { created: false, skipped: true };
+  }
 
   const connection = await pool.getConnection();
 
@@ -264,6 +496,7 @@ export const seedDefaultHrManager = async () => {
     }
 
     const companyId = await ensureCompany(connection, {
+      id: explicitCompanyId,
       name: companyName,
       address: companyAddress,
       phone: companyPhone,

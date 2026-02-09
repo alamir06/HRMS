@@ -22,6 +22,7 @@ CREATE TABLE company (
 -- OUTSOURCING VENDORS
 CREATE TABLE outsourcing_companies (
     id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
+    company_id BINARY(16) NOT NULL,
     company_name VARCHAR(255) NOT NULL,
     company_name_amharic VARCHAR(255),
     company_address TEXT,
@@ -64,10 +65,12 @@ CREATE TABLE department (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- DESIGNATION WITH TYPE
+-- DESIGNATION WITH ASSIGNED EMPLOYEE
 CREATE TABLE designations (
     id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
-    department_id BINARY(16) NOT NULL,
+    employee_id BINARY(16) NOT NULL,
+    department_id BINARY(16),
+    college_id BINARY(16),
     title VARCHAR(255) NOT NULL,
     title_amharic VARCHAR(255),
     job_description TEXT,
@@ -78,10 +81,12 @@ CREATE TABLE designations (
     designation_type ENUM('academic', 'administrative', 'hr', 'support') DEFAULT 'administrative',
     status ENUM('active', 'inactive') DEFAULT 'active',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_designation_employee (employee_id),
+    FOREIGN KEY (employee_id) REFERENCES employee(id) ON DELETE CASCADE
 );
 
--- SINGLE EMPLOYEE TABLE WITH ROLE
+-- SINGLE EMPLOYEE TABLE WITH ROLE (designation_id removed)
 CREATE TABLE employee (
     id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
     employee_code VARCHAR(50) UNIQUE NOT NULL,
@@ -90,10 +95,9 @@ CREATE TABLE employee (
     employee_category ENUM('hr_officer', 'academic', 'outsource') NOT NULL,
     employee_role ENUM('HR_MANAGER', 'DEAN', 'employee', 'HEAD', 'HR_OFFICER', 'RECRUITER', 'PAYROLL_OFFICER') DEFAULT 'employee',
     department_id BINARY(16)  NULL,
-    designation_id BINARY(16)  NULL,
     manager_id BINARY(16),
     hire_date DATE NOT NULL,
-    employment_type ENUM('full_time', 'part_time', 'contract', 'intern') NOT NULL,
+    employment_type ENUM('full_time', 'part_time', 'contract', 'intern') NOT NULL DEFAULT 'full_time',
     employment_status ENUM('active', 'on_leave', 'terminated', 'resigned') DEFAULT 'active',
     termination_date DATE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -600,6 +604,7 @@ ADD FOREIGN KEY (college_id) REFERENCES college(id) ON DELETE SET NULL,
 ADD FOREIGN KEY (manager_id) REFERENCES employee(id) ON DELETE SET NULL;
 
 ALTER TABLE designations ADD FOREIGN KEY (department_id) REFERENCES department(id) ON DELETE CASCADE;
+ALTER TABLE designations ADD FOREIGN KEY (college_id) REFERENCES college(id) ON DELETE SET NULL;
 
 ALTER TABLE employee 
 ADD FOREIGN KEY (company_id) REFERENCES company(id) ON DELETE CASCADE,
@@ -614,6 +619,7 @@ ALTER TABLE employee_academic ADD FOREIGN KEY (college_id) REFERENCES college(id
 ALTER TABLE employee_hr ADD FOREIGN KEY (employee_id) REFERENCES employee(id) ON DELETE CASCADE;
 ALTER TABLE employee_outsource ADD FOREIGN KEY (employee_id) REFERENCES employee(id) ON DELETE CASCADE;
 ALTER TABLE employee_outsource ADD FOREIGN KEY (outsourcing_company_id) REFERENCES outsourcing_companies(id) ON DELETE CASCADE;
+ALTER TABLE outsourcing_companies ADD FOREIGN KEY (company_id) REFERENCES company(id) ON DELETE CASCADE;
 ALTER TABLE users ADD FOREIGN KEY (employee_id) REFERENCES employee(id) ON DELETE CASCADE;
 ALTER TABLE attendance ADD FOREIGN KEY (employee_id) REFERENCES employee(id) ON DELETE CASCADE;
 ALTER TABLE employee_shift ADD FOREIGN KEY (employee_id) REFERENCES employee(id) ON DELETE CASCADE;
@@ -658,7 +664,9 @@ CREATE INDEX idx_employee_company ON employee(company_id);
 CREATE INDEX idx_company_status ON company(status);
 CREATE INDEX idx_college_company ON college(company_id);
 CREATE INDEX idx_department_company ON department(company_id);
+CREATE INDEX idx_outsourcing_company_company ON outsourcing_companies(company_id);
 CREATE INDEX idx_designation_department ON designations(department_id);
+CREATE INDEX idx_designation_college ON designations(college_id);
 CREATE INDEX idx_attendance_employee_date ON attendance(employee_id, date);
 CREATE INDEX idx_leave_request_employee ON leave_request(employee_id);
 CREATE INDEX idx_leave_request_status ON leave_request(status);

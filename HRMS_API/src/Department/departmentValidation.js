@@ -6,6 +6,9 @@ export const departmentValidationSchema = {
       .string()
       .uuid("Invalid company ID format")
       .min(1, "Company ID is required"),
+    department_type: z.enum(["academic", "administrative", "support", "hr"], {
+      errorMap: () => ({ message: "Invalid department type" }),
+    }),
     college_id: z
       .string()
       .uuid("Invalid college ID format")
@@ -36,6 +39,11 @@ export const departmentValidationSchema = {
 
   update: z.object({
     company_id: z.string().uuid("Invalid company ID format").optional(),
+    department_type: z
+      .enum(["academic", "administrative", "support", "hr"], {
+        errorMap: () => ({ message: "Invalid department type" }),
+      })
+      .optional(),
     college_id: z
       .string()
       .uuid("Invalid college ID format")
@@ -73,6 +81,52 @@ export const departmentValidationSchema = {
     id: z.string().uuid("Invalid department ID format"),
   }),
 };
+
+// Conditional rules enforced at application level to give clear errors before DB triggers
+// Create: require college_id when department_type === 'academic'; forbid college_id for non-academic
+departmentValidationSchema.create = departmentValidationSchema.create.superRefine((data, ctx) => {
+  const type = data.department_type;
+  const hasCollege = Boolean(data.college_id);
+
+  if (type === "academic") {
+    if (!hasCollege) {
+      ctx.addIssue({
+        path: ["college_id"],
+        code: z.ZodIssueCode.custom,
+        message: "college_id is required for academic departments",
+      });
+    }
+  } else {
+    if (hasCollege) {
+      ctx.addIssue({
+        path: ["college_id"],
+        code: z.ZodIssueCode.custom,
+        message: "college_id must be omitted for non-academic departments",
+      });
+    }
+  }
+});
+
+// Update: enforce consistency only when both fields are present in the payload
+departmentValidationSchema.update = departmentValidationSchema.update.superRefine((data, ctx) => {
+  if ("department_type" in data && data.department_type === "academic") {
+    if (!("college_id" in data) || !data.college_id) {
+      ctx.addIssue({
+        path: ["college_id"],
+        code: z.ZodIssueCode.custom,
+        message: "Updating to 'academic' requires providing college_id",
+      });
+    }
+  }
+
+  if ("college_id" in data && data.college_id && "department_type" in data && data.department_type !== "academic") {
+    ctx.addIssue({
+      path: ["department_type"],
+      code: z.ZodIssueCode.custom,
+      message: "Cannot set college_id when department_type is not 'academic'",
+    });
+  }
+});
 
 // For backward compatibility
 export const createDepartmentSchema = departmentValidationSchema.create;

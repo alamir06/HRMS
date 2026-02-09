@@ -3,6 +3,7 @@ import { createCrudRouter } from '../Commons/CommonRouter.js';
 import { collegeValidationSchema } from './CollegeValidation.js';
 import { authenticateToken, authorize } from '../../middleware/auth.js';
 import collegeCustomController from "./CollegeController.js"
+import { ensureDefaultCompanyIdInBody } from "../Commons/defaultCompany.js";
 
 const collegeRouter = express.Router();
 const collegeCrudRouter = createCrudRouter({
@@ -13,10 +14,18 @@ const collegeCrudRouter = createCrudRouter({
   displayNameField: "college_name",
   entityLabel: "college",
   uuidFields: ["id", "company_id"],
-  createRoles: ["admin", "super_admin", "hr_manager"],
+  createRoles: ["HR_MANAGERdd"],
   readRoles: null,
-  updateRoles: ["admin", "super_admin", "hr_manager"],
-  deleteRoles: ["super_admin"],
+  updateRoles: ["HR_MANAGER"],
+  deleteRoles: ["HR_MANAGER"],
+  middleware: {
+    create: [ensureDefaultCompanyIdInBody()],
+    read: [],
+    update: [],
+    delete: [],
+    list: [],
+    count: [],
+  },
 });
 
 collegeRouter.use('/', collegeCrudRouter);

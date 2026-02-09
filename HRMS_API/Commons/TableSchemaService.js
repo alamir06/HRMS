@@ -21,6 +21,31 @@ export class TableSchemaService {
         uuidFields: ["id"],
         relations: {}, // Company has no foreign key relations
       },
+      outsourcing_companies: {
+        columns: [
+          "id",
+          "company_id",
+          "company_name",
+          "company_name_amharic",
+          "company_address",
+          "company_address_amharic",
+          "company_phone",
+          "company_email",
+          "company_service_type",
+          "company_contract_start_date",
+          "company_contract_end_date",
+          "company_status",
+          "created_at",
+          "updated_at",
+        ],
+        uuidFields: ["id", "company_id"],
+        relations: {
+          company: {
+            join: "LEFT JOIN company ON outsourcing_companies.company_id = company.id",
+            fields: ["company_name", "company_name_amharic", "company_email"],
+          },
+        },
+      },
       hr_roles: {
         columns: [
           "id",
@@ -98,7 +123,9 @@ export class TableSchemaService {
       designations: {
         columns: [
           "id",
+          "employee_id",
           "department_id",
+          "college_id",
           "title",
           "title_amharic",
           "job_description",
@@ -110,7 +137,7 @@ export class TableSchemaService {
           "created_at",
           "updated_at",
         ],
-        uuidFields: ["id", "department_id"],
+        uuidFields: ["id", "employee_id", "department_id", "college_id"],
         relations: {
           department: {
             join: "LEFT JOIN department ON designations.department_id = department.id",
@@ -118,6 +145,7 @@ export class TableSchemaService {
               "department_name",
               "department_name_amharic",
               "department_status",
+              "department_type",
             ],
           },
           company: {
@@ -127,6 +155,10 @@ export class TableSchemaService {
           college: {
             join: "LEFT JOIN college ON department.college_id = college.id",
             fields: ["college_name", "college_name_amharic"],
+          },
+          employee: {
+            join: "LEFT JOIN employee_personal emp ON designations.employee_id = emp.employee_id",
+            fields: ["first_name", "last_name", "personal_email"],
           },
         },
       },
@@ -138,7 +170,6 @@ export class TableSchemaService {
           "employee_category",
           "employee_type",
           "department_id",
-          "designation_id",
           "manager_id",
           "hire_date",
           "employment_type",
@@ -152,7 +183,6 @@ export class TableSchemaService {
           "id",
           "company_id",
           "department_id",
-          "designation_id",
           "manager_id",
         ],
         relations: {
@@ -167,10 +197,6 @@ export class TableSchemaService {
               "department_name_amharic",
               "department_status",
             ],
-          },
-          designation: {
-            join: "LEFT JOIN designations ON employee.designation_id = designations.id",
-            fields: ["title", "title_amharic", "grade_level"],
           },
           personal: {
             join: "LEFT JOIN employee_personal personal ON employee.id = personal.employee_id",
