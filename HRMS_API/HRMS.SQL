@@ -29,7 +29,7 @@ CREATE TABLE outsourcing_companies (
     company_address_amharic TEXT,
     company_phone VARCHAR(20),
     company_email VARCHAR(150),
-    company_service_type ENUM('security', 'cleaning', 'it', 'catering', 'maintenance', 'other') NOT NULL,
+    company_service_type ENUM('security', 'cleaning',  'maintenance', 'other') NOT NULL,
     company_contract_start_date DATE,
     company_contract_end_date DATE,
     company_status ENUM('active', 'inactive', 'suspended') DEFAULT 'active',
@@ -65,26 +65,6 @@ CREATE TABLE department (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- DESIGNATION WITH ASSIGNED EMPLOYEE
-CREATE TABLE designations (
-    id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
-    employee_id BINARY(16) NOT NULL,
-    department_id BINARY(16),
-    college_id BINARY(16),
-    title VARCHAR(255) NOT NULL,
-    title_amharic VARCHAR(255),
-    job_description TEXT,
-    job_description_amharic TEXT,
-    grade_level VARCHAR(50),
-    min_salary DECIMAL(10,2),
-    max_salary DECIMAL(10,2),
-    designation_type ENUM('academic', 'administrative', 'hr', 'support') DEFAULT 'administrative',
-    status ENUM('active', 'inactive') DEFAULT 'active',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY uq_designation_employee (employee_id),
-    FOREIGN KEY (employee_id) REFERENCES employee(id) ON DELETE CASCADE
-);
 
 -- SINGLE EMPLOYEE TABLE WITH ROLE (designation_id removed)
 CREATE TABLE employee (
@@ -221,6 +201,26 @@ CREATE TABLE employee_education (
     FOREIGN KEY (document_id) REFERENCES employee_documents(id) ON DELETE SET NULL
 );
 
+-- DESIGNATION WITH ASSIGNED EMPLOYEE
+CREATE TABLE designations (
+    id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
+    employee_id BINARY(16) NOT NULL,
+    department_id BINARY(16),
+    college_id BINARY(16),
+    title VARCHAR(255) NOT NULL,
+    title_amharic VARCHAR(255),
+    job_description TEXT,
+    job_description_amharic TEXT,
+    grade_level VARCHAR(50),
+    min_salary DECIMAL(10,2),
+    max_salary DECIMAL(10,2),
+    designation_type ENUM('academic', 'administrative', 'hr', 'support') DEFAULT 'administrative',
+    status ENUM('active', 'inactive') DEFAULT 'active',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_designation_employee (employee_id),
+    FOREIGN KEY (employee_id) REFERENCES employee(id) ON DELETE CASCADE
+);
 
 -- USER AUTHENTICATION
 CREATE TABLE users(
@@ -609,7 +609,6 @@ ALTER TABLE designations ADD FOREIGN KEY (college_id) REFERENCES college(id) ON 
 ALTER TABLE employee 
 ADD FOREIGN KEY (company_id) REFERENCES company(id) ON DELETE CASCADE,
 ADD FOREIGN KEY (department_id) REFERENCES department(id) ON DELETE CASCADE,
-ADD FOREIGN KEY (designation_id) REFERENCES designations(id) ON DELETE CASCADE,
 ADD FOREIGN KEY (manager_id) REFERENCES employee(id) ON DELETE SET NULL;
 
 ALTER TABLE employee_personal ADD FOREIGN KEY (employee_id) REFERENCES employee(id) ON DELETE CASCADE;
@@ -655,7 +654,6 @@ ALTER TABLE notifications ADD FOREIGN KEY (user_id) REFERENCES users(id) ON DELE
 
 -- CREATE INDEXES FOR PERFORMANCE
 CREATE INDEX idx_employee_department ON employee(department_id);
-CREATE INDEX idx_employee_designation ON employee(designation_id);
 CREATE INDEX idx_employee_manager ON employee(manager_id);
 CREATE INDEX idx_employee_status ON employee(employment_status);
 CREATE INDEX idx_employee_type ON employee(employee_type);
@@ -909,7 +907,7 @@ LEFT JOIN employee_employment ee ON e.id = ee.employee_id
 LEFT JOIN employee_academic ea ON e.id = ea.employee_id
 LEFT JOIN employee_hr eh ON e.id = eh.employee_id
 LEFT JOIN department d ON e.department_id = d.id
-LEFT JOIN designations des ON e.designation_id = des.id
+LEFT JOIN designations des ON des.employee_id = e.id
 LEFT JOIN users u ON e.id = u.employee_id;
 
 -- VIEW FOR DEPARTMENT-COLLEGE RELATIONSHIPS

@@ -142,11 +142,22 @@ const employeeBaseSchema = z.object({
     .nullable(),
   hr: z
     .object({
-      hr_role_id: z
-        .string()
-        .uuid("Invalid HR role ID format")
+      hr_specialization: z
+        .enum([
+          "recruitment",
+          "payroll",
+          "training",
+          "employee_relations",
+          "compliance",
+          "generalist",
+        ])
         .optional()
         .nullable(),
+      hr_level: z
+        .enum(["officer", "supervisor", "manager", "director"])
+        .optional()
+        .nullable(),
+      certifications: z.array(z.string()).optional().nullable(),
     })
     .optional()
     .nullable(),
@@ -157,6 +168,16 @@ const employeeBaseSchema = z.object({
         .uuid("Invalid outsourcing company ID format")
         .optional()
         .nullable(),
+      contract_start_date: dateSchema.optional().nullable(),
+      contract_end_date: dateSchema.optional().nullable(),
+      service_type: z.enum([
+        "security",
+        "cleaning",
+        "it",
+        "catering",
+        "maintenance",
+        "other",
+      ]),
     })
     .optional()
     .nullable(),
