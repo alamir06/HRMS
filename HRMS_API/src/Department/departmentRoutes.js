@@ -1,3 +1,5 @@
+// Get full parent hierarchy for a department (from child up to root)
+
 import express from "express";
 import { createCrudRouter } from "../Commons/CommonRouter.js";
 import { departmentValidationSchema } from "./departmentValidation.js";
@@ -14,7 +16,7 @@ const departmentCrudRouter = createCrudRouter({
   uuidEnabled: true,
   displayNameField: "department_name",
   entityLabel: "department",
-  uuidFields: ["id", "company_id", "college_id", "manager_id"],
+  uuidFields: ["id", "company_id", "college_id", "manager_id", "parent_department_id"],
   createRoles: ["HR_MANAGER"],
   readRoles: null,
   updateRoles: ["HR_MANAGER"],
@@ -43,6 +45,19 @@ departmentRouter.get(
   authenticateToken,
   authorize("HR_MANAGER"),
   departmentCustomController.getDepartmentsByCollege
+);
+departmentRouter.get(
+  "/:departmentId/parent-hierarchy",
+  authenticateToken,
+  authorize("HR_MANAGER"),
+  departmentCustomController.getDepartmentParentHierarchy
+);
+// Get departments by parent (for administrative hierarchy)
+departmentRouter.get(
+  "/parent/:parentId",
+  authenticateToken,
+  authorize("HR_MANAGER"),
+  departmentCustomController.getDepartmentsByParent
 );
 
 // Statistics

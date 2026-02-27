@@ -6,7 +6,7 @@ export const departmentValidationSchema = {
       .string()
       .uuid("Invalid company ID format")
       .min(1, "Company ID is required"),
-    department_type: z.enum(["academic", "administrative", "support", "hr"], {
+    department_type: z.enum(["academic", "administrative"], {
       errorMap: () => ({ message: "Invalid department type" }),
     }),
     college_id: z
@@ -33,14 +33,45 @@ export const departmentValidationSchema = {
       .max(1000, "Amharic description must be less than 1000 characters")
       .optional()
       .nullable(),
+    parent_department_id: z.string().uuid("Invalid parent department ID format").optional().nullable(),
     manager_id: z.string().uuid().nullable().optional(),
     department_status: z.enum(["active", "inactive"]).default("active"),
+  }).superRefine((data, ctx) => {
+    const type = data.department_type;
+    const hasCollege = Boolean(data.college_id);
+    const hasParent = Boolean(data.parent_department_id);
+
+    if (type === "academic") {
+      if (!hasCollege) {
+        ctx.addIssue({
+          path: ["college_id"],
+          code: z.ZodIssueCode.custom,
+          message: "college_id is required for academic departments",
+        });
+      }
+      if (hasParent) {
+        ctx.addIssue({
+          path: ["parent_department_id"],
+          code: z.ZodIssueCode.custom,
+          message: "parent_department_id must be omitted for academic departments",
+        });
+      }
+    } else {
+      if (hasCollege) {
+        ctx.addIssue({
+          path: ["college_id"],
+          code: z.ZodIssueCode.custom,
+          message: "college_id must be omitted for non-academic departments",
+        });
+      }
+      // For administrative, parent_department_id is allowed (nullable for top-level)
+    }
   }),
 
   update: z.object({
     company_id: z.string().uuid("Invalid company ID format").optional(),
     department_type: z
-      .enum(["academic", "administrative", "support", "hr"], {
+      .enum(["academic", "administrative"], {
         errorMap: () => ({ message: "Invalid department type" }),
       })
       .optional(),
@@ -69,12 +100,40 @@ export const departmentValidationSchema = {
       .max(1000, "Amharic description must be less than 1000 characters")
       .optional()
       .nullable(),
+    parent_department_id: z.string().uuid("Invalid parent department ID format").optional().nullable(),
     manager_id: z
       .string()
       .uuid("Invalid manager ID format")
       .optional()
       .nullable(),
     department_status: z.enum(["active", "inactive"]).optional(),
+  }).superRefine((data, ctx) => {
+    if ("department_type" in data && data.department_type === "academic") {
+      if (!("college_id" in data) || !data.college_id) {
+        ctx.addIssue({
+          path: ["college_id"],
+          code: z.ZodIssueCode.custom,
+          message: "Updating to 'academic' requires providing college_id",
+        });
+      }
+      if ("parent_department_id" in data && data.parent_department_id) {
+        ctx.addIssue({
+          path: ["parent_department_id"],
+          code: z.ZodIssueCode.custom,
+          message: "parent_department_id must be omitted for academic departments",
+        });
+      }
+    }
+    if ("department_type" in data && data.department_type === "administrative") {
+      if ("college_id" in data && data.college_id) {
+        ctx.addIssue({
+          path: ["college_id"],
+          code: z.ZodIssueCode.custom,
+          message: "college_id must be omitted for administrative departments",
+        });
+      }
+      // parent_department_id is allowed (nullable for top-level)
+    }
   }),
 
   id: z.object({

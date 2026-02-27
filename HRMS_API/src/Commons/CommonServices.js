@@ -2,11 +2,30 @@ import pool from "../../config/database.js";
 import { tableSchemaService } from "../../Commons/TableSchemaService.js";
 import { v4 as uuidv4 } from "uuid";
 
+
+// Extract duplicate field for department unique constraints
+function extractDuplicateField(error) {
+  if (!error || !error.sqlMessage) return null;
+  const match = error.sqlMessage.match(/for key '([^']+)'/);
+  if (!match) return null;
+  const key = match[1];
+  // Map known unique keys to user-friendly field names
+  if (key.includes('uniq_academic_department')) {
+    return 'department_name (academic, per college)';
+  }
+  if (key.includes('uniq_admin_department')) {
+    return 'department_name (administrative, per parent/branch)';
+  }
+  if (key.includes('department_name')) {
+    return 'department_name';
+  }
+  return key;
+}
+
 const resolveFetch = async () => {
   if (typeof fetch === "function") {
     return fetch;
   }
-
   try {
     const module = await import("node-fetch");
     return module.default;
@@ -97,6 +116,7 @@ export class CrudService {
     this.softDeleteEnabled = softDeleteEnabled;
     this.softDeleteField = softDeleteField;
     this.uuidFields = uuidFields || tableSchemaService.getUuidFields(tableName);
+    this.extractDuplicateField = extractDuplicateField;
   }
 
   async create(data, fields = ["*"], connection = null) {

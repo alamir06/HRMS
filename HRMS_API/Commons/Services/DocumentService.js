@@ -10,7 +10,6 @@ export class DocumentService {
   // Upload document with enhanced validation
   async uploadDocument(employeeId, file, documentData) {
     const connection = await pool.getConnection();
-
     try {
       await connection.beginTransaction();
 

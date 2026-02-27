@@ -47,14 +47,7 @@ const educationSchema = z.object({
 });
 // Base employee schema
 const employeeBaseSchema = z.object({
-  employee_code: z.string().min(1, "Employee code is required"),
   company_id: z.string().uuid("Invalid company ID format"),
-  employee_category: z.enum(["hr_officer", "academic", "outsource"], {
-    errorMap: () => ({
-      message:
-        "Employee category must be 'hr_officer', 'academic', or 'outsource'",
-    }),
-  }),
   employee_type: z.string().optional(),
   department_id: z.string().uuid("Invalid department ID format").optional().nullable(),
   manager_id: z
@@ -103,8 +96,6 @@ const employeeBaseSchema = z.object({
     emergency_contact_name: z.string().optional().nullable(),
     emergency_contact_name_amharic: z.string().optional().nullable(),
     emergency_contact_phone: z.string().optional().nullable(),
-    address: z.string().optional().nullable(),
-    address_amharic: z.string().optional().nullable(),
     profile_picture: z.string().optional().nullable(),
   }),
   employment: z

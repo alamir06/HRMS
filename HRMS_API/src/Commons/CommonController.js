@@ -28,7 +28,7 @@ create = async (req, res) => {
     if (error.type === "DUPLICATE") {
       return res.status(409).json({
         success: false,
-        message: `${this.entityLabel} with this ${error.field} already exists`,
+        message: `${this.entityLabel} with this ${this.displayNameField} already exists`,
       });
     }
     this.handleError(res, error, `${this.entityLabel} creation failed`);

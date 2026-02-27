@@ -1,6 +1,53 @@
 import pool from "../../config/database.js";
-
 const departmentCustomController = {
+  getDepartmentParentHierarchy: async (req, res) => {
+    try {
+      const { departmentId } = req.params;
+      const query = `
+        WITH RECURSIVE parent_hierarchy AS (
+          SELECT 
+            BIN_TO_UUID(d.id) as id,
+            BIN_TO_UUID(d.parent_department_id) as parent_department_id,
+            d.department_name,
+            d.department_name_amharic,
+            d.department_type,
+            d.department_status,
+            d.department_level,
+            d.created_at,
+            d.updated_at
+          FROM department d
+          WHERE d.id = UUID_TO_BIN(?)
+          UNION ALL
+          SELECT 
+            BIN_TO_UUID(parent.id) as id,
+            BIN_TO_UUID(parent.parent_department_id) as parent_department_id,
+            parent.department_name,
+            parent.department_name_amharic,
+            parent.department_type,
+            parent.department_status,
+            parent.department_level,
+            parent.created_at,
+            parent.updated_at
+          FROM department parent
+          INNER JOIN parent_hierarchy ph ON parent.id = ph.parent_department_id
+        )
+        SELECT * FROM parent_hierarchy;
+      `;
+      const [rows] = await pool.execute(query, [departmentId]);
+      res.json({
+        success: true,
+        data: rows,
+        message: "Hierarchy from this department up to the root (first row is the child, last is the root)"
+      });
+    } catch (error) {
+      console.error("Get department parent hierarchy error:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to fetch department parent hierarchy",
+        message: error.message,
+      });
+    }
+  },
   getDepartmentsByCompany: async (req, res) => {
     try {
       const { companyId } = req.params;
@@ -98,7 +145,6 @@ const departmentCustomController = {
       });
     }
   },
-
   // 2. Get departments by college ID
   getDepartmentsByCollege: async (req, res) => {
     try {
@@ -181,7 +227,6 @@ const departmentCustomController = {
       });
     }
   },
-
   // 3. Department Statistics
   getDepartmentStats: async (req, res) => {
     try {
@@ -237,7 +282,6 @@ const departmentCustomController = {
       });
     }
   },
-
   // 4. Update Department Manager
   updateDepartmentManager: async (req, res) => {
     try {
@@ -298,7 +342,6 @@ const departmentCustomController = {
       });
     }
   },
-
   // 5. Bulk Update Department Status
   bulkUpdateDepartmentStatus: async (req, res) => {
     try {
@@ -342,7 +385,6 @@ const departmentCustomController = {
       });
     }
   },
-
   getDepartmentWithDetails: async (req, res) => {
     try {
       const { id } = req.params;
@@ -607,6 +649,65 @@ const departmentCustomController = {
       res.status(500).json({
         success: false,
         error: "Failed to fetch departments",
+        message: error.message,
+      });
+    }
+  },
+
+  // 6. Get departments by parent (for administrative hierarchy)
+  getDepartmentsByParent: async (req, res) => {
+    try {
+      const { parentId } = req.params;
+      const { page = 1, limit = 10, status } = req.query;
+      const offset = (page - 1) * limit;
+
+      let query = `
+        SELECT 
+          BIN_TO_UUID(d.id) as id,
+          BIN_TO_UUID(d.company_id) as company_id,
+          BIN_TO_UUID(d.college_id) as college_id,
+          BIN_TO_UUID(d.parent_department_id) as parent_department_id,
+          d.department_name,
+          d.department_name_amharic,
+          d.department_status,
+          d.department_level,
+          d.created_at,
+          d.updated_at
+        FROM department d
+        WHERE d.parent_department_id = UUID_TO_BIN(?)
+      `;
+      let countQuery = `
+        SELECT COUNT(*) as total 
+        FROM department 
+        WHERE parent_department_id = UUID_TO_BIN(?)
+      `;
+      const params = [parentId];
+      const countParams = [parentId];
+      if (status && ["active", "inactive"].includes(status)) {
+        query += ` AND d.department_status = ?`;
+        countQuery += ` AND department_status = ?`;
+        params.push(status);
+        countParams.push(status);
+      }
+      query += ` ORDER BY d.department_name ASC LIMIT ? OFFSET ?`;
+      params.push(parseInt(limit), offset);
+      const [departments] = await pool.query(query, params);
+      const [countResult] = await pool.query(countQuery, countParams);
+      res.json({
+        success: true,
+        data: departments,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total: countResult[0].total,
+          pages: Math.ceil(countResult[0].total / limit),
+        },
+      });
+    } catch (error) {
+      console.error("Get departments by parent error:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to fetch departments by parent",
         message: error.message,
       });
     }

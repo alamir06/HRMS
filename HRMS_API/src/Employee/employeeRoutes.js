@@ -26,22 +26,22 @@ employeeRouter.post(
 
 employeeRouter.get(
   "/", 
-  // authenticateToken,
-  // authorize("admin", "super_admin", "hr_manager", "user"),
+    authenticateToken,
+    authorize("HR_MANAGER", "HR_OFFICER"),
   employeeController.findAll);
 
 employeeRouter.get(
   "/:id",
-  // authenticateToken,
-  // authorize("admin", "super_admin", "hr_manager", "user"),
+  authenticateToken,
+  authorize("HR_MANAGER", "HR_OFFICER"),
   validateEmployee(employeeIdSchema),
   employeeController.findById
 );
-
+  
 employeeRouter.put(
   "/:id",
-  // authenticateToken,
-  // authorize("admin", "super_admin", "hr_manager", "user"),
+  authenticateToken,
+  authorize("HR_MANAGER", "HR_OFFICER"),
   validateEmployee(employeeIdSchema),
   validateEmployee(updateEmployeeSchema),
   employeeController.update
@@ -50,8 +50,8 @@ employeeRouter.put(
 // ========== PROFILE PICTURE ROUTES ==========
 employeeRouter.post(
   "/:id/profile-picture",
-  // authenticateToken,
-  // authorize("admin", "super_admin", "hr_manager", "user"),
+  authenticateToken,
+  authorize("HR_MANAGER", "HR_OFFICER"),
   validateEmployee(employeeIdSchema),
   fileUploadService.uploadSingleImage("profile_picture"),
   employeeController.uploadProfilePicture
@@ -59,8 +59,8 @@ employeeRouter.post(
 
 employeeRouter.delete(
   "/:id/profile-picture",
-  // authenticateToken,
-  // authorize("admin", "super_admin", "hr_manager", "user"),
+  authenticateToken,
+  authorize("HR_MANAGER", "HR_OFFICER"),
   validateEmployee(employeeIdSchema),
   employeeController.deleteProfilePicture
 );
@@ -69,8 +69,8 @@ employeeRouter.delete(
 // Single document upload
 employeeRouter.post(
   "/:id/documents",
-  // authenticateToken,
-  // authorize("admin", "super_admin", "hr_manager", "user"),
+  authenticateToken,
+  authorize("HR_MANAGER", "HR_OFFICER"),
   validateEmployee(employeeIdSchema),
   fileUploadService.uploadSingleDocument("document"),
   employeeController.uploadDocument
@@ -79,8 +79,8 @@ employeeRouter.post(
 // Multiple documents upload
 employeeRouter.post(
   "/:id/documents/bulk",
-  // authenticateToken,
-  // authorize("admin", "super_admin", "hr_manager", "user"),
+  authenticateToken,
+  authorize("HR_MANAGER", "HR_OFFICER"),
   validateEmployee(employeeIdSchema),
   fileUploadService.uploadMultipleDocuments("documents", 10),
   employeeController.uploadMultipleDocuments
@@ -89,8 +89,8 @@ employeeRouter.post(
 // Get employee documents
 employeeRouter.get(
   "/:id/documents",
-  // authenticateToken,
-  // authorize("admin", "super_admin", "hr_manager", "user"),
+  authenticateToken,
+  authorize("HR_MANAGER", "HR_OFFICER"),
   validateEmployee(employeeIdSchema),
   employeeController.getDocuments
 );
@@ -101,40 +101,40 @@ employeeRouter.put("/documents/:documentId", employeeController.updateDocument);
 // Delete document
 employeeRouter.delete(
   "/documents/:documentId",
-  // authenticateToken,
-  // authorize("admin", "super_admin", "hr_manager", "user"),
+  authenticateToken,
+  authorize("HR_MANAGER", "HR_OFFICER"),
   employeeController.deleteDocument
 );
 
 // Verify document
 employeeRouter.patch(
   "/documents/:documentId/verify",
-  // authenticateToken,
-  // authorize("admin", "super_admin", "hr_manager", "user"),
+  authenticateToken,
+  authorize("HR_MANAGER", "HR_OFFICER"),
   employeeController.verifyDocument
 );
 
 // Expiring documents alert
 employeeRouter.get(
   "/documents/expiring-soon",
-  // authenticateToken,
-  // authorize("admin", "super_admin", "hr_manager", "user"),
+  authenticateToken,
+  authorize("HR_MANAGER", "HR_OFFICER"),
   employeeController.getExpiringDocuments
 );
 
 // ========== EDUCATION ROUTES ==========
 employeeRouter.post(
   "/:id/education",
-  // authenticateToken,
-  // authorize("admin", "super_admin", "hr_manager", "user"),
+  authenticateToken,
+  authorize("HR_MANAGER", "HR_OFFICER"),
   validateEmployee(employeeIdSchema),
   employeeController.addEducation
 );
 
 employeeRouter.get(
   "/:id/education",
-  // authenticateToken,
-  // authorize("admin", "super_admin", "hr_manager", "user"),
+  authenticateToken,
+  authorize("HR_MANAGER", "HR_OFFICER"),
   validateEmployee(employeeIdSchema),
   employeeController.getEducation
 );
@@ -142,8 +142,8 @@ employeeRouter.get(
 // ========== SEARCH ROUTES ==========
 employeeRouter.get(
   "/search/advanced",
-  // authenticateToken,
-  // authorize("admin", "super_admin", "hr_manager", "user"), 
+  authenticateToken,
+  authorize("HR_MANAGER", "HR_OFFICER"), 
   employeeController.findAll);
 
 export default employeeRouter;

@@ -7,9 +7,7 @@ export class EmployeeController {
   create = async (req, res) => {
     try {
       const validatedData = employeeValidationSchema.create.parse(req.body);
-
       const result = await employeeService.createEmployee(validatedData);
-
       res.status(201).json({
         success: true,
         message: "Employee created successfully",
@@ -73,11 +71,8 @@ export class EmployeeController {
     try {
       const { id } = req.params;
       const updateData = req.body;
-
       employeeValidationSchema.id.parse({ id });
-
       const result = await employeeService.updateEmployee(id, updateData);
-
       res.status(200).json({
         success: true,
         message: "Employee updated successfully",

@@ -8,10 +8,10 @@ CREATE TABLE company (
     company_name_amharic VARCHAR(255),
     company_address TEXT,
     company_address_amharic TEXT,
-    company_phone VARCHAR(20),
-    company_email VARCHAR(150),
-    company_website VARCHAR(255),
-    company_logo VARCHAR(255),
+    company_phone VARCHAR(20) UNIQUE,
+    company_email VARCHAR(150) UNIQUE,
+    company_website VARCHAR(255) NULL,
+    company_logo VARCHAR(255) NULL,
     company_established_date DATE,
     company_tin_number VARCHAR(50),
     status ENUM('active', 'inactive') DEFAULT 'active',
@@ -43,8 +43,8 @@ CREATE TABLE college (
     company_id BINARY(16) NOT NULL,
     college_name VARCHAR(255) NOT NULL,
     college_name_amharic VARCHAR(255),
-    college_description TEXT,
-    college_description_amharic TEXT,
+    college_description TEXT NULL,
+    college_description_amharic TEXT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -53,12 +53,14 @@ CREATE TABLE college (
 CREATE TABLE department (
     id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
     company_id BINARY(16) NOT NULL,
-    college_id BINARY(16),
+    college_id BINARY(16) NULL,
+    parent_department_id BINARY(16) NULL,
     department_name VARCHAR(255) NOT NULL,
+    department_level INT DEFAULT 1,
     department_name_amharic VARCHAR(255),
-    department_description TEXT,
-    department_description_amharic TEXT,
-    department_type ENUM('academic', 'administrative', 'support', 'hr') DEFAULT 'administrative',
+    department_description TEXT NULL,
+    department_description_amharic TEXT NULL,
+    department_type ENUM('academic','administrative') NOT NULL,
     manager_id BINARY(16),
     department_status ENUM('active', 'inactive') DEFAULT 'active',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -71,9 +73,8 @@ CREATE TABLE employee (
     id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
     employee_code VARCHAR(50) UNIQUE NOT NULL,
     company_id BINARY(16) NOT NULL,
-    employee_type ENUM('academic', 'hr_officer', 'outsource') NOT NULL,
-    employee_category ENUM('hr_officer', 'academic', 'outsource') NOT NULL,
-    employee_role ENUM('HR_MANAGER', 'DEAN', 'employee', 'HEAD', 'HR_OFFICER', 'RECRUITER', 'PAYROLL_OFFICER') DEFAULT 'employee',
+    employee_type ENUM('academic','administrative','outsource') NOT NULL,
+    employee_role ENUM('HR_MANAGER','DEAN','HEAD','HR_OFFICER','RECRUITER','PAYROLL_OFFICER','EMPLOYEE') DEFAULT 'EMPLOYEE',
     department_id BINARY(16)  NULL,
     manager_id BINARY(16),
     hire_date DATE NOT NULL,
@@ -95,14 +96,12 @@ CREATE TABLE employee_personal (
     last_name_amharic VARCHAR(100),
     gender VARCHAR(20),
     date_of_birth DATE,
-    personal_email VARCHAR(150),
-    personal_phone VARCHAR(20),
-    emergency_contact_name VARCHAR(150),
-    emergency_contact_name_amharic VARCHAR(150),
-    emergency_contact_phone VARCHAR(20),
-    profile_picture VARCHAR(255),
-    address TEXT,
-    address_amharic TEXT,
+    personal_email VARCHAR(150) UNIQUE,
+    personal_phone VARCHAR(20) UNIQUE,
+    emergency_contact_name VARCHAR(150) NULL,
+    emergency_contact_name_amharic VARCHAR(150) NULL,
+    emergency_contact_phone VARCHAR(20) NULL,
+    profile_picture VARCHAR(255) NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -227,7 +226,7 @@ CREATE TABLE users(
     id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
     employee_id BINARY(16) UNIQUE NOT NULL,
     username VARCHAR(100) UNIQUE NOT NULL,
-    system_role ENUM('HR_MANAGER', 'DEAN', 'employee', 'HEAD', 'HR_OFFICER', 'RECRUITER', 'PAYROLL_OFFICER') DEFAULT 'employee',
+    system_role ENUM(  'HR_MANAGER','DEAN','HEAD',  'HR_OFFICER','RECRUITER','PAYROLL_OFFICER','EMPLOYEE') DEFAULT 'EMPLOYEE',
     password_hash VARCHAR(255) NOT NULL,
     preferred_language ENUM('en', 'am') DEFAULT 'am',
     last_login TIMESTAMP NULL,
@@ -286,7 +285,6 @@ CREATE TABLE leave_types (
     max_days_per_year INT NOT NULL,
     carry_forward_days INT DEFAULT 0,
     requires_approval BOOLEAN DEFAULT TRUE,
-    color VARCHAR(7),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -692,7 +690,11 @@ ALTER TABLE employee_outsource ADD UNIQUE KEY unique_employee_outsource (employe
 ALTER TABLE company ADD CONSTRAINT unique_company_email UNIQUE (company_email);
 ALTER TABLE company ADD CONSTRAINT unique_company_phone UNIQUE (company_phone);
 ALTER TABLE college ADD CONSTRAINT unique_college_per_company UNIQUE (company_id, college_name);
-ALTER TABLE department ADD CONSTRAINT unique_department_per_company UNIQUE (company_id, department_name);
+-- Remove old unique constraint if exists
+ALTER TABLE department DROP INDEX unique_department_per_company;
+-- Add new unique constraint: for academic departments, uniqueness is (college_id, department_name); for administrative, (company_id, department_name, parent_department_id)
+CREATE UNIQUE INDEX unique_academic_department_per_college ON department (college_id, department_name) WHERE department_type = 'academic';
+CREATE UNIQUE INDEX unique_admin_department_per_company_parent ON department (company_id, department_name, parent_department_id) WHERE department_type = 'administrative';
 ALTER TABLE designations ADD CONSTRAINT unique_designation_per_department UNIQUE (department_id, title);
 
 
