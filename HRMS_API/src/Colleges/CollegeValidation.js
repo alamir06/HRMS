@@ -2,51 +2,51 @@ import { z } from 'zod';
 
 export const collegeValidationSchema = {
   create: z.object({
-    company_id: z.string()
+    companyId: z.string()
       .uuid('Invalid company ID format')
       .min(1, 'Company ID is required'),
-    college_name: z.string()
+    collegeName: z.string()
       .min(1, 'College name is required')
       .max(255, 'College name must be less than 255 characters'),
-    college_name_amharic: z.string()
+    collegeNameAmharic: z.string()
       .max(255, 'Amharic college name must be less than 255 characters')
       .optional()
       .nullable(),
-    college_description: z.string()
+    collegeDescription: z.string()
       .max(1000, 'Description must be less than 1000 characters')
       .optional()
       .nullable(),
-    college_description_amharic: z.string()
+    collegeDescriptionAmharic: z.string()
       .max(1000, 'Amharic description must be less than 1000 characters')
       .optional()
       .nullable()
-  }),
+  }).strict(),
 
   update: z.object({
-    company_id: z.string()
+    companyId: z.string()
       .uuid('Invalid company ID format')
       .optional(),
-    college_name: z.string()
+    collegeName: z.string()
       .min(1, 'College name is required')
       .max(255, 'College name must be less than 255 characters')
       .optional(),
-    college_name_amharic: z.string()
+    collegeNameAmharic: z.string()
       .max(255, 'Amharic college name must be less than 255 characters')
       .optional()
       .nullable(),
-    college_description: z.string()
+    collegeDescription: z.string()
       .max(1000, 'Description must be less than 1000 characters')
       .optional()
       .nullable(),
-    college_description_amharic: z.string()
+    collegeDescriptionAmharic: z.string()
       .max(1000, 'Amharic description must be less than 1000 characters')
       .optional()
       .nullable()
-  }),
+  }).strict(),
 
   id: z.object({
     id: z.string().uuid('Invalid college ID format')
-  })
+  }).strict()
 };
 
 // For backward compatibility

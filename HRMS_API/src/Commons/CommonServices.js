@@ -10,14 +10,14 @@ function extractDuplicateField(error) {
   if (!match) return null;
   const key = match[1];
   // Map known unique keys to user-friendly field names
-  if (key.includes('uniq_academic_department')) {
-    return 'department_name (academic, per college)';
+  if (key.includes('uniqAcademicDepartment')) {
+    return 'departmentName (academic, per college)';
   }
-  if (key.includes('uniq_admin_department')) {
-    return 'department_name (administrative, per parent/branch)';
+  if (key.includes('uniqAdminDepartment')) {
+    return 'departmentName (administrative, per parent/branch)';
   }
-  if (key.includes('department_name')) {
-    return 'department_name';
+  if (key.includes('departmentName')) {
+    return 'departmentName';
   }
   return key;
 }
@@ -87,9 +87,9 @@ export const createTelegramNotifier = () => {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            chat_id: chatId,
+            chatId: chatId,
             text: message,
-            disable_web_page_preview: true,
+            disableWebPagePreview: true,
           }),
         });
       } catch (error) {
@@ -107,7 +107,7 @@ export class CrudService {
       uuidEnabled = true,
       uuidFields,
       softDeleteEnabled = false,
-      softDeleteField = "deleted_at",
+      softDeleteField = "deletedAt",
     } = config;
 
     this.tableName = tableName;
@@ -236,7 +236,7 @@ export class CrudService {
         search = "",
         searchFields = [],
         filters = {},
-        sortBy = "created_at",
+        sortBy = "createdAt",
         sortOrder = "DESC",
         fields = ["*"],
         include = [],
@@ -452,7 +452,7 @@ export class CrudService {
             params.push(...values);
             break;
           }
-          case "not_in": {
+          case "notIn": {
             const values = Array.isArray(value) ? value : value.split(",");
             const placeholders = values.map(() => "?").join(",");
             conditions.push(`${field} NOT IN (${placeholders})`);
@@ -462,7 +462,7 @@ export class CrudService {
           case "null":
             conditions.push(`${field} IS NULL`);
             break;
-          case "not_null":
+          case "notNull":
             conditions.push(`${field} IS NOT NULL`);
             break;
           default:
@@ -485,7 +485,7 @@ export class CrudService {
     const validFieldRegex = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
 
     if (!validFieldRegex.test(field)) {
-      return "created_at";
+      return "createdAt";
     }
 
     return field;

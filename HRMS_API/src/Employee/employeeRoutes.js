@@ -18,7 +18,7 @@ const employeeRouter = express.Router();
 employeeRouter.post(
   "/",
   authenticateToken,
-  authorize("HR_MANAGER", "HR_OFFICER"),
+  authorize("HRMANAGER", "HROFFICER"),
   ensureDefaultCompanyIdInBody(),
   validateEmployee(createEmployeeSchema),
   employeeController.create
@@ -27,13 +27,13 @@ employeeRouter.post(
 employeeRouter.get(
   "/", 
     authenticateToken,
-    authorize("HR_MANAGER", "HR_OFFICER"),
+    authorize("HRMANAGER", "HROFFICER"),
   employeeController.findAll);
 
 employeeRouter.get(
   "/:id",
   authenticateToken,
-  authorize("HR_MANAGER", "HR_OFFICER"),
+  authorize("HRMANAGER", "HROFFICER"),
   validateEmployee(employeeIdSchema),
   employeeController.findById
 );
@@ -41,7 +41,7 @@ employeeRouter.get(
 employeeRouter.put(
   "/:id",
   authenticateToken,
-  authorize("HR_MANAGER", "HR_OFFICER"),
+  authorize("HRMANAGER", "HROFFICER"),
   validateEmployee(employeeIdSchema),
   validateEmployee(updateEmployeeSchema),
   employeeController.update
@@ -51,16 +51,16 @@ employeeRouter.put(
 employeeRouter.post(
   "/:id/profile-picture",
   authenticateToken,
-  authorize("HR_MANAGER", "HR_OFFICER"),
+  authorize("HRMANAGER", "HROFFICER"),
   validateEmployee(employeeIdSchema),
-  fileUploadService.uploadSingleImage("profile_picture"),
+  fileUploadService.uploadSingleImage("profilePicture"),
   employeeController.uploadProfilePicture
 );
 
 employeeRouter.delete(
   "/:id/profile-picture",
   authenticateToken,
-  authorize("HR_MANAGER", "HR_OFFICER"),
+  authorize("HRMANAGER", "HROFFICER"),
   validateEmployee(employeeIdSchema),
   employeeController.deleteProfilePicture
 );
@@ -70,7 +70,7 @@ employeeRouter.delete(
 employeeRouter.post(
   "/:id/documents",
   authenticateToken,
-  authorize("HR_MANAGER", "HR_OFFICER"),
+  authorize("HRMANAGER", "HROFFICER"),
   validateEmployee(employeeIdSchema),
   fileUploadService.uploadSingleDocument("document"),
   employeeController.uploadDocument
@@ -80,7 +80,7 @@ employeeRouter.post(
 employeeRouter.post(
   "/:id/documents/bulk",
   authenticateToken,
-  authorize("HR_MANAGER", "HR_OFFICER"),
+  authorize("HRMANAGER", "HROFFICER"),
   validateEmployee(employeeIdSchema),
   fileUploadService.uploadMultipleDocuments("documents", 10),
   employeeController.uploadMultipleDocuments
@@ -90,7 +90,7 @@ employeeRouter.post(
 employeeRouter.get(
   "/:id/documents",
   authenticateToken,
-  authorize("HR_MANAGER", "HR_OFFICER"),
+  authorize("HRMANAGER", "HROFFICER"),
   validateEmployee(employeeIdSchema),
   employeeController.getDocuments
 );
@@ -102,7 +102,7 @@ employeeRouter.put("/documents/:documentId", employeeController.updateDocument);
 employeeRouter.delete(
   "/documents/:documentId",
   authenticateToken,
-  authorize("HR_MANAGER", "HR_OFFICER"),
+  authorize("HRMANAGER", "HROFFICER"),
   employeeController.deleteDocument
 );
 
@@ -110,7 +110,7 @@ employeeRouter.delete(
 employeeRouter.patch(
   "/documents/:documentId/verify",
   authenticateToken,
-  authorize("HR_MANAGER", "HR_OFFICER"),
+  authorize("HRMANAGER", "HROFFICER"),
   employeeController.verifyDocument
 );
 
@@ -118,7 +118,7 @@ employeeRouter.patch(
 employeeRouter.get(
   "/documents/expiring-soon",
   authenticateToken,
-  authorize("HR_MANAGER", "HR_OFFICER"),
+  authorize("HRMANAGER", "HROFFICER"),
   employeeController.getExpiringDocuments
 );
 
@@ -126,7 +126,7 @@ employeeRouter.get(
 employeeRouter.post(
   "/:id/education",
   authenticateToken,
-  authorize("HR_MANAGER", "HR_OFFICER"),
+  authorize("HRMANAGER", "HROFFICER"),
   validateEmployee(employeeIdSchema),
   employeeController.addEducation
 );
@@ -134,7 +134,7 @@ employeeRouter.post(
 employeeRouter.get(
   "/:id/education",
   authenticateToken,
-  authorize("HR_MANAGER", "HR_OFFICER"),
+  authorize("HRMANAGER", "HROFFICER"),
   validateEmployee(employeeIdSchema),
   employeeController.getEducation
 );
@@ -143,7 +143,7 @@ employeeRouter.get(
 employeeRouter.get(
   "/search/advanced",
   authenticateToken,
-  authorize("HR_MANAGER", "HR_OFFICER"), 
+  authorize("HRMANAGER", "HROFFICER"), 
   employeeController.findAll);
 
 export default employeeRouter;

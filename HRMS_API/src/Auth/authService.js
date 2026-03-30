@@ -14,23 +14,23 @@ export const findUserByIdentifier = async (identifier) => {
   const [rows] = await pool.execute(
     `SELECT 
        BIN_TO_UUID(u.id) AS id,
-       BIN_TO_UUID(u.employee_id) AS employee_id,
+       BIN_TO_UUID(u.employeeId) AS employeeId,
        u.username,
-       u.system_role AS system_role,
-       u.password_hash,
-       u.is_active,
-       u.must_change_password,
-       u.password_changed_at,
-       e.employee_role,
-       e.employment_status,
-       ep.personal_email,
-       ep.first_name,
-       ep.middle_name,
-       ep.last_name
+       u.systemRole AS systemRole,
+       u.passwordHash,
+       u.isActive,
+       u.mustChangePassword,
+       u.passwordChangedAt,
+       e.employeeRole,
+       e.employmentStatus,
+       ep.personalEmail,
+       ep.firstName,
+       ep.middleName,
+       ep.lastName
      FROM users u
-     JOIN employee e ON u.employee_id = e.id
-     LEFT JOIN employee_personal ep ON e.id = ep.employee_id  
-     WHERE u.username = ? OR ep.personal_email = ? OR ep.personal_phone = ?        
+     JOIN employee e ON u.employeeId = e.id
+     LEFT JOIN employeePersonal ep ON e.id = ep.employeeId  
+     WHERE u.username = ? OR ep.personalEmail = ? OR ep.personalPhone = ?        
      LIMIT 1`,
     [identifier, identifier, identifier]
   );
@@ -40,7 +40,7 @@ export const findUserByIdentifier = async (identifier) => {
 
 export const recordSuccessfulLogin = async (userId) => {
   await pool.execute(
-    "UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = UUID_TO_BIN(?)",
+    "UPDATE users SET lastLogin = CURRENT_TIMESTAMP WHERE id = UUID_TO_BIN(?)",
     [userId]
   );
 };
@@ -49,22 +49,22 @@ export const changeUserPassword = async ({ userId, newPassword, mustChange = fal
   const passwordHash = await bcrypt.hash(newPassword, SALT_ROUNDS);
   await pool.execute(
     `UPDATE users
-       SET password_hash = ?,
-           must_change_password = ?,
-           password_changed_at = CURRENT_TIMESTAMP,
-           updated_at = CURRENT_TIMESTAMP
+       SET passwordHash = ?,
+           mustChangePassword = ?,
+           passwordChangedAt = CURRENT_TIMESTAMP,
+           updatedAt = CURRENT_TIMESTAMP
      WHERE id = UUID_TO_BIN(?)`,
     [passwordHash, mustChange ? 1 : 0, userId]
   );
 };
 
-export const createUserAccount = async ({ employeeId, username, systemRole = 'employee' }) => {
+export const createUserAccount = async ({ employeeId, username, systemRole = 'EMPLOYEE' }) => {
   const connection = await pool.getConnection();
   try {
     await connection.beginTransaction();
 
     const [employeeRows] = await connection.execute(
-      `SELECT BIN_TO_UUID(id) AS id, employee_role
+      `SELECT BIN_TO_UUID(id) AS id, employeeRole
          FROM employee
          WHERE id = UUID_TO_BIN(?)
          LIMIT 1`,
@@ -76,7 +76,7 @@ export const createUserAccount = async ({ employeeId, username, systemRole = 'em
     }
 
     const [existingUserByEmployee] = await connection.execute(
-      "SELECT 1 FROM users WHERE employee_id = UUID_TO_BIN(?) LIMIT 1",
+      "SELECT 1 FROM users WHERE employeeId = UUID_TO_BIN(?) LIMIT 1",
       [employeeId]
     );
     if (existingUserByEmployee.length) {
@@ -98,12 +98,12 @@ export const createUserAccount = async ({ employeeId, username, systemRole = 'em
     await connection.execute(
       `INSERT INTO users (
          id,
-         employee_id,
+         employeeId,
          username,
-         system_role,
-         password_hash,
-         must_change_password,
-         is_active
+         systemRole,
+         passwordHash,
+         mustChangePassword,
+         isActive
        ) VALUES (
          UUID_TO_BIN(?),
          UUID_TO_BIN(?),
@@ -120,7 +120,7 @@ export const createUserAccount = async ({ employeeId, username, systemRole = 'em
 
     return {
       userId,
-      employeeRole: employeeRows[0].employee_role,
+      employeeRole: employeeRows[0].employeeRole,
       temporaryPassword: password,
       systemRole,
     };
@@ -180,16 +180,16 @@ const ensureCompany = async (
       await connection.execute(
         `INSERT INTO company (
            id,
-           company_name,
-           company_name_amharic,
-           company_address,
-           company_address_amharic,
-           company_phone,
-           company_email,
-           company_website,
-           company_logo,
-           company_established_date,
-           company_tin_number,
+           companyName,
+           companyNameAmharic,
+           companyAddress,
+           companyAddressAmharic,
+           companyPhone,
+           companyEmail,
+           companyWebsite,
+           companyLogo,
+           companyEstablishedDate,
+           companyTinNumber,
            status
          ) VALUES (
            UUID_TO_BIN(?),
@@ -207,7 +207,7 @@ const ensureCompany = async (
           logo || null,
           establishedDate || null,
           tinNumber || null,
-          status || "active",
+          status || "ACTIVE",
         ]
       );
 
@@ -217,18 +217,18 @@ const ensureCompany = async (
     // Update the targeted row with any provided values.
     await connection.execute(
       `UPDATE company
-          SET company_name = ?,
-              company_name_amharic = COALESCE(?, company_name_amharic),
-              company_address = COALESCE(?, company_address),
-              company_address_amharic = COALESCE(?, company_address_amharic),
-              company_phone = COALESCE(?, company_phone),
-              company_email = COALESCE(?, company_email),
-              company_website = COALESCE(?, company_website),
-              company_logo = COALESCE(?, company_logo),
-              company_established_date = COALESCE(?, company_established_date),
-              company_tin_number = COALESCE(?, company_tin_number),
+          SET companyName = ?,
+              companyNameAmharic = COALESCE(?, companyNameAmharic),
+              companyAddress = COALESCE(?, companyAddress),
+              companyAddressAmharic = COALESCE(?, companyAddressAmharic),
+              companyPhone = COALESCE(?, companyPhone),
+              companyEmail = COALESCE(?, companyEmail),
+              companyWebsite = COALESCE(?, companyWebsite),
+              companyLogo = COALESCE(?, companyLogo),
+              companyEstablishedDate = COALESCE(?, companyEstablishedDate),
+              companyTinNumber = COALESCE(?, companyTinNumber),
               status = COALESCE(?, status),
-              updated_at = CURRENT_TIMESTAMP
+              updatedAt = CURRENT_TIMESTAMP
         WHERE id = UUID_TO_BIN(?)`,
       [
         name,
@@ -263,18 +263,18 @@ const ensureCompany = async (
 
     await connection.execute(
       `UPDATE company
-          SET company_name = ?,
-              company_name_amharic = COALESCE(?, company_name_amharic),
-              company_address = COALESCE(?, company_address),
-              company_address_amharic = COALESCE(?, company_address_amharic),
-              company_phone = COALESCE(?, company_phone),
-              company_email = COALESCE(?, company_email),
-              company_website = COALESCE(?, company_website),
-              company_logo = COALESCE(?, company_logo),
-              company_established_date = COALESCE(?, company_established_date),
-              company_tin_number = COALESCE(?, company_tin_number),
+          SET companyName = ?,
+              companyNameAmharic = COALESCE(?, companyNameAmharic),
+              companyAddress = COALESCE(?, companyAddress),
+              companyAddressAmharic = COALESCE(?, companyAddressAmharic),
+              companyPhone = COALESCE(?, companyPhone),
+              companyEmail = COALESCE(?, companyEmail),
+              companyWebsite = COALESCE(?, companyWebsite),
+              companyLogo = COALESCE(?, companyLogo),
+              companyEstablishedDate = COALESCE(?, companyEstablishedDate),
+              companyTinNumber = COALESCE(?, companyTinNumber),
               status = COALESCE(?, status),
-              updated_at = CURRENT_TIMESTAMP
+              updatedAt = CURRENT_TIMESTAMP
         WHERE id = UUID_TO_BIN(?)`,
       [
         name,
@@ -299,16 +299,16 @@ const ensureCompany = async (
   await connection.execute(
     `INSERT INTO company (
        id,
-       company_name,
-       company_name_amharic,
-       company_address,
-       company_address_amharic,
-       company_phone,
-       company_email,
-       company_website,
-       company_logo,
-       company_established_date,
-       company_tin_number,
+       companyName,
+       companyNameAmharic,
+       companyAddress,
+       companyAddressAmharic,
+       companyPhone,
+       companyEmail,
+       companyWebsite,
+       companyLogo,
+       companyEstablishedDate,
+       companyTinNumber,
        status
      ) VALUES (
        UUID_TO_BIN(?),
@@ -326,7 +326,7 @@ const ensureCompany = async (
       logo || null,
       establishedDate || null,
       tinNumber || null,
-      status || "active",
+      status || "ACTIVE",
     ]
   );
 
@@ -382,8 +382,8 @@ const ensureSeedEmployee = async (connection, { companyId, firstName, lastName, 
   const [existing] = await connection.execute(
     `SELECT BIN_TO_UUID(e.id) AS id
        FROM employee e
-       JOIN users u ON e.id = u.employee_id
-       WHERE e.employee_role = 'HR_MANAGER'
+       JOIN users u ON e.id = u.employeeId
+       WHERE e.employeeRole = 'HRMANAGER'
        LIMIT 1`
   );
 
@@ -397,33 +397,33 @@ const ensureSeedEmployee = async (connection, { companyId, firstName, lastName, 
   await connection.execute(
     `INSERT INTO employee (
        id,
-       employee_code,
-       company_id,
-       employee_type,
-       employee_role,
-       hire_date,
-       employment_type,
-       employment_status
+       employeeCode,
+       companyId,
+       employeeType,
+       employeeRole,
+       hireDate,
+       employmentType,
+       employmentStatus
      ) VALUES (
        UUID_TO_BIN(?),
        ?,
        UUID_TO_BIN(?),
-       'administrative',
-       'HR_MANAGER',
+       'ADMINISTRATIVE',
+       'HRMANAGER',
        CURRENT_DATE,
-       'full_time',
-       'active'
+       'FULLTIME',
+       'ACTIVE'
      )`,
     [employeeId, employeeCode, companyId]
   );
 
   await connection.execute(
-    `INSERT INTO employee_personal (
+    `INSERT INTO employeePersonal (
        id,
-       employee_id,
-       first_name,
-       last_name,
-       personal_email
+       employeeId,
+       firstName,
+       lastName,
+       personalEmail
      ) VALUES (
        UUID_TO_BIN(?),
        UUID_TO_BIN(?),
@@ -435,10 +435,10 @@ const ensureSeedEmployee = async (connection, { companyId, firstName, lastName, 
   );
 
   await connection.execute(
-    `INSERT INTO employee_employment (
+    `INSERT INTO employeeEmployment (
        id,
-       employee_id,
-       official_email
+       employeeId,
+       officialEmail
      ) VALUES (
        UUID_TO_BIN(?),
        UUID_TO_BIN(?),
@@ -455,12 +455,12 @@ export const seedDefaultHrManager = async () => {
   const email = process.env.SEED_HR_MANAGER_EMAIL;
   const firstName = process.env.SEED_HR_MANAGER_FIRST_NAME;
   const lastName = process.env.SEED_HR_MANAGER_LAST_NAME;
-  const companyName = process.env.SEED_COMPANY_NAME || "Default Organization";
+  const companyName = process.env.SEED_COMPANY_NAME;
   const companyAddress = process.env.SEED_COMPANY_ADDRESS;
   const companyPhone = process.env.SEED_COMPANY_PHONE;
-  const rawExplicitCompanyId = process.env.SEED_COMPANY_ID || "";
+  const rawExplicitCompanyId = process.env.SEED_COMPANY_ID;
   const explicitCompanyId = rawExplicitCompanyId && rawExplicitCompanyId.trim() ? rawExplicitCompanyId.trim() : null;
-  const seededPassword = process.env.SEED_HR_MANAGER_PASSWORD || "ChangeMe123!";
+  const seededPassword = process.env.SEED_HR_MANAGER_PASSWORD;
 
   if (!username || !email || !firstName || !lastName) {
     console.warn(
@@ -483,8 +483,8 @@ export const seedDefaultHrManager = async () => {
     const [existingManager] = await connection.execute(
       `SELECT 1
          FROM users u
-         JOIN employee e ON u.employee_id = e.id
-         WHERE e.employee_role = 'HR_MANAGER'
+         JOIN employee e ON u.employeeId = e.id
+         WHERE e.employeeRole = 'HRMANAGER'
          LIMIT 1`
     );
 
@@ -518,12 +518,12 @@ export const seedDefaultHrManager = async () => {
     await connection.execute(
       `INSERT INTO users (
          id,
-         employee_id,
+         employeeId,
          username,
-         system_role,
-         password_hash,
-         must_change_password,
-         is_active
+         systemRole,
+         passwordHash,
+         mustChangePassword,
+         isActive
        ) VALUES (
          UUID_TO_BIN(?),
          UUID_TO_BIN(?),
@@ -533,7 +533,7 @@ export const seedDefaultHrManager = async () => {
          TRUE,
          TRUE
        )`,
-      [userId, employeeId, username, 'HR_MANAGER', passwordHash]
+      [userId, employeeId, username, 'HRMANAGER', passwordHash]
     );
 
     await connection.commit();
@@ -563,14 +563,14 @@ export const seedDefaultHrManager = async () => {
 export const getEmployeeContact = async (employeeId) => {
   const [rows] = await pool.execute(
     `SELECT 
-       ep.personal_email,
-       ee.official_email,
-       ep.first_name,
-       ep.middle_name,
-       ep.last_name
+       ep.personalEmail,
+       ee.officialEmail,
+       ep.firstName,
+       ep.middleName,
+       ep.lastName
      FROM employee e
-     LEFT JOIN employee_personal ep ON e.id = ep.employee_id
-     LEFT JOIN employee_employment ee ON e.id = ee.employee_id
+     LEFT JOIN employeePersonal ep ON e.id = ep.employeeId
+     LEFT JOIN employeeEmployment ee ON e.id = ee.employeeId
      WHERE e.id = UUID_TO_BIN(?)
      LIMIT 1`,
     [employeeId]
@@ -581,8 +581,8 @@ export const getEmployeeContact = async (employeeId) => {
   }
 
   const record = rows[0];
-  const email = record.personal_email || record.official_email || null;
-  const name = [record.first_name, record.middle_name, record.last_name]
+  const email = record.personalEmail || record.officialEmail || null;
+  const name = [record.firstName, record.middleName, record.lastName]
     .filter(Boolean)
     .join(" ");
 

@@ -34,19 +34,19 @@ const parseBoolean = (value) => {
 
 const calculateTotals = (data) => {
   const earnings = [
-    toAmount(data.basic_salary),
-    toAmount(data.house_rent_allowance),
-    toAmount(data.travel_allowance),
-    toAmount(data.medical_allowance),
-    toAmount(data.overtime_allowance),
-    toAmount(data.other_allowances),
+    toAmount(data.basicSalary),
+    toAmount(data.houseRentAllowance),
+    toAmount(data.travelAllowance),
+    toAmount(data.medicalAllowance),
+    toAmount(data.overtimeAllowance),
+    toAmount(data.otherAllowances),
   ];
 
   const deductions = [
-    toAmount(data.tax_deduction),
-    toAmount(data.provident_fund),
-    toAmount(data.leave_deduction),
-    toAmount(data.other_deductions),
+    toAmount(data.taxDeduction),
+    toAmount(data.providentFund),
+    toAmount(data.leaveDeduction),
+    toAmount(data.otherDeductions),
   ];
 
   const totalEarnings = earnings.reduce((sum, value) => sum + value, 0);
@@ -62,75 +62,75 @@ const calculateTotals = (data) => {
 
 const mapPayrollRecord = (record) => ({
   id: record.id,
-  employeeId: record.employee_id,
-  employeeCode: record.employee_code,
-  employeeName: record.employee_name,
-  payPeriodStart: record.pay_period_start,
-  payPeriodEnd: record.pay_period_end,
-  basicSalary: toNumber(record.basic_salary),
-  houseRentAllowance: toNumber(record.house_rent_allowance),
-  travelAllowance: toNumber(record.travel_allowance),
-  medicalAllowance: toNumber(record.medical_allowance),
-  overtimeAllowance: toNumber(record.overtime_allowance),
-  otherAllowances: toNumber(record.other_allowances),
-  totalEarnings: toNumber(record.total_earnings),
-  taxDeduction: toNumber(record.tax_deduction),
-  providentFund: toNumber(record.provident_fund),
-  leaveDeduction: toNumber(record.leave_deduction),
-  otherDeductions: toNumber(record.other_deductions),
-  totalDeductions: toNumber(record.total_deductions),
-  netSalary: toNumber(record.net_salary),
-  paymentDate: record.payment_date,
-  paymentStatus: record.payment_status,
-  generatedBy: record.generated_by,
-  generatedByUsername: record.generated_by_username,
-  departmentId: record.department_id,
-  departmentName: record.department_name,
-  designationId: record.designation_id,
-  designationTitle: record.designation_title,
-  createdAt: record.created_at,
-  updatedAt: record.updated_at,
+  employeeId: record.employeeId,
+  employeeCode: record.employeeCode,
+  employeeName: record.employeeName,
+  payPeriodStart: record.payPeriodStart,
+  payPeriodEnd: record.payPeriodEnd,
+  basicSalary: toNumber(record.basicSalary),
+  houseRentAllowance: toNumber(record.houseRentAllowance),
+  travelAllowance: toNumber(record.travelAllowance),
+  medicalAllowance: toNumber(record.medicalAllowance),
+  overtimeAllowance: toNumber(record.overtimeAllowance),
+  otherAllowances: toNumber(record.otherAllowances),
+  totalEarnings: toNumber(record.totalEarnings),
+  taxDeduction: toNumber(record.taxDeduction),
+  providentFund: toNumber(record.providentFund),
+  leaveDeduction: toNumber(record.leaveDeduction),
+  otherDeductions: toNumber(record.otherDeductions),
+  totalDeductions: toNumber(record.totalDeductions),
+  netSalary: toNumber(record.netSalary),
+  paymentDate: record.paymentDate,
+  paymentStatus: record.paymentStatus,
+  generatedBy: record.generatedBy,
+  generatedByUsername: record.generatedByUsername,
+  departmentId: record.departmentId,
+  departmentName: record.departmentName,
+  designationId: record.designationId,
+  designationTitle: record.designationTitle,
+  createdAt: record.createdAt,
+  updatedAt: record.updatedAt,
 });
 
 const buildBaseSelect = (whereClause = "") => `
   SELECT
     BIN_TO_UUID(p.id) AS id,
-    BIN_TO_UUID(p.employee_id) AS employee_id,
-    p.pay_period_start,
-    p.pay_period_end,
-    p.basic_salary,
-    p.house_rent_allowance,
-    p.travel_allowance,
-    p.medical_allowance,
-    p.overtime_allowance,
-    p.other_allowances,
-    p.total_earnings,
-    p.tax_deduction,
-    p.provident_fund,
-    p.leave_deduction,
-    p.other_deductions,
-    p.total_deductions,
-    p.net_salary,
-    p.payment_date,
-    p.payment_status,
-    BIN_TO_UUID(p.generated_by) AS generated_by,
-    p.created_at,
-    p.updated_at,
-    e.employee_code,
-    e.employment_type,
-    e.employment_status,
-    BIN_TO_UUID(e.department_id) AS department_id,
-    BIN_TO_UUID(ds.employee_id) AS designation_id,
-    d.department_name,
-    ds.title AS designation_title,
-    CONCAT_WS(' ', ep.first_name, ep.middle_name, ep.last_name) AS employee_name,
-    u.username AS generated_by_username
+    BIN_TO_UUID(p.employeeId) AS employeeId,
+    p.payPeriodStart,
+    p.payPeriodEnd,
+    p.basicSalary,
+    p.houseRentAllowance,
+    p.travelAllowance,
+    p.medicalAllowance,
+    p.overtimeAllowance,
+    p.otherAllowances,
+    p.totalEarnings,
+    p.taxDeduction,
+    p.providentFund,
+    p.leaveDeduction,
+    p.otherDeductions,
+    p.totalDeductions,
+    p.netSalary,
+    p.paymentDate,
+    p.paymentStatus,
+    BIN_TO_UUID(p.generatedBy) AS generatedBy,
+    p.createdAt,
+    p.updatedAt,
+    e.employeeCode,
+    e.employmentType,
+    e.employmentStatus,
+    BIN_TO_UUID(e.departmentId) AS departmentId,
+    BIN_TO_UUID(ds.employeeId) AS designationId,
+    d.departmentName,
+    ds.title AS designationTitle,
+    CONCAT_WS(' ', ep.firstName, ep.middleName, ep.lastName) AS employeeName,
+    u.username AS generatedByUsername
   FROM payroll p
-  LEFT JOIN employee e ON p.employee_id = e.id
-  LEFT JOIN employee_personal ep ON e.id = ep.employee_id
-  LEFT JOIN department d ON e.department_id = d.id
-  LEFT JOIN designations ds ON ds.employee_id = e.id
-  LEFT JOIN users u ON p.generated_by = u.id
+  LEFT JOIN employee e ON p.employeeId = e.id
+  LEFT JOIN employeePersonal ep ON e.id = ep.employeeId
+  LEFT JOIN department d ON e.departmentId = d.id
+  LEFT JOIN designations ds ON ds.employeeId = e.id
+  LEFT JOIN users u ON p.generatedBy = u.id
   ${whereClause}
 `;
 
@@ -145,27 +145,27 @@ const buildFilters = ({
   const params = [];
 
   if (employeeId) {
-    conditions.push("p.employee_id = UUID_TO_BIN(?)");
+    conditions.push("p.employeeId = UUID_TO_BIN(?)");
     params.push(employeeId);
   }
 
   if (paymentStatus) {
-    conditions.push("p.payment_status = ?");
+    conditions.push("p.paymentStatus = ?");
     params.push(paymentStatus);
   }
 
   if (startDate) {
-    conditions.push("p.pay_period_start >= ?");
+    conditions.push("p.payPeriodStart >= ?");
     params.push(startDate);
   }
 
   if (endDate) {
-    conditions.push("p.pay_period_end <= ?");
+    conditions.push("p.payPeriodEnd <= ?");
     params.push(endDate);
   }
 
   if (includePending === false && !paymentStatus) {
-    conditions.push("p.payment_status = 'Paid'");
+    conditions.push("p.paymentStatus = 'Paid'");
   }
 
   const whereClause = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
@@ -190,25 +190,25 @@ export const createPayrollRecord = async (req, res, next) => {
     const insertQuery = `
       INSERT INTO payroll (
         id,
-        employee_id,
-        pay_period_start,
-        pay_period_end,
-        basic_salary,
-        house_rent_allowance,
-        travel_allowance,
-        medical_allowance,
-        overtime_allowance,
-        other_allowances,
-        total_earnings,
-        tax_deduction,
-        provident_fund,
-        leave_deduction,
-        other_deductions,
-        total_deductions,
-        net_salary,
-        payment_date,
-        payment_status,
-        generated_by
+        employeeId,
+        payPeriodStart,
+        payPeriodEnd,
+        basicSalary,
+        houseRentAllowance,
+        travelAllowance,
+        medicalAllowance,
+        overtimeAllowance,
+        otherAllowances,
+        totalEarnings,
+        taxDeduction,
+        providentFund,
+        leaveDeduction,
+        otherDeductions,
+        totalDeductions,
+        netSalary,
+        paymentDate,
+        paymentStatus,
+        generatedBy
       ) VALUES (
         UUID_TO_BIN(?),
         UUID_TO_BIN(?),
@@ -235,25 +235,25 @@ export const createPayrollRecord = async (req, res, next) => {
 
     const values = [
       id,
-      data.employee_id,
-      data.pay_period_start,
-      data.pay_period_end,
-      toAmount(data.basic_salary),
-      toAmount(data.house_rent_allowance),
-      toAmount(data.travel_allowance),
-      toAmount(data.medical_allowance),
-      toAmount(data.overtime_allowance),
-      toAmount(data.other_allowances),
+      data.employeeId,
+      data.payPeriodStart,
+      data.payPeriodEnd,
+      toAmount(data.basicSalary),
+      toAmount(data.houseRentAllowance),
+      toAmount(data.travelAllowance),
+      toAmount(data.medicalAllowance),
+      toAmount(data.overtimeAllowance),
+      toAmount(data.otherAllowances),
       totals.totalEarnings,
-      toAmount(data.tax_deduction),
-      toAmount(data.provident_fund),
-      toAmount(data.leave_deduction),
-      toAmount(data.other_deductions),
+      toAmount(data.taxDeduction),
+      toAmount(data.providentFund),
+      toAmount(data.leaveDeduction),
+      toAmount(data.otherDeductions),
       totals.totalDeductions,
       totals.netSalary,
-      data.payment_date || null,
-      data.payment_status || "Pending",
-      data.generated_by,
+      data.paymentDate || null,
+      data.paymentStatus || "Pending",
+      data.generatedBy,
     ];
 
     await connection.beginTransaction();
@@ -276,27 +276,27 @@ export const createPayrollRecord = async (req, res, next) => {
 export const listPayrollRecords = async (req, res, next) => {
   try {
     const {
-      employee_id,
-      payment_status,
-      start_date,
-      end_date,
-      include_pending,
+      employeeId,
+      paymentStatus,
+      startDate,
+      endDate,
+      includePending,
       limit,
       offset,
     } = req.query;
 
     const { whereClause, params } = buildFilters({
-      employeeId: employee_id,
-      paymentStatus: payment_status,
-      startDate: start_date,
-      endDate: end_date,
-      includePending: parseBoolean(include_pending),
+      employeeId: employeeId,
+      paymentStatus: paymentStatus,
+      startDate: startDate,
+      endDate: endDate,
+      includePending: parseBoolean(includePending),
     });
 
     const limitValue = parseLimit(limit);
     const offsetValue = parseOffset(offset);
 
-    const query = `${buildBaseSelect(whereClause)} ORDER BY p.pay_period_end DESC LIMIT ? OFFSET ?`;
+    const query = `${buildBaseSelect(whereClause)} ORDER BY p.payPeriodEnd DESC LIMIT ? OFFSET ?`;
     const [rows] = await pool.query(query, [...params, limitValue, offsetValue]);
 
     res.json({
@@ -328,26 +328,26 @@ export const getEmployeePayslips = async (req, res, next) => {
   const { employeeId } = req.params;
   try {
     const {
-      payment_status,
-      start_date,
-      end_date,
-      include_pending,
+      paymentStatus,
+      startDate,
+      endDate,
+      includePending,
       limit,
       offset,
     } = req.query;
 
     const { whereClause, params } = buildFilters({
       employeeId,
-      paymentStatus: payment_status,
-      startDate: start_date,
-      endDate: end_date,
-      includePending: parseBoolean(include_pending),
+      paymentStatus: paymentStatus,
+      startDate: startDate,
+      endDate: endDate,
+      includePending: parseBoolean(includePending),
     });
 
     const limitValue = parseLimit(limit);
     const offsetValue = parseOffset(offset);
 
-    const query = `${buildBaseSelect(whereClause)} ORDER BY p.pay_period_end DESC LIMIT ? OFFSET ?`;
+    const query = `${buildBaseSelect(whereClause)} ORDER BY p.payPeriodEnd DESC LIMIT ? OFFSET ?`;
     const [rows] = await pool.query(query, [...params, limitValue, offsetValue]);
 
     res.json({
@@ -370,73 +370,73 @@ export const updatePayrollRecord = async (req, res, next) => {
     }
 
     const merged = {
-      employee_id: updates.employee_id ?? existing.employee_id,
-      pay_period_start: updates.pay_period_start ?? existing.pay_period_start,
-      pay_period_end: updates.pay_period_end ?? existing.pay_period_end,
-      payment_date: Object.prototype.hasOwnProperty.call(updates, "payment_date")
-        ? updates.payment_date
-        : existing.payment_date,
-      payment_status: updates.payment_status ?? existing.payment_status,
-      generated_by: updates.generated_by ?? existing.generated_by,
-      basic_salary: toAmount(updates.basic_salary, existing.basic_salary),
-      house_rent_allowance: toAmount(updates.house_rent_allowance, existing.house_rent_allowance),
-      travel_allowance: toAmount(updates.travel_allowance, existing.travel_allowance),
-      medical_allowance: toAmount(updates.medical_allowance, existing.medical_allowance),
-      overtime_allowance: toAmount(updates.overtime_allowance, existing.overtime_allowance),
-      other_allowances: toAmount(updates.other_allowances, existing.other_allowances),
-      tax_deduction: toAmount(updates.tax_deduction, existing.tax_deduction),
-      provident_fund: toAmount(updates.provident_fund, existing.provident_fund),
-      leave_deduction: toAmount(updates.leave_deduction, existing.leave_deduction),
-      other_deductions: toAmount(updates.other_deductions, existing.other_deductions),
+      employeeId: updates.employeeId ?? existing.employeeId,
+      payPeriodStart: updates.payPeriodStart ?? existing.payPeriodStart,
+      payPeriodEnd: updates.payPeriodEnd ?? existing.payPeriodEnd,
+      paymentDate: Object.prototype.hasOwnProperty.call(updates, "paymentDate")
+        ? updates.paymentDate
+        : existing.paymentDate,
+      paymentStatus: updates.paymentStatus ?? existing.paymentStatus,
+      generatedBy: updates.generatedBy ?? existing.generatedBy,
+      basicSalary: toAmount(updates.basicSalary, existing.basicSalary),
+      houseRentAllowance: toAmount(updates.houseRentAllowance, existing.houseRentAllowance),
+      travelAllowance: toAmount(updates.travelAllowance, existing.travelAllowance),
+      medicalAllowance: toAmount(updates.medicalAllowance, existing.medicalAllowance),
+      overtimeAllowance: toAmount(updates.overtimeAllowance, existing.overtimeAllowance),
+      otherAllowances: toAmount(updates.otherAllowances, existing.otherAllowances),
+      taxDeduction: toAmount(updates.taxDeduction, existing.taxDeduction),
+      providentFund: toAmount(updates.providentFund, existing.providentFund),
+      leaveDeduction: toAmount(updates.leaveDeduction, existing.leaveDeduction),
+      otherDeductions: toAmount(updates.otherDeductions, existing.otherDeductions),
     };
 
     const totals = calculateTotals(merged);
 
     const updateQuery = `
       UPDATE payroll SET
-        employee_id = UUID_TO_BIN(?),
-        pay_period_start = ?,
-        pay_period_end = ?,
-        basic_salary = ?,
-        house_rent_allowance = ?,
-        travel_allowance = ?,
-        medical_allowance = ?,
-        overtime_allowance = ?,
-        other_allowances = ?,
-        total_earnings = ?,
-        tax_deduction = ?,
-        provident_fund = ?,
-        leave_deduction = ?,
-        other_deductions = ?,
-        total_deductions = ?,
-        net_salary = ?,
-        payment_date = ?,
-        payment_status = ?,
-        generated_by = UUID_TO_BIN(?),
-        updated_at = CURRENT_TIMESTAMP
+        employeeId = UUID_TO_BIN(?),
+        payPeriodStart = ?,
+        payPeriodEnd = ?,
+        basicSalary = ?,
+        houseRentAllowance = ?,
+        travelAllowance = ?,
+        medicalAllowance = ?,
+        overtimeAllowance = ?,
+        otherAllowances = ?,
+        totalEarnings = ?,
+        taxDeduction = ?,
+        providentFund = ?,
+        leaveDeduction = ?,
+        otherDeductions = ?,
+        totalDeductions = ?,
+        netSalary = ?,
+        paymentDate = ?,
+        paymentStatus = ?,
+        generatedBy = UUID_TO_BIN(?),
+        updatedAt = CURRENT_TIMESTAMP
       WHERE id = UUID_TO_BIN(?)
     `;
 
     const values = [
-      merged.employee_id,
-      merged.pay_period_start,
-      merged.pay_period_end,
-      merged.basic_salary,
-      merged.house_rent_allowance,
-      merged.travel_allowance,
-      merged.medical_allowance,
-      merged.overtime_allowance,
-      merged.other_allowances,
+      merged.employeeId,
+      merged.payPeriodStart,
+      merged.payPeriodEnd,
+      merged.basicSalary,
+      merged.houseRentAllowance,
+      merged.travelAllowance,
+      merged.medicalAllowance,
+      merged.overtimeAllowance,
+      merged.otherAllowances,
       totals.totalEarnings,
-      merged.tax_deduction,
-      merged.provident_fund,
-      merged.leave_deduction,
-      merged.other_deductions,
+      merged.taxDeduction,
+      merged.providentFund,
+      merged.leaveDeduction,
+      merged.otherDeductions,
       totals.totalDeductions,
       totals.netSalary,
-      merged.payment_date || null,
-      merged.payment_status,
-      merged.generated_by,
+      merged.paymentDate || null,
+      merged.paymentStatus,
+      merged.generatedBy,
       id,
     ];
 
@@ -453,17 +453,17 @@ export const updatePayrollRecord = async (req, res, next) => {
 
 export const markPayrollAsPaid = async (req, res, next) => {
   const { id } = req.params;
-  const { payment_date, payment_status } = req.body;
+  const { paymentDate, paymentStatus } = req.body;
 
-  const effectiveStatus = payment_status || "Paid";
-  const effectiveDate = payment_date || new Date().toISOString().slice(0, 10);
+  const effectiveStatus = paymentStatus || "Paid";
+  const effectiveDate = paymentDate || new Date().toISOString().slice(0, 10);
 
   try {
     const [result] = await pool.execute(
       `UPDATE payroll
-         SET payment_status = ?,
-             payment_date = ?,
-             updated_at = CURRENT_TIMESTAMP
+         SET paymentStatus = ?,
+             paymentDate = ?,
+             updatedAt = CURRENT_TIMESTAMP
        WHERE id = UUID_TO_BIN(?)`,
       [effectiveStatus, effectiveDate, id]
     );
@@ -507,45 +507,45 @@ export const getPayrollSlip = async (req, res, next) => {
     const slip = {
       payroll: mapPayrollRecord(record),
       employee: {
-        id: record.employee_id,
-        code: record.employee_code,
-        name: record.employee_name,
-        employmentType: record.employment_type,
-        employmentStatus: record.employment_status,
-        departmentId: record.department_id,
-        departmentName: record.department_name,
-        designationId: record.designation_id,
-        designationTitle: record.designation_title,
+        id: record.employeeId,
+        code: record.employeeCode,
+        name: record.employeeName,
+        employmentType: record.employmentType,
+        employmentStatus: record.employmentStatus,
+        departmentId: record.departmentId,
+        departmentName: record.departmentName,
+        designationId: record.designationId,
+        designationTitle: record.designationTitle,
       },
       earnings: {
-        basicSalary: toNumber(record.basic_salary),
-        houseRentAllowance: toNumber(record.house_rent_allowance),
-        travelAllowance: toNumber(record.travel_allowance),
-        medicalAllowance: toNumber(record.medical_allowance),
-        overtimeAllowance: toNumber(record.overtime_allowance),
-        otherAllowances: toNumber(record.other_allowances),
-        total: toNumber(record.total_earnings),
+        basicSalary: toNumber(record.basicSalary),
+        houseRentAllowance: toNumber(record.houseRentAllowance),
+        travelAllowance: toNumber(record.travelAllowance),
+        medicalAllowance: toNumber(record.medicalAllowance),
+        overtimeAllowance: toNumber(record.overtimeAllowance),
+        otherAllowances: toNumber(record.otherAllowances),
+        total: toNumber(record.totalEarnings),
       },
       deductions: {
-        taxDeduction: toNumber(record.tax_deduction),
-        providentFund: toNumber(record.provident_fund),
-        leaveDeduction: toNumber(record.leave_deduction),
-        otherDeductions: toNumber(record.other_deductions),
-        total: toNumber(record.total_deductions),
+        taxDeduction: toNumber(record.taxDeduction),
+        providentFund: toNumber(record.providentFund),
+        leaveDeduction: toNumber(record.leaveDeduction),
+        otherDeductions: toNumber(record.otherDeductions),
+        total: toNumber(record.totalDeductions),
       },
       summary: {
-        netSalary: toNumber(record.net_salary),
+        netSalary: toNumber(record.netSalary),
         payPeriod: {
-          start: record.pay_period_start,
-          end: record.pay_period_end,
+          start: record.payPeriodStart,
+          end: record.payPeriodEnd,
         },
         payment: {
-          status: record.payment_status,
-          date: record.payment_date,
+          status: record.paymentStatus,
+          date: record.paymentDate,
         },
         generatedBy: {
-          id: record.generated_by,
-          username: record.generated_by_username,
+          id: record.generatedBy,
+          username: record.generatedByUsername,
         },
       },
     };

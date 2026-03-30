@@ -6,70 +6,70 @@ const dateSchema = z
   .regex(/^[0-9]{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[01])$/, "Date must be in YYYY-MM-DD format");
 
 const positiveDayCount = z
-  .number({ invalid_type_error: "Value must be a number" })
+  .number({ invalidTypeError: "Value must be a number" })
   .min(0, "Value cannot be negative");
 
 const leaveTypeBase = z.object({
-  leave_name: z.string().min(1, "Leave name is required"),
-  leave_name_amharic: z.string().optional().nullable(),
-  leave_description: z.string().optional().nullable(),
-  leave_description_amharic: z.string().optional().nullable(),
-  max_days_per_year: positiveDayCount,
-  carry_forward_days: positiveDayCount.optional().nullable(),
-  requires_approval: z.boolean().optional(),
+  leaveName: z.string().min(1, "Leave name is required"),
+  leaveNameAmharic: z.string().optional().nullable(),
+  leaveDescription: z.string().optional().nullable(),
+  leaveDescriptionAmharic: z.string().optional().nullable(),
+  maxDaysPerYear: positiveDayCount,
+  carryForwardDays: positiveDayCount.optional().nullable(),
+  requiresApproval: z.boolean().optional(),
   color: z
     .string()
     .regex(/^#?[0-9A-Fa-f]{6}$/i, "Color must be a HEX value")
     .optional()
     .nullable(),
-});
+}).strict();
 
 const leaveBalanceBase = z.object({
-  employee_id: uuidSchema,
-  leave_type_id: uuidSchema,
+  employeeId: uuidSchema,
+  leaveTypeId: uuidSchema,
   year: z
-    .number({ invalid_type_error: "Year must be a number" })
+    .number({ invalidTypeError: "Year must be a number" })
     .min(2000, "Year must be greater than or equal to 2000"),
-  total_allocated_days: positiveDayCount,
-  used_days: positiveDayCount.optional().nullable(),
-  remaining_days: positiveDayCount.optional().nullable(),
-  carry_forward_days: positiveDayCount.optional().nullable(),
-});
+  totalAllocatedDays: positiveDayCount,
+  usedDays: positiveDayCount.optional().nullable(),
+  remainingDays: positiveDayCount.optional().nullable(),
+  carryForwardDays: positiveDayCount.optional().nullable(),
+}).strict();
 
 const leaveRequestBase = z.object({
-  employee_id: uuidSchema,
-  leave_type_id: uuidSchema,
-  start_date: dateSchema,
-  end_date: dateSchema,
-  total_days: positiveDayCount.optional(),
+  employeeId: uuidSchema,
+  leaveTypeId: uuidSchema,
+  startDate: dateSchema,
+  endDate: dateSchema,
+  totalDays: positiveDayCount.optional(),
   reason: z.string().optional().nullable(),
-  reason_amharic: z.string().optional().nullable(),
-  status: z.enum(["pending", "approved", "rejected"]).optional(),
-  approved_by: uuidSchema.optional().nullable(),
-  approved_at: z.string().optional().nullable(),
+  reasonAmharic: z.string().optional().nullable(),
+  status: z.enum(["PENDING", "APPROVED", "REJECTED"]).optional(),
+  approvedBy: uuidSchema.optional().nullable(),
+  approvedAt: z.string().optional().nullable(),
   comments: z.string().optional().nullable(),
-  comments_amharic: z.string().optional().nullable(),
-});
+  commentsAmharic: z.string().optional().nullable(),
+}).strict();
 
 export const leaveValidationSchema = {
   type: {
     create: leaveTypeBase,
     update: leaveTypeBase.partial(),
-    id: z.object({ id: uuidSchema }),
+    id: z.object({ id: uuidSchema }).strict(),
   },
   balance: {
     create: leaveBalanceBase,
     update: leaveBalanceBase.partial(),
-    id: z.object({ id: uuidSchema }),
+    id: z.object({ id: uuidSchema }).strict(),
   },
   request: {
     create: leaveRequestBase,
     update: leaveRequestBase.partial(),
-    id: z.object({ id: uuidSchema }),
+    id: z.object({ id: uuidSchema }).strict(),
   },
   id: z.object({
     id: uuidSchema,
-  }),
+  }).strict(),
 };
 
 export const validateLeave = (schema) => {

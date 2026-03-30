@@ -12,24 +12,24 @@ const parseMoney = (value) => {
 export const benefitController = {
   enrollEmployee: async (req, res) => {
     const {
-      employee_id,
-      benefit_id,
-      enrollment_date,
-      coverage_amount,
-      employee_contribution,
-      company_contribution,
-      status = "active",
-      end_date,
+      employeeId,
+      benefitId,
+      enrollmentDate,
+      coverageAmount,
+      employeeContribution,
+      companyContribution,
+      status = "ACTIVE",
+      endDate,
     } = req.body;
 
     try {
       const [existing] = await pool.query(
         `SELECT id
-           FROM employee_benefits
-          WHERE employee_id = UUID_TO_BIN(?)
-            AND benefit_id = UUID_TO_BIN(?)
-            AND status = 'active'`,
-        [employee_id, benefit_id]
+           FROM employeeBenefits
+          WHERE employeeId = UUID_TO_BIN(?)
+            AND benefitId = UUID_TO_BIN(?)
+            AND status = 'ACTIVE'`,
+        [employeeId, benefitId]
       );
 
       if (existing.length > 0) {
@@ -40,15 +40,15 @@ export const benefitController = {
       }
 
       const [result] = await pool.query(
-        `INSERT INTO employee_benefits (
-           employee_id,
-           benefit_id,
-           enrollment_date,
-           coverage_amount,
-           employee_contribution,
-           company_contribution,
+        `INSERT INTO employeeBenefits (
+           employeeId,
+           benefitId,
+           enrollmentDate,
+           coverageAmount,
+           employeeContribution,
+           companyContribution,
            status,
-           end_date
+           endDate
          ) VALUES (
            UUID_TO_BIN(?),
            UUID_TO_BIN(?),
@@ -60,14 +60,14 @@ export const benefitController = {
            ?
          )`,
         [
-          employee_id,
-          benefit_id,
-          enrollment_date,
-          parseMoney(coverage_amount),
-          parseMoney(employee_contribution),
-          parseMoney(company_contribution),
+          employeeId,
+          benefitId,
+          enrollmentDate,
+          parseMoney(coverageAmount),
+          parseMoney(employeeContribution),
+          parseMoney(companyContribution),
           status,
-          end_date || null,
+          endDate || null,
         ]
       );
 
@@ -76,8 +76,8 @@ export const benefitController = {
         message: "Employee enrolled",
         data: {
           id: result.insertId,
-          employee_id,
-          benefit_id,
+          employeeId,
+          benefitId,
           status,
         },
       });
@@ -92,16 +92,16 @@ export const benefitController = {
 
   updateEnrollmentStatus: async (req, res) => {
     const { id } = req.params;
-    const { status, end_date } = req.body;
+    const { status, endDate } = req.body;
 
     try {
       const [result] = await pool.query(
-        `UPDATE employee_benefits
+        `UPDATE employeeBenefits
             SET status = ?,
-                end_date = ?,
-                updated_at = CURRENT_TIMESTAMP
+                endDate = ?,
+                updatedAt = CURRENT_TIMESTAMP
           WHERE id = UUID_TO_BIN(?)`,
-        [status, end_date || null, id]
+        [status, endDate || null, id]
       );
 
       if (result.affectedRows === 0) {
@@ -131,12 +131,12 @@ export const benefitController = {
       const [benefitRows] = await pool.query(
         `SELECT 
            BIN_TO_UUID(id) as id,
-           benefit_name,
-           benefit_type,
+           benefitName,
+           benefitType,
            description,
-           cost_to_company,
-           is_active,
-           created_at
+           costToCompany,
+           isActive,
+           createdAt
          FROM benefits
          WHERE id = UUID_TO_BIN(?)`,
         [id]
@@ -151,28 +151,28 @@ export const benefitController = {
 
       const [enrollmentStats] = await pool.query(
         `SELECT 
-           SUM(status = 'active') as active_enrollments,
-           SUM(status = 'cancelled') as cancelled_enrollments,
-           SUM(status = 'suspended') as suspended_enrollments,
-           COALESCE(SUM(employee_contribution), 0) as total_employee_contribution,
-           COALESCE(SUM(company_contribution), 0) as total_company_contribution
-         FROM employee_benefits
-         WHERE benefit_id = UUID_TO_BIN(?)`,
+           SUM(status = 'ACTIVE') as activeEnrollments,
+           SUM(status = 'CANCELLED') as cancelledEnrollments,
+           SUM(status = 'SUSPENDED') as suspendedEnrollments,
+           COALESCE(SUM(employeeContribution), 0) as totalEmployeeContribution,
+           COALESCE(SUM(companyContribution), 0) as totalCompanyContribution
+         FROM employeeBenefits
+         WHERE benefitId = UUID_TO_BIN(?)`,
         [id]
       );
 
       const [recentEnrollments] = await pool.query(
         `SELECT 
            BIN_TO_UUID(eb.id) as id,
-           BIN_TO_UUID(eb.employee_id) as employee_id,
-           eb.enrollment_date,
+           BIN_TO_UUID(eb.employeeId) as employeeId,
+           eb.enrollmentDate,
            eb.status,
-           ep.first_name,
-           ep.last_name
-         FROM employee_benefits eb
-         LEFT JOIN employee_personal ep ON eb.employee_id = ep.employee_id
-         WHERE eb.benefit_id = UUID_TO_BIN(?)
-         ORDER BY eb.enrollment_date DESC
+           ep.firstName,
+           ep.lastName
+         FROM employeeBenefits eb
+         LEFT JOIN employeePersonal ep ON eb.employeeId = ep.employeeId
+         WHERE eb.benefitId = UUID_TO_BIN(?)
+         ORDER BY eb.enrollmentDate DESC
          LIMIT 20`,
         [id]
       );
@@ -182,11 +182,11 @@ export const benefitController = {
         data: {
           benefit: benefitRows[0],
           stats: {
-            active_enrollments: Number(enrollmentStats[0].active_enrollments || 0),
-            cancelled_enrollments: Number(enrollmentStats[0].cancelled_enrollments || 0),
-            suspended_enrollments: Number(enrollmentStats[0].suspended_enrollments || 0),
-            total_employee_contribution: Number(enrollmentStats[0].total_employee_contribution || 0),
-            total_company_contribution: Number(enrollmentStats[0].total_company_contribution || 0),
+            activeEnrollments: Number(enrollmentStats[0].activeEnrollments || 0),
+            cancelledEnrollments: Number(enrollmentStats[0].cancelledEnrollments || 0),
+            suspendedEnrollments: Number(enrollmentStats[0].suspendedEnrollments || 0),
+            totalEmployeeContribution: Number(enrollmentStats[0].totalEmployeeContribution || 0),
+            totalCompanyContribution: Number(enrollmentStats[0].totalCompanyContribution || 0),
           },
           recentEnrollments,
         },
@@ -205,7 +205,7 @@ export const benefitController = {
       const { employeeId } = req.params;
       const { status } = req.query;
 
-      const conditions = ["eb.employee_id = UUID_TO_BIN(?)"];
+      const conditions = ["eb.employeeId = UUID_TO_BIN(?)"];
       const params = [employeeId];
 
       if (status) {
@@ -217,19 +217,19 @@ export const benefitController = {
 
       const [records] = await pool.query(
         `SELECT 
-           BIN_TO_UUID(eb.id) as enrollment_id,
-           BIN_TO_UUID(eb.benefit_id) as benefit_id,
-           b.benefit_name,
-           eb.enrollment_date,
+           BIN_TO_UUID(eb.id) as enrollmentId,
+           BIN_TO_UUID(eb.benefitId) as benefitId,
+           b.benefitName,
+           eb.enrollmentDate,
            eb.status,
-           eb.coverage_amount,
-           eb.employee_contribution,
-           eb.company_contribution,
-           eb.end_date
-         FROM employee_benefits eb
-         JOIN benefits b ON eb.benefit_id = b.id
+           eb.coverageAmount,
+           eb.employeeContribution,
+           eb.companyContribution,
+           eb.endDate
+         FROM employeeBenefits eb
+         JOIN benefits b ON eb.benefitId = b.id
          ${whereClause}
-         ORDER BY eb.enrollment_date DESC`,
+         ORDER BY eb.enrollmentDate DESC`,
         params
       );
 

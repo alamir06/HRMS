@@ -6,68 +6,68 @@ const dateSchema = z
   .regex(/^[0-9]{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[01])$/, "Date must be in YYYY-MM-DD format");
 
 const assetCategoryBase = z.object({
-  category_name: z.string().min(1, "Category name is required"),
-  category_name_amharic: z.string().optional().nullable(),
+  categoryName: z.string().min(1, "Category name is required"),
+  categoryNameAmharic: z.string().optional().nullable(),
   description: z.string().optional().nullable(),
-  description_amharic: z.string().optional().nullable(),
-});
+  descriptionAmharic: z.string().optional().nullable(),
+}).strict();
 
 const moneySchema = z
-  .number({ invalid_type_error: "Value must be a number" })
+  .number({ invalidTypeError: "Value must be a number" })
   .nonnegative("Value cannot be negative")
   .optional()
   .nullable();
 
 const assetBase = z.object({
-  asset_name: z.string().min(1, "Asset name is required"),
-  asset_name_amharic: z.string().optional().nullable(),
-  asset_category_id: uuidSchema,
-  serial_number: z.string().optional().nullable(),
+  assetName: z.string().min(1, "Asset name is required"),
+  assetNameAmharic: z.string().optional().nullable(),
+  assetCategoryId: uuidSchema,
+  serialNumber: z.string().optional().nullable(),
   model: z.string().optional().nullable(),
-  purchase_date: dateSchema.optional().nullable(),
-  purchase_cost: moneySchema,
-  current_value: moneySchema,
-  status: z.enum(["available", "assigned", "maintenance", "disposed"]).optional(),
+  purchaseDate: dateSchema.optional().nullable(),
+  purchaseCost: moneySchema,
+  currentValue: moneySchema,
+  status: z.enum(["AVAILABLE", "ASSIGNED", "MAINTENANCE", "DISPOSED"]).optional(),
   location: z.string().optional().nullable(),
-  location_amharic: z.string().optional().nullable(),
+  locationAmharic: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),
-  notes_amharic: z.string().optional().nullable(),
-});
+  notesAmharic: z.string().optional().nullable(),
+}).strict();
 
 const assignmentBase = z.object({
-  asset_id: uuidSchema,
-  employee_id: uuidSchema,
-  assigned_date: dateSchema,
-  expected_return_date: dateSchema.optional().nullable(),
-  assignment_reason: z.string().optional().nullable(),
-  assignment_reason_amharic: z.string().optional().nullable(),
-  condition_assigned: z.string().optional().nullable(),
-  condition_assigned_amharic: z.string().optional().nullable(),
-  assigned_by: uuidSchema,
-});
+  assetId: uuidSchema,
+  employeeId: uuidSchema,
+  assignedDate: dateSchema,
+  expectedReturnDate: dateSchema.optional().nullable(),
+  assignmentReason: z.string().optional().nullable(),
+  assignmentReasonAmharic: z.string().optional().nullable(),
+  conditionAssigned: z.string().optional().nullable(),
+  conditionAssignedAmharic: z.string().optional().nullable(),
+  assignedBy: uuidSchema,
+}).strict();
 
 const returnSchema = z.object({
-  actual_return_date: dateSchema.optional().nullable(),
-  condition_returned: z.string().optional().nullable(),
-  condition_returned_amharic: z.string().optional().nullable(),
-  status: z.enum(["returned", "overdue"]).optional(),
-});
+  actualReturnDate: dateSchema.optional().nullable(),
+  conditionReturned: z.string().optional().nullable(),
+  conditionReturnedAmharic: z.string().optional().nullable(),
+  status: z.enum(["RETURNED", "OVERDUE"]).optional(),
+}).strict();
 
 export const assetValidationSchema = {
   category: {
     create: assetCategoryBase,
     update: assetCategoryBase.partial(),
-    id: z.object({ id: uuidSchema }),
+    id: z.object({ id: uuidSchema }).strict(),
   },
   asset: {
     create: assetBase,
     update: assetBase.partial(),
-    id: z.object({ id: uuidSchema }),
+    id: z.object({ id: uuidSchema }).strict(),
   },
   assignment: {
     create: assignmentBase,
     update: assignmentBase.partial(),
-    id: z.object({ id: uuidSchema }),
+    id: z.object({ id: uuidSchema }).strict(),
     return: returnSchema,
   },
 };

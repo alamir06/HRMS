@@ -6,28 +6,28 @@ const dateSchema = z
   .regex(/^[0-9]{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[01])$/, "Date must be in YYYY-MM-DD format");
 
 const outsourcingCompanyBase = z.object({
-  company_id: uuidSchema.optional(),
-  company_name: z.string().min(1, "Company name is required"),
-  company_name_amharic: z.string().optional().nullable(),
-  company_address: z.string().optional().nullable(),
-  company_address_amharic: z.string().optional().nullable(),
-  company_phone: z.string().optional().nullable(),
-  company_email: z.string().email("Invalid email format").optional().nullable(),
-  company_service_type: z.enum([
-    "security",
-    "cleaning",
-    "it",
-    "catering",
-    "maintenance",
-    "other",
+  companyId: uuidSchema.optional(),
+  companyName: z.string().min(1, "Company name is required"),
+  companyNameAmharic: z.string().optional().nullable(),
+  companyAddress: z.string().optional().nullable(),
+  companyAddressAmharic: z.string().optional().nullable(),
+  companyPhone: z.string().optional().nullable(),
+  companyEmail: z.string().email("Invalid email format").optional().nullable(),
+  companyServiceType: z.enum([
+    "SECURITY",
+    "CLEANING",
+    "IT",
+    "CATERING",
+    "MAINTENANCE",
+    "OTHER",
   ]),
-  company_contract_start_date: dateSchema.optional().nullable(),
-  company_contract_end_date: dateSchema.optional().nullable(),
-  company_status: z.enum(["active", "inactive", "suspended"]).optional(),
-});
+  companyContractStartDate: dateSchema.optional().nullable(),
+  companyContractEndDate: dateSchema.optional().nullable(),
+  companyStatus: z.enum(["ACTIVE", "INACTIVE", "SUSPENDED"]).optional(),
+}).strict();
 
 export const outsourcingCompanyValidationSchema = {
   create: outsourcingCompanyBase,
   update: outsourcingCompanyBase.partial(),
-  id: z.object({ id: uuidSchema }),
+  id: z.object({ id: uuidSchema }).strict(),
 };

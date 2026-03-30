@@ -6,12 +6,12 @@ import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
 import pool from "./config/database.js";
 import path from "path";
+
 //By Group1:Routes
 import appRouter from './routes/index.js';
 import { seedDefaultCompany, seedDefaultHrManager } from "./src/Auth/authService.js";
 
 dotenv.config();
-
 const app = express();
 const PORT = process.env.PORT;
 
@@ -26,7 +26,6 @@ const limiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
-
 
 const allowedOrigins = process.env.NODE_ENV === 'production'
   ? [process.env.CLIENT_URL]
@@ -188,7 +187,7 @@ process.on('uncaughtException', (error) => {
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('💥 Unhandled Rejection at:', promise, 'reason:', reason);
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
   process.exit(1);
 });
 

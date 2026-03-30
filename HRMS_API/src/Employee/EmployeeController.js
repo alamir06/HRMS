@@ -105,7 +105,7 @@ export class EmployeeController {
         success: true,
         message: result.message,
         data: {
-          profile_picture: result.profile_picture,
+          profilePicture: result.profilePicture,
         },
       });
     } catch (error) {
@@ -265,15 +265,15 @@ export class EmployeeController {
   getDocuments = async (req, res) => {
     try {
       const { id } = req.params;
-      const { type, page = 1, limit = 10, verified_only } = req.query;
+      const { type, page = 1, limit = 10, verifiedOnly } = req.query;
 
       employeeValidationSchema.id.parse({ id });
 
       const options = {
-        document_type: type || null,
+        documentType: type || null,
         page: parseInt(page),
         limit: parseInt(limit),
-        verified_only: verified_only === "true",
+        verifiedOnly: verifiedOnly === "true",
       };
 
       const result = await documentService.getEmployeeDocuments(id, options);
@@ -331,9 +331,9 @@ export class EmployeeController {
   verifyDocument = async (req, res) => {
     try {
       const { documentId } = req.params;
-      const { verified_by } = req.body;
+      const { verifiedBy } = req.body;
 
-      if (!verified_by) {
+      if (!verifiedBy) {
         return res.status(400).json({
           success: false,
           error: "Verifier ID is required",
@@ -342,7 +342,7 @@ export class EmployeeController {
 
       const result = await documentService.verifyDocument(
         documentId,
-        verified_by
+        verifiedBy
       );
 
       res.json({
@@ -391,7 +391,7 @@ export class EmployeeController {
         success: true,
         message: result.message,
         data: {
-          education_id: result.id,
+          educationId: result.id,
         },
       });
     } catch (error) {
@@ -480,10 +480,8 @@ export class EmployeeController {
     res.status(500).json({
       success: false,
       error: defaultMessage,
-      message:
-        process.env.NODE_ENV === "development"
-          ? error.message
-          : "Internal server error",
+      message: error.message,
+      sqlMessage: error.sqlMessage,
       ...(process.env.NODE_ENV === "development" && { stack: error.stack }),
     });
   }

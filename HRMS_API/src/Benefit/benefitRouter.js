@@ -10,16 +10,16 @@ const benefitCrudRouter = createCrudRouter({
   routePath: "/",
   tableName: "benefits",
   validationSchema: benefitValidationSchema.benefit,
-  displayNameField: "benefit_name",
+  displayNameField: "benefitName",
   entityLabel: "Benefit",
   uuidEnabled: true,
 });
 
 const enrollmentCrudRouter = createCrudRouter({
   routePath: "/",
-  tableName: "employee_benefits",
+  tableName: "employeeBenefits",
   validationSchema: benefitValidationSchema.enrollment,
-  displayNameField: "enrollment_date",
+  displayNameField: "enrollmentDate",
   entityLabel: "Employee Benefit",
   uuidEnabled: true,
 });
@@ -30,28 +30,28 @@ benefitRouter.use("/enrollments", enrollmentCrudRouter);
 benefitRouter.post(
   "/enrollments/enroll",
   authenticateToken,
-  authorize("HR_MANAGER", "HR_OFFICER"),
+  authorize("HRMANAGER", "HROFFICER"),
   benefitController.enrollEmployee
 );
 
 benefitRouter.post(
   "/enrollments/:id/status",
   authenticateToken,
-  authorize("HR_MANAGER", "HR_OFFICER"),
+  authorize("HRMANAGER", "HROFFICER"),
   benefitController.updateEnrollmentStatus
 );
 
 benefitRouter.get(
   "/catalog/:id/summary",
   authenticateToken,
-  authorize("HR_MANAGER", "HR_OFFICER"),
+  authorize("HRMANAGER", "HROFFICER"),
   benefitController.getBenefitSummary
 );
 
 benefitRouter.get(
   "/employees/:employeeId",
   authenticateToken,
-  authorize("HR_MANAGER", "HR_OFFICER", "employee"),
+  authorize("HRMANAGER", "HROFFICER", "EMPLOYEE"),
   benefitController.getEmployeeBenefits
 );
 

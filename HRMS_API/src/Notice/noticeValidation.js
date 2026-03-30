@@ -5,42 +5,42 @@ const dateSchema = z
   .string()
   .regex(/^[0-9]{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[01])$/, "Date must be in YYYY-MM-DD format");
 
-const targetAudienceEnum = z.enum(["all", "department", "individual"]);
-const noticeTypeEnum = z.enum(["general", "policy", "event", "urgent"]);
+const targetAudienceEnum = z.enum(["ALL", "DEPARTMENT", "INDIVIDUAL"]);
+const noticeTypeEnum = z.enum(["GENERAL", "POLICY", "EVENT", "URGENT"]);
 
 const audienceConstraint = (schema) =>
   schema.superRefine((data, ctx) => {
-    const audience = data.target_audience ?? null;
-    const departmentId = data.target_department_id ?? null;
-    const employeeId = data.target_employee_id ?? null;
+    const audience = data.targetAudience ?? null;
+    const departmentId = data.targetDepartmentId ?? null;
+    const employeeId = data.targetEmployeeId ?? null;
 
-    if (audience === "department" && !departmentId) {
+    if (audience === "DEPARTMENT" && !departmentId) {
       ctx.addIssue({
-        path: ["target_department_id"],
+        path: ["targetDepartmentId"],
         code: z.ZodIssueCode.custom,
         message: "Department target is required for department audience",
       });
     }
 
-    if (audience === "individual" && !employeeId) {
+    if (audience === "INDIVIDUAL" && !employeeId) {
       ctx.addIssue({
-        path: ["target_employee_id"],
+        path: ["targetEmployeeId"],
         code: z.ZodIssueCode.custom,
         message: "Employee target is required for individual audience",
       });
     }
 
-    if ((departmentId || employeeId) && audience === "all") {
+    if ((departmentId || employeeId) && audience === "ALL") {
       ctx.addIssue({
-        path: ["target_audience"],
+        path: ["targetAudience"],
         code: z.ZodIssueCode.custom,
         message: "Audience selection must match the provided targets",
       });
     }
 
-    if (data.publish_date && data.expiry_date && data.expiry_date < data.publish_date) {
+    if (data.publishDate && data.expiryDate && data.expiryDate < data.publishDate) {
       ctx.addIssue({
-        path: ["expiry_date"],
+        path: ["expiryDate"],
         code: z.ZodIssueCode.custom,
         message: "Expiry date cannot be before publish date",
       });
@@ -50,34 +50,34 @@ const audienceConstraint = (schema) =>
 const noticeBase = audienceConstraint(
   z.object({
     title: z.string().min(1, "Title is required"),
-    title_amharic: z.string().optional().nullable(),
+    titleAmharic: z.string().optional().nullable(),
     content: z.string().min(1, "Content is required"),
-    content_amharic: z.string().optional().nullable(),
-    notice_type: noticeTypeEnum.optional().default("general"),
-    target_audience: targetAudienceEnum.optional().default("all"),
-    target_department_id: uuidSchema.optional().nullable(),
-    target_employee_id: uuidSchema.optional().nullable(),
-    publish_date: dateSchema,
-    expiry_date: dateSchema.optional().nullable(),
-    is_published: z.boolean().optional().default(false),
-    created_by: uuidSchema,
-  })
+    contentAmharic: z.string().optional().nullable(),
+    noticeType: noticeTypeEnum.optional().default("GENERAL"),
+    targetAudience: targetAudienceEnum.optional().default("ALL"),
+    targetDepartmentId: uuidSchema.optional().nullable(),
+    targetEmployeeId: uuidSchema.optional().nullable(),
+    publishDate: dateSchema,
+    expiryDate: dateSchema.optional().nullable(),
+    isPublished: z.boolean().optional().default(false),
+    createdBy: uuidSchema,
+  }).strict()
 );
 
 const noticeUpdate = audienceConstraint(
   z
     .object({
       title: z.string().min(1).optional(),
-      title_amharic: z.string().nullable().optional(),
+      titleAmharic: z.string().nullable().optional(),
       content: z.string().min(1).optional(),
-      content_amharic: z.string().nullable().optional(),
-      notice_type: noticeTypeEnum.optional(),
-      target_audience: targetAudienceEnum.optional(),
-      target_department_id: uuidSchema.optional().nullable(),
-      target_employee_id: uuidSchema.optional().nullable(),
-      publish_date: dateSchema.optional(),
-      expiry_date: dateSchema.optional().nullable(),
-      is_published: z.boolean().optional(),
+      contentAmharic: z.string().nullable().optional(),
+      noticeType: noticeTypeEnum.optional(),
+      targetAudience: targetAudienceEnum.optional(),
+      targetDepartmentId: uuidSchema.optional().nullable(),
+      targetEmployeeId: uuidSchema.optional().nullable(),
+      publishDate: dateSchema.optional(),
+      expiryDate: dateSchema.optional().nullable(),
+      isPublished: z.boolean().optional(),
     })
     .refine((data) => Object.keys(data).length > 0, {
       message: "At least one field must be provided",
@@ -86,29 +86,29 @@ const noticeUpdate = audienceConstraint(
 
 const noticePublish = z
   .object({
-    is_published: z.boolean(),
-    publish_date: dateSchema.optional(),
-    expiry_date: dateSchema.optional().nullable(),
+    isPublished: z.boolean(),
+    publishDate: dateSchema.optional(),
+    expiryDate: dateSchema.optional().nullable(),
   })
   .superRefine((data, ctx) => {
-    if (data.expiry_date && data.publish_date && data.expiry_date < data.publish_date) {
+    if (data.expiryDate && data.publishDate && data.expiryDate < data.publishDate) {
       ctx.addIssue({
-        path: ["expiry_date"],
+        path: ["expiryDate"],
         code: z.ZodIssueCode.custom,
         message: "Expiry date cannot be before publish date",
       });
     }
   });
 
-const noticeIdSchema = z.object({ id: uuidSchema });
+const noticeIdSchema = z.object({ id: uuidSchema }).strict();
 const noticeQuerySchema = z
   .object({
-    notice_type: noticeTypeEnum.optional(),
-    target_audience: targetAudienceEnum.optional(),
-    department_id: uuidSchema.optional(),
-    employee_id: uuidSchema.optional(),
-    is_published: z.enum(["true", "false"]).transform((val) => val === "true").optional(),
-    active_only: z.enum(["true", "false"]).transform((val) => val === "true").optional(),
+    noticeType: noticeTypeEnum.optional(),
+    targetAudience: targetAudienceEnum.optional(),
+    departmentId: uuidSchema.optional(),
+    employeeId: uuidSchema.optional(),
+    isPublished: z.enum(["true", "false"]).transform((val) => val === "true").optional(),
+    activeOnly: z.enum(["true", "false"]).transform((val) => val === "true").optional(),
   })
   .passthrough();
 

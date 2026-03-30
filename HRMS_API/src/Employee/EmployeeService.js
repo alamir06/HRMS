@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from "uuid";
 
 export class EmployeeService extends CrudService {
   constructor() {
-    super("employee", "id", true);
+    super("EMPLOYEE", "id", true);
   }
 
   async assignAsDepartmentManagerIfNeeded(connection, employeeId) {
@@ -13,24 +13,24 @@ export class EmployeeService extends CrudService {
     const [designationRows] = await connection.query(
       `SELECT des.id,
               des.title,
-              BIN_TO_UUID(des.department_id) AS department_id,
-              BIN_TO_UUID(des.college_id) AS college_id,
-              d.department_type
+              BIN_TO_UUID(des.departmentId) AS departmentId,
+              BIN_TO_UUID(des.collegeId) AS collegeId,
+              d.departmentType
          FROM designations des
-         LEFT JOIN department d ON des.department_id = d.id
-        WHERE des.employee_id = UUID_TO_BIN(?)
+         LEFT JOIN department d ON des.departmentId = d.id
+        WHERE des.employeeId = UUID_TO_BIN(?)
         LIMIT 1`,
       [employeeId]
     );
 
     if (!designationRows.length) return;
 
-    const { title, department_id: deptId, department_type: deptType } = designationRows[0];
+    const { title, departmentId: deptId, departmentType: deptType } = designationRows[0];
     const t = (title || "").toLowerCase();
-    const isAcademic = deptType === "academic";
-    const isHead = t.includes("head");
+    const isAcademic = deptType === "ACADEMIC";
+    const isHead = t.includes("HEAD");
     const isManager = t.includes("manager");
-    const isDea = t.includes("dea") || t.includes("dean");
+    const isDea = t.includes("dea") || t.includes("DEAN");
 
     // College-level DEA/Dean has no department manager to set
     if (!deptId || isDea) return;
@@ -39,7 +39,7 @@ export class EmployeeService extends CrudService {
 
     if (shouldAssign) {
       await connection.query(
-        `UPDATE department SET manager_id = UUID_TO_BIN(?) WHERE id = UUID_TO_BIN(?)`,
+        `UPDATE department SET managerId = UUID_TO_BIN(?) WHERE id = UUID_TO_BIN(?)`,
         [employeeId, deptId]
       );
     }
@@ -48,21 +48,21 @@ export class EmployeeService extends CrudService {
   async createEmployee(fullData) {
     const { personal, employment, academic, outsource, ...employeeData } = fullData;
     const connection = await pool.getConnection();
-    if (employeeData.employee_code) {
-      delete employeeData.employee_code;
+    if (employeeData.employeeCode) {
+      delete employeeData.employeeCode;
     }
-    if (employeeData.employee_type === "academic" && academic) {
+    if (employeeData.employeeType === "ACADEMIC" && academic) {
       try {
         const [deptRows] = await connection.query(
-          `SELECT BIN_TO_UUID(college_id) as college_id FROM department WHERE id = UUID_TO_BIN(?) AND department_type = 'academic'`,
-          [employeeData.department_id]
+          `SELECT BIN_TO_UUID(collegeId) as collegeId FROM department WHERE id = UUID_TO_BIN(?) AND departmentType = 'ACADEMIC'`,
+          [employeeData.departmentId]
         );
         if (!deptRows.length) {
-          throw new Error("Invalid department_id: not found or not academic");
+          throw new Error("Invalid departmentId: not found or not academic");
         }
-        const deptCollegeId = deptRows[0].college_id;
-        if (!deptCollegeId || deptCollegeId !== academic.college_id) {
-          throw new Error("The selected department does not belong to the provided college_id");
+        const deptCollegeId = deptRows[0].collegeId;
+        if (!deptCollegeId || deptCollegeId !== academic.collegeId) {
+          throw new Error("The selected department does not belong to the provided collegeId");
         }
       } catch (error) {
         connection.release();
@@ -78,8 +78,8 @@ export class EmployeeService extends CrudService {
       //Group one 1. Insert into employee table with generated UUID and code
       const employeeQuery = `
         INSERT INTO employee (
-          id, employee_code, company_id, employee_type, employee_role, department_id, manager_id, hire_date,
-          employment_type, employment_status, termination_date
+          id, employeeCode, companyId, employeeType, employeeRole, departmentId, managerId, hireDate,
+          employmentType, employmentStatus, terminationDate
         ) VALUES (
           UUID_TO_BIN(?), ?, UUID_TO_BIN(?), ?, ?, UUID_TO_BIN(?), UUID_TO_BIN(?), ?, ?, ?, ?
         )
@@ -87,92 +87,92 @@ export class EmployeeService extends CrudService {
       await connection.query(employeeQuery, [
         employeeUUID,
         generatedEmployeeCode,
-        employeeData.company_id,
-        employeeData.employee_type,
-        employeeData.employee_role || "EMPLOYEE",
-        employeeData.department_id,
-        employeeData.manager_id || null,
-        employeeData.hire_date,
-        employeeData.employment_type,
-        employeeData.employment_status || "active",
-        employeeData.termination_date || null,
+        employeeData.companyId,
+        employeeData.employeeType,
+        employeeData.employeeRole || "EMPLOYEE",
+        employeeData.departmentId,
+        employeeData.managerId || null,
+        employeeData.hireDate,
+        employeeData.employmentType,
+        employeeData.employmentStatus || "ACTIVE",
+        employeeData.terminationDate || null,
       ]);
-      //Group one 2. Insert into employee_personal using the same UUID
+      //Group one 2. Insert into employeePersonal using the same UUID
       const personalQuery = `
-        INSERT INTO employee_personal (
-          employee_id, first_name, first_name_amharic, middle_name,
-          middle_name_amharic, last_name, last_name_amharic, gender,
-          date_of_birth, personal_email, personal_phone, emergency_contact_name,
-          emergency_contact_name_amharic, emergency_contact_phone, profile_picture
+        INSERT INTO employeePersonal (
+          employeeId, firstName, firstNameAmharic, middleName,
+          middleNameAmharic, lastName, lastNameAmharic, gender,
+          dateOfBirth, personalEmail, personalPhone, emergencyContactName,
+          emergencyContactNameAmharic, emergencyContactPhone, profilePicture
         ) VALUES (UUID_TO_BIN(?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
       await connection.query(personalQuery, [
         employeeUUID,
-        personal.first_name,
-        personal.first_name_amharic || null,
-        personal.middle_name || null,
-        personal.middle_name_amharic || null,
-        personal.last_name,
-        personal.last_name_amharic || null,
+        personal.firstName,
+        personal.firstNameAmharic || null,
+        personal.middleName || null,
+        personal.middleNameAmharic || null,
+        personal.lastName,
+        personal.lastNameAmharic || null,
         personal.gender || null,
-        personal.date_of_birth || null,
-        personal.personal_email || null,
-        personal.personal_phone || null,
-        personal.emergency_contact_name || null,
-        personal.emergency_contact_name_amharic || null,
-        personal.emergency_contact_phone || null,
-        personal.profile_picture || null,
+        personal.dateOfBirth || null,
+        personal.personalEmail || null,
+        personal.personalPhone || null,
+        personal.emergencyContactName || null,
+        personal.emergencyContactNameAmharic || null,
+        personal.emergencyContactPhone || null,
+        personal.profilePicture || null,
       ]);
 
-      //Group one 3. Insert into employee_employment if provided
+      //Group one 3. Insert into employeeEmployment if provided
       if (employment) {
         const employmentQuery = `
-        INSERT INTO employee_employment (
-          employee_id, official_email, official_phone, salary, qualification, qualification_amharic
+        INSERT INTO employeeEmployment (
+          employeeId, officialEmail, officialPhone, salary, qualification, qualificationAmharic
         ) VALUES (UUID_TO_BIN(?), ?, ?, ?, ?, ?)
       `;
 
         await connection.query(employmentQuery, [
           employeeUUID,
-          employment.official_email || null,
-          employment.official_phone || null,
+          employment.officialEmail || null,
+          employment.officialPhone || null,
           employment.salary || null,
           employment.qualification || null,
-          employment.qualification_amharic || null,
+          employment.qualificationAmharic || null,
         ]);
       }
 
-      //Group one 4. Insert type-specific data based on employee_type
-      if (employeeData.employee_type === "academic" && academic) {
+      //Group one 4. Insert type-specific data based on employeeType
+      if (employeeData.employeeType === "ACADEMIC" && academic) {
         const academicQuery = `
-          INSERT INTO employee_academic (
-            employee_id, college_id, academic_rank, academic_rank_amharic,
-            academic_status, field_of_specialization, field_of_specialization_amharic
+          INSERT INTO employeeAcademic (
+            employeeId, collegeId, academicRank, academicRankAmharic,
+            academicStatus, fieldOfSpecialization, fieldOfSpecializationAmharic
           ) VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), ?, ?, ?, ?, ?)
         `;
         await connection.query(academicQuery, [
           employeeUUID,
-          academic.college_id || null,
-          academic.academic_rank || null,
-          academic.academic_rank_amharic || null,
-          academic.academic_status || "active",
-          academic.field_of_specialization || null,
-          academic.field_of_specialization_amharic || null,
+          academic.collegeId || null,
+          academic.academicRank || null,
+          academic.academicRankAmharic || null,
+          academic.academicStatus || "ACTIVE",
+          academic.fieldOfSpecialization || null,
+          academic.fieldOfSpecializationAmharic || null,
         ]);
       }
       // Removed HR-specific logic
-      if (employeeData.employee_type === "outsource" && outsource) {
+      if (employeeData.employeeType === "outsource" && outsource) {
         const outsourceQuery = `
-          INSERT INTO employee_outsource (
-            employee_id, outsourcing_company_id, contract_start_date, contract_end_date, service_type
+          INSERT INTO employeeOutsource (
+            employeeId, outsourcingCompanyId, contractStartDate, contractEndDate, serviceType
           ) VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), ?, ?, ?)
         `;
         await connection.query(outsourceQuery, [
           employeeUUID,
-          outsource.outsourcing_company_id,
-          outsource.contract_start_date || null,
-          outsource.contract_end_date || null,
-          outsource.service_type,
+          outsource.outsourcingCompanyId,
+          outsource.contractStartDate || null,
+          outsource.contractEndDate || null,
+          outsource.serviceType,
         ]);
       }
 
@@ -195,17 +195,17 @@ export class EmployeeService extends CrudService {
       const query = `
         SELECT 
           BIN_TO_UUID(id) as id,
-          employee_code,
-          employee_type,
-          BIN_TO_UUID(company_id) as company_id,
-          BIN_TO_UUID(department_id) as department_id,
-          BIN_TO_UUID(manager_id) as manager_id,
-          hire_date,
-          employment_type,
-          employment_status,
-          termination_date,
-          created_at,
-          updated_at
+          employeeCode,
+          employeeType,
+          BIN_TO_UUID(companyId) as companyId,
+          BIN_TO_UUID(departmentId) as departmentId,
+          BIN_TO_UUID(managerId) as managerId,
+          hireDate,
+          employmentType,
+          employmentStatus,
+          terminationDate,
+          createdAt,
+          updatedAt
         FROM employee 
         WHERE id = UUID_TO_BIN(?)
       `;
@@ -225,49 +225,49 @@ export class EmployeeService extends CrudService {
       const query = `
         SELECT 
           BIN_TO_UUID(e.id) as id,
-          e.employee_code,
-          e.employee_type,
-          BIN_TO_UUID(e.company_id) as company_id,
-          BIN_TO_UUID(e.department_id) as department_id,
-          BIN_TO_UUID(e.manager_id) as manager_id,
-          e.hire_date,
-          e.employment_type,
-          e.employment_status,
-          e.termination_date,
-          e.created_at,
-          e.updated_at,
-          ep.first_name,
-          ep.first_name_amharic,
-          ep.middle_name,
-          ep.middle_name_amharic,
-          ep.last_name,
-          ep.last_name_amharic,
+          e.employeeCode,
+          e.employeeType,
+          BIN_TO_UUID(e.companyId) as companyId,
+          BIN_TO_UUID(e.departmentId) as departmentId,
+          BIN_TO_UUID(e.managerId) as managerId,
+          e.hireDate,
+          e.employmentType,
+          e.employmentStatus,
+          e.terminationDate,
+          e.createdAt,
+          e.updatedAt,
+          ep.firstName,
+          ep.firstNameAmharic,
+          ep.middleName,
+          ep.middleNameAmharic,
+          ep.lastName,
+          ep.lastNameAmharic,
           ep.gender,
-          ep.date_of_birth,
-          ep.personal_email,
-          ep.personal_phone,
-          ep.emergency_contact_name,
-          ep.emergency_contact_name_amharic,
-          ep.emergency_contact_phone,
-          ep.profile_picture,
-          ee.official_email,
-          ee.official_phone,
+          ep.dateOfBirth,
+          ep.personalEmail,
+          ep.personalPhone,
+          ep.emergencyContactName,
+          ep.emergencyContactNameAmharic,
+          ep.emergencyContactPhone,
+          ep.profilePicture,
+          ee.officialEmail,
+          ee.officialPhone,
           ee.salary,
           ee.qualification,
-          ee.qualification_amharic,
-          c.company_name,
-          c.company_name_amharic,
-          d.department_name,
-          d.department_name_amharic,
-          des.title as designation_title,
-          des.title_amharic as designation_title_amharic,
-          des.grade_level as designation_grade_level
+          ee.qualificationAmharic,
+          c.companyName,
+          c.companyNameAmharic,
+          d.departmentName,
+          d.departmentNameAmharic,
+          des.title as designationTitle,
+          des.titleAmharic as designationTitleAmharic,
+          des.gradeLevel as designationGradeLevel
         FROM employee e
-        LEFT JOIN employee_personal ep ON e.id = ep.employee_id
-        LEFT JOIN employee_employment ee ON e.id = ee.employee_id
-        LEFT JOIN company c ON e.company_id = c.id
-        LEFT JOIN department d ON e.department_id = d.id
-        LEFT JOIN designations des ON des.employee_id = e.id
+        LEFT JOIN employeePersonal ep ON e.id = ep.employeeId
+        LEFT JOIN employeeEmployment ee ON e.id = ee.employeeId
+        LEFT JOIN company c ON e.companyId = c.id
+        LEFT JOIN department d ON e.departmentId = d.id
+        LEFT JOIN designations des ON des.employeeId = e.id
         WHERE e.id = UUID_TO_BIN(?)
       `;
 
@@ -294,13 +294,13 @@ export class EmployeeService extends CrudService {
       fileUploadService.validateFile(file);
 
       // Generate file URL
-      const fileUrl = fileUploadService.generateFileUrl(file.filename);
+      const fileUrl = fileUploadService.generateFileUrl(file);
 
-      // Update employee_personal table
+      // Update employeePersonal table
       const updateQuery = `
-        UPDATE employee_personal 
-        SET profile_picture = ? 
-        WHERE employee_id = UUID_TO_BIN(?)
+        UPDATE employeePersonal 
+        SET profilePicture = ? 
+        WHERE employeeId = UUID_TO_BIN(?)
       `;
 
       const [result] = await connection.query(updateQuery, [
@@ -315,7 +315,7 @@ export class EmployeeService extends CrudService {
       await connection.commit();
 
       return {
-        profile_picture: fileUrl,
+        profilePicture: fileUrl,
         message: "Profile picture uploaded successfully",
       };
     } catch (error) {
@@ -341,7 +341,7 @@ export class EmployeeService extends CrudService {
 
       // Get current profile picture
       const [current] = await connection.query(
-        "SELECT profile_picture FROM employee_personal WHERE employee_id = UUID_TO_BIN(?)",
+        "SELECT profilePicture FROM employeePersonal WHERE employeeId = UUID_TO_BIN(?)",
         [employeeId]
       );
 
@@ -349,11 +349,11 @@ export class EmployeeService extends CrudService {
         throw new Error("Employee not found");
       }
 
-      const currentPicture = current[0].profile_picture;
+      const currentPicture = current[0].profilePicture;
 
       // Update to remove profile picture
       const [result] = await connection.query(
-        "UPDATE employee_personal SET profile_picture = NULL WHERE employee_id = UUID_TO_BIN(?)",
+        "UPDATE employeePersonal SET profilePicture = NULL WHERE employeeId = UUID_TO_BIN(?)",
         [employeeId]
       );
 
@@ -363,8 +363,7 @@ export class EmployeeService extends CrudService {
 
       // Delete file from storage
       if (currentPicture) {
-        const filename = currentPicture.split("/").pop();
-        await fileUploadService.deleteFile(filename);
+        await fileUploadService.deleteFile(currentPicture);
       }
 
       await connection.commit();
@@ -402,7 +401,7 @@ export class EmployeeService extends CrudService {
         if (employeeFields.length > 0) {
           const employeeQuery = `
           UPDATE employee 
-          SET ${employeeFields.join(", ")}, updated_at = NOW()
+          SET ${employeeFields.join(", ")}, updatedAt = NOW()
           WHERE id = UUID_TO_BIN(?)
         `;
           await connection.query(employeeQuery, [
@@ -412,7 +411,7 @@ export class EmployeeService extends CrudService {
         }
       }
 
-      //Group one 2. Update employee_personal table
+      //Group one 2. Update employeePersonal table
       if (personal && Object.keys(personal).length > 0) {
         const personalFields = [];
         const personalValues = [];
@@ -422,9 +421,9 @@ export class EmployeeService extends CrudService {
         });
         if (personalFields.length > 0) {
           const personalQuery = `
-          UPDATE employee_personal 
+          UPDATE employeePersonal 
           SET ${personalFields.join(", ")}
-          WHERE employee_id = UUID_TO_BIN(?)
+          WHERE employeeId = UUID_TO_BIN(?)
         `;
           await connection.query(personalQuery, [
             ...personalValues,
@@ -432,7 +431,7 @@ export class EmployeeService extends CrudService {
           ]);
         }
       }
-      //Group one 3. Update employee_employment table
+      //Group one 3. Update employeeEmployment table
       if (employment && Object.keys(employment).length > 0) {
         const employmentFields = [];
         const employmentValues = [];
@@ -442,14 +441,14 @@ export class EmployeeService extends CrudService {
         });
         if (employmentFields.length > 0) {
           const [existing] = await connection.query(
-            "SELECT * FROM employee_employment WHERE employee_id = UUID_TO_BIN(?)",
+            "SELECT * FROM employeeEmployment WHERE employeeId = UUID_TO_BIN(?)",
             [employeeId]
           );
           if (existing.length > 0) {
             const employmentQuery = `
-            UPDATE employee_employment 
+            UPDATE employeeEmployment 
             SET ${employmentFields.join(", ")}
-            WHERE employee_id = UUID_TO_BIN(?)
+            WHERE employeeId = UUID_TO_BIN(?)
           `;
             await connection.query(employmentQuery, [
               ...employmentValues,
@@ -457,7 +456,7 @@ export class EmployeeService extends CrudService {
             ]);
           } else {
             const employmentQuery = `
-            INSERT INTO employee_employment (employee_id, ${Object.keys(
+            INSERT INTO employeeEmployment (employeeId, ${Object.keys(
               employment
             ).join(", ")})
             VALUES (UUID_TO_BIN(?), ${Object.keys(employment)
@@ -471,16 +470,16 @@ export class EmployeeService extends CrudService {
           }
         }
       }
-      //Group one 4. Update type-specific tables based on employee_type
+      //Group one 4. Update type-specific tables based on employeeType
       const [currentEmployee] = await connection.query(
-        "SELECT employee_type FROM employee WHERE id = UUID_TO_BIN(?)",
+        "SELECT employeeType FROM employee WHERE id = UUID_TO_BIN(?)",
         [employeeId]
       );
-      const currentType = currentEmployee[0]?.employee_type;
+      const currentType = currentEmployee[0]?.employeeType;
       if (
         academic &&
         Object.keys(academic).length > 0 &&
-        currentType === "academic"
+        currentType === "ACADEMIC"
       ) {
         const academicFields = [];
         const academicValues = [];
@@ -495,14 +494,14 @@ export class EmployeeService extends CrudService {
         });
         if (academicFields.length > 0) {
           const [existing] = await connection.query(
-            "SELECT * FROM employee_academic WHERE employee_id = UUID_TO_BIN(?)",
+            "SELECT * FROM employeeAcademic WHERE employeeId = UUID_TO_BIN(?)",
             [employeeId]
           );
           if (existing.length > 0) {
             const academicQuery = `
-            UPDATE employee_academic 
+            UPDATE employeeAcademic 
             SET ${academicFields.join(", ")}
-            WHERE employee_id = UUID_TO_BIN(?)
+            WHERE employeeId = UUID_TO_BIN(?)
           `;
             await connection.query(academicQuery, [
               ...academicValues,
@@ -510,7 +509,7 @@ export class EmployeeService extends CrudService {
             ]);
           } else {
             const academicQuery = `
-            INSERT INTO employee_academic (employee_id, ${Object.keys(
+            INSERT INTO employeeAcademic (employeeId, ${Object.keys(
               academic
             ).join(", ")})
             VALUES (UUID_TO_BIN(?), ${Object.keys(academic)
@@ -530,7 +529,7 @@ export class EmployeeService extends CrudService {
         currentType === "outsource"
       ) {
         const [existing] = await connection.query(
-          "SELECT * FROM employee_outsource WHERE employee_id = UUID_TO_BIN(?)",
+          "SELECT * FROM employeeOutsource WHERE employeeId = UUID_TO_BIN(?)",
           [employeeId]
         );
         if (existing.length > 0) {
@@ -546,9 +545,9 @@ export class EmployeeService extends CrudService {
             }
           });
           const outsourceQuery = `
-            UPDATE employee_outsource 
+            UPDATE employeeOutsource 
             SET ${outsourceFields.join(", ")}
-            WHERE employee_id = UUID_TO_BIN(?)
+            WHERE employeeId = UUID_TO_BIN(?)
           `;
           await connection.query(outsourceQuery, [
             ...outsourceValues,
@@ -556,7 +555,7 @@ export class EmployeeService extends CrudService {
           ]);
         } else {
           const outsourceQuery = `
-            INSERT INTO employee_outsource (employee_id, ${Object.keys(outsource).join(", ")})
+            INSERT INTO employeeOutsource (employeeId, ${Object.keys(outsource).join(", ")})
             VALUES (UUID_TO_BIN(?), ${Object.keys(outsource).map(() => "?").join(", ")})
           `;
           await connection.query(outsourceQuery, [
@@ -580,97 +579,97 @@ export class EmployeeService extends CrudService {
       page = 1,
       limit = 10,
       search = "",
-      company_id,
-      department_id,
-      employee_type,
-      employment_status,
-      employment_type,
+      companyId,
+      departmentId,
+      employeeType,
+      employmentStatus,
+      employmentType,
     } = filters;
     const offset = (page - 1) * limit;
-    const defaultIncludes = ["personal", "company", "department"];
+    const defaultIncludes = ["personal", "company", "DEPARTMENT"];
     const allIncludes = [...new Set([...defaultIncludes, ...include])];
     let query = `
       SELECT 
         BIN_TO_UUID(e.id) as id,
-        e.employee_code,
-        e.employment_type,
-        e.employment_status,
-        e.hire_date
+        e.employeeCode,
+        e.employmentType,
+        e.employmentStatus,
+        e.hireDate
     `;
     let countQuery = `SELECT COUNT(*) as total FROM employee e`;
     const params = [];
     const countParams = [];
     if (allIncludes.includes("personal")) {
       query += `,
-        ep.first_name,
-        ep.last_name,
-        ep.profile_picture
+        ep.firstName,
+        ep.lastName,
+        ep.profilePicture
       `;
     }
     if (allIncludes.includes("company")) {
       query += `,
-        c.company_name
+        c.companyName
       `;
     }
-    if (allIncludes.includes("department")) {
+    if (allIncludes.includes("DEPARTMENT")) {
       query += `,
-        d.department_name
+        d.departmentName
       `;
     }
     query += ` FROM employee e`;
     if (allIncludes.includes("personal")) {
-      query += ` LEFT JOIN employee_personal ep ON e.id = ep.employee_id`;
-      countQuery += ` LEFT JOIN employee_personal ep ON e.id = ep.employee_id`;
+      query += ` LEFT JOIN employeePersonal ep ON e.id = ep.employeeId`;
+      countQuery += ` LEFT JOIN employeePersonal ep ON e.id = ep.employeeId`;
     }
     if (allIncludes.includes("company")) {
-      query += ` LEFT JOIN company c ON e.company_id = c.id`;
-      countQuery += ` LEFT JOIN company c ON e.company_id = c.id`;
+      query += ` LEFT JOIN company c ON e.companyId = c.id`;
+      countQuery += ` LEFT JOIN company c ON e.companyId = c.id`;
     }
-    if (allIncludes.includes("department")) {
-      query += ` LEFT JOIN department d ON e.department_id = d.id`;
-      countQuery += ` LEFT JOIN department d ON e.department_id = d.id`;
+    if (allIncludes.includes("DEPARTMENT")) {
+      query += ` LEFT JOIN department d ON e.departmentId = d.id`;
+      countQuery += ` LEFT JOIN department d ON e.departmentId = d.id`;
     }
     const whereConditions = [];
 
     if (search) {
       whereConditions.push(`(
-        e.employee_code LIKE ? OR 
-        ep.first_name LIKE ? OR 
-        ep.last_name LIKE ? OR
-        ep.personal_email LIKE ?
+        e.employeeCode LIKE ? OR 
+        ep.firstName LIKE ? OR 
+        ep.lastName LIKE ? OR
+        ep.personalEmail LIKE ?
       )`);
       const searchTerm = `%${search}%`;
       params.push(searchTerm, searchTerm, searchTerm, searchTerm);
       countParams.push(searchTerm, searchTerm, searchTerm, searchTerm);
     }
-    if (company_id) {
-      whereConditions.push(`e.company_id = UUID_TO_BIN(?)`);
-      params.push(company_id);
-      countParams.push(company_id);
+    if (companyId) {
+      whereConditions.push(`e.companyId = UUID_TO_BIN(?)`);
+      params.push(companyId);
+      countParams.push(companyId);
     }
 
-    if (department_id) {
-      whereConditions.push(`e.department_id = UUID_TO_BIN(?)`);
-      params.push(department_id);
-      countParams.push(department_id);
+    if (departmentId) {
+      whereConditions.push(`e.departmentId = UUID_TO_BIN(?)`);
+      params.push(departmentId);
+      countParams.push(departmentId);
     }
 
-    if (employee_type) {
-      whereConditions.push(`e.employee_type = ?`);
-      params.push(employee_type);
-      countParams.push(employee_type);
+    if (employeeType) {
+      whereConditions.push(`e.employeeType = ?`);
+      params.push(employeeType);
+      countParams.push(employeeType);
     }
 
-    if (employment_status) {
-      whereConditions.push(`e.employment_status = ?`);
-      params.push(employment_status);
-      countParams.push(employment_status);
+    if (employmentStatus) {
+      whereConditions.push(`e.employmentStatus = ?`);
+      params.push(employmentStatus);
+      countParams.push(employmentStatus);
     }
 
-    if (employment_type) {
-      whereConditions.push(`e.employment_type = ?`);
-      params.push(employment_type);
-      countParams.push(employment_type);
+    if (employmentType) {
+      whereConditions.push(`e.employmentType = ?`);
+      params.push(employmentType);
+      countParams.push(employmentType);
     }
 
     // Add WHERE clause
@@ -681,7 +680,7 @@ export class EmployeeService extends CrudService {
     }
 
     // Add sorting and pagination
-    query += ` ORDER BY e.created_at DESC LIMIT ? OFFSET ?`;
+    query += ` ORDER BY e.createdAt DESC LIMIT ? OFFSET ?`;
     params.push(parseInt(limit), offset);
 
     const [employees] = await pool.query(query, params);
@@ -704,17 +703,17 @@ export class EmployeeService extends CrudService {
       const query = `
         SELECT 
           BIN_TO_UUID(e.id) as id,
-          e.employee_code,
-          e.employee_category,
-          e.employee_type,
-          e.employment_type,
-          e.employment_status,
-          ep.first_name,
-          ep.last_name,
-          ep.profile_picture
+          e.employeeCode,
+          e.employeeCategory,
+          e.employeeType,
+          e.employmentType,
+          e.employmentStatus,
+          ep.firstName,
+          ep.lastName,
+          ep.profilePicture
         FROM employee e
-        LEFT JOIN employee_personal ep ON e.id = ep.employee_id
-        WHERE e.employee_category = ?
+        LEFT JOIN employeePersonal ep ON e.id = ep.employeeId
+        WHERE e.employeeCategory = ?
       `;
 
       const [rows] = await pool.query(query, [category]);
@@ -726,7 +725,7 @@ export class EmployeeService extends CrudService {
 
   // Update employee category
   async updateEmployeeCategory(employeeId, newCategory) {
-    const validCategories = ["hr_officer", "academic", "outsource"];
+    const validCategories = ["HROFFICER", "ACADEMIC", "outsource"];
 
     if (!validCategories.includes(newCategory)) {
       throw new Error(
@@ -738,7 +737,7 @@ export class EmployeeService extends CrudService {
 
     const query = `
       UPDATE employee 
-      SET employee_category = ?, updated_at = NOW() 
+      SET employeeCategory = ?, updatedAt = NOW() 
       WHERE id = UUID_TO_BIN(?)
     `;
 
@@ -750,7 +749,7 @@ export class EmployeeService extends CrudService {
 
     return {
       message: "Employee category updated successfully",
-      employee_category: newCategory,
+      employeeCategory: newCategory,
     };
   }
 
@@ -777,29 +776,29 @@ export class EmployeeService extends CrudService {
       await connection.beginTransaction();
 
       const query = `
-      INSERT INTO employee_education (
-        employee_id, institution_name, institution_name_amharic,
-        qualification, qualification_amharic, field_of_study, field_of_study_amharic,
-        start_date, end_date, graduation_date, grade, description, description_amharic,
-        document_id
+      INSERT INTO employeeEducation (
+        employeeId, institutionName, institutionNameAmharic,
+        qualification, qualificationAmharic, fieldOfStudy, fieldOfStudyAmharic,
+        startDate, endDate, graduationDate, grade, description, descriptionAmharic,
+        documentId
       ) VALUES (UUID_TO_BIN(?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, UUID_TO_BIN(?))
     `;
 
       const [result] = await connection.query(query, [
         employeeId,
-        educationData.institution_name,
-        educationData.institution_name_amharic || null,
+        educationData.institutionName,
+        educationData.institutionNameAmharic || null,
         educationData.qualification,
-        educationData.qualification_amharic || null,
-        educationData.field_of_study || null,
-        educationData.field_of_study_amharic || null,
-        educationData.start_date,
-        educationData.end_date || null,
-        educationData.graduation_date || null,
+        educationData.qualificationAmharic || null,
+        educationData.fieldOfStudy || null,
+        educationData.fieldOfStudyAmharic || null,
+        educationData.startDate,
+        educationData.endDate || null,
+        educationData.graduationDate || null,
         educationData.grade || null,
         educationData.description || null,
-        educationData.description_amharic || null,
-        educationData.document_id || null,
+        educationData.descriptionAmharic || null,
+        educationData.documentId || null,
       ]);
 
       await connection.commit();
@@ -821,26 +820,26 @@ export class EmployeeService extends CrudService {
       const query = `
       SELECT 
         BIN_TO_UUID(id) as id,
-        BIN_TO_UUID(employee_id) as employee_id,
-        institution_name,
-        institution_name_amharic,
+        BIN_TO_UUID(employeeId) as employeeId,
+        institutionName,
+        institutionNameAmharic,
         qualification,
-        qualification_amharic,
-        field_of_study,
-        field_of_study_amharic,
-        start_date,
-        end_date,
-        graduation_date,
+        qualificationAmharic,
+        fieldOfStudy,
+        fieldOfStudyAmharic,
+        startDate,
+        endDate,
+        graduationDate,
         grade,
         description,
-        description_amharic,
-        BIN_TO_UUID(document_id) as document_id,
-        is_verified,
-        created_at,
-        updated_at
-      FROM employee_education 
-      WHERE employee_id = UUID_TO_BIN(?)
-      ORDER BY start_date DESC
+        descriptionAmharic,
+        BIN_TO_UUID(documentId) as documentId,
+        isVerified,
+        createdAt,
+        updatedAt
+      FROM employeeEducation 
+      WHERE employeeId = UUID_TO_BIN(?)
+      ORDER BY startDate DESC
     `;
 
       const [education] = await pool.query(query, [employeeId]);
@@ -879,27 +878,27 @@ export class EmployeeService extends CrudService {
         for (const doc of documents) {
           // Handle document creation - you might need to adjust this based on your file handling
           const documentQuery = `
-          INSERT INTO employee_documents (
-            employee_id, document_type, document_name, document_name_amharic,
-            file_name, file_path, file_size, mime_type, issue_date, expiry_date,
-            issuing_authority, description, description_amharic
+          INSERT INTO employeeDocuments (
+            employeeId, documentType, documentName, documentNameAmharic,
+            fileName, filePath, fileSize, mimeType, issueDate, expiryDate,
+            issuingAuthority, description, descriptionAmharic
           ) VALUES (UUID_TO_BIN(?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
 
           await connection.query(documentQuery, [
             employeeUUID,
-            doc.document_type,
-            doc.document_name,
-            doc.document_name_amharic || null,
-            doc.file_name,
-            doc.file_path,
-            doc.file_size || null,
-            doc.mime_type || null,
-            doc.issue_date || null,
-            doc.expiry_date || null,
-            doc.issuing_authority || null,
+            doc.documentType,
+            doc.documentName,
+            doc.documentNameAmharic || null,
+            doc.fileName,
+            doc.filePath,
+            doc.fileSize || null,
+            doc.mimeType || null,
+            doc.issueDate || null,
+            doc.expiryDate || null,
+            doc.issuingAuthority || null,
             doc.description || null,
-            doc.description_amharic || null,
+            doc.descriptionAmharic || null,
           ]);
         }
       }
@@ -908,27 +907,27 @@ export class EmployeeService extends CrudService {
       if (education && education.length > 0) {
         for (const edu of education) {
           await connection.query(
-            `INSERT INTO employee_education (
-            employee_id, institution_name, institution_name_amharic,
-            qualification, qualification_amharic, field_of_study, field_of_study_amharic,
-            start_date, end_date, graduation_date, grade, description, description_amharic,
-            document_id
+            `INSERT INTO employeeEducation (
+            employeeId, institutionName, institutionNameAmharic,
+            qualification, qualificationAmharic, fieldOfStudy, fieldOfStudyAmharic,
+            startDate, endDate, graduationDate, grade, description, descriptionAmharic,
+            documentId
           ) VALUES (UUID_TO_BIN(?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, UUID_TO_BIN(?))`,
             [
               employeeUUID,
-              edu.institution_name,
-              edu.institution_name_amharic || null,
+              edu.institutionName,
+              edu.institutionNameAmharic || null,
               edu.qualification,
-              edu.qualification_amharic || null,
-              edu.field_of_study || null,
-              edu.field_of_study_amharic || null,
-              edu.start_date,
-              edu.end_date || null,
-              edu.graduation_date || null,
+              edu.qualificationAmharic || null,
+              edu.fieldOfStudy || null,
+              edu.fieldOfStudyAmharic || null,
+              edu.startDate,
+              edu.endDate || null,
+              edu.graduationDate || null,
               edu.grade || null,
               edu.description || null,
-              edu.description_amharic || null,
-              edu.document_id || null,
+              edu.descriptionAmharic || null,
+              edu.documentId || null,
             ]
           );
         }
@@ -939,7 +938,7 @@ export class EmployeeService extends CrudService {
       // Return employee with all details
       return await this.getEmployeeWithDetails(employeeUUID, [
         "documents",
-        "education",
+        "EDUCATION",
       ]);
     } catch (error) {
       await connection.rollback();

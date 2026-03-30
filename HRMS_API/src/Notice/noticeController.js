@@ -4,22 +4,22 @@ import pool from "../../config/database.js";
 const mapNoticeRecord = (record) => ({
   id: record.id,
   title: record.title,
-  titleAmharic: record.title_amharic,
+  titleAmharic: record.titleAmharic,
   content: record.content,
-  contentAmharic: record.content_amharic,
-  noticeType: record.notice_type,
-  targetAudience: record.target_audience,
-  targetDepartmentId: record.target_department_id,
-  targetDepartmentName: record.target_department_name,
-  targetEmployeeId: record.target_employee_id,
-  targetEmployeeName: record.target_employee_name,
-  publishDate: record.publish_date,
-  expiryDate: record.expiry_date,
-  isPublished: Boolean(record.is_published),
-  createdBy: record.created_by,
-  createdByUsername: record.created_by_username,
-  createdAt: record.created_at,
-  updatedAt: record.updated_at,
+  contentAmharic: record.contentAmharic,
+  noticeType: record.noticeType,
+  targetAudience: record.targetAudience,
+  targetDepartmentId: record.targetDepartmentId,
+  targetDepartmentName: record.targetDepartmentName,
+  targetEmployeeId: record.targetEmployeeId,
+  targetEmployeeName: record.targetEmployeeName,
+  publishDate: record.publishDate,
+  expiryDate: record.expiryDate,
+  isPublished: Boolean(record.isPublished),
+  createdBy: record.createdBy,
+  createdByUsername: record.createdByUsername,
+  createdAt: record.createdAt,
+  updatedAt: record.updatedAt,
 });
 
 export const createNotice = async (req, res, next) => {
@@ -28,17 +28,17 @@ export const createNotice = async (req, res, next) => {
     const id = uuidv4();
     const {
       title,
-      title_amharic,
+      titleAmharic,
       content,
-      content_amharic,
-      notice_type = "general",
-      target_audience = "all",
-      target_department_id,
-      target_employee_id,
-      publish_date,
-      expiry_date,
-      is_published = false,
-      created_by,
+      contentAmharic,
+      noticeType = "GENERAL",
+      targetAudience = "ALL",
+      targetDepartmentId,
+      targetEmployeeId,
+      publishDate,
+      expiryDate,
+      isPublished = false,
+      createdBy,
     } = req.body;
 
     await connection.beginTransaction();
@@ -47,17 +47,17 @@ export const createNotice = async (req, res, next) => {
       INSERT INTO notices (
         id,
         title,
-        title_amharic,
+        titleAmharic,
         content,
-        content_amharic,
-        notice_type,
-        target_audience,
-        target_department_id,
-        target_employee_id,
-        publish_date,
-        expiry_date,
-        is_published,
-        created_by
+        contentAmharic,
+        noticeType,
+        targetAudience,
+        targetDepartmentId,
+        targetEmployeeId,
+        publishDate,
+        expiryDate,
+        isPublished,
+        createdBy
       ) VALUES (
         UUID_TO_BIN(?),
         ?,
@@ -66,8 +66,8 @@ export const createNotice = async (req, res, next) => {
         ?,
         ?,
         ?,
-        ${target_department_id ? "UUID_TO_BIN(?)" : "NULL"},
-        ${target_employee_id ? "UUID_TO_BIN(?)" : "NULL"},
+        ${targetDepartmentId ? "UUID_TO_BIN(?)" : "NULL"},
+        ${targetEmployeeId ? "UUID_TO_BIN(?)" : "NULL"},
         ?,
         ?,
         ?,
@@ -78,25 +78,25 @@ export const createNotice = async (req, res, next) => {
     const values = [
       id,
       title,
-      title_amharic || null,
+      titleAmharic || null,
       content,
-      content_amharic || null,
-      notice_type,
-      target_audience,
+      contentAmharic || null,
+      noticeType,
+      targetAudience,
     ];
 
-    if (target_department_id) {
-      values.push(target_department_id);
+    if (targetDepartmentId) {
+      values.push(targetDepartmentId);
     }
 
-    if (target_employee_id) {
-      values.push(target_employee_id);
+    if (targetEmployeeId) {
+      values.push(targetEmployeeId);
     }
 
-    values.push(publish_date);
-    values.push(expiry_date || null);
-    values.push(is_published ? 1 : 0);
-    values.push(created_by);
+    values.push(publishDate);
+    values.push(expiryDate || null);
+    values.push(isPublished ? 1 : 0);
+    values.push(createdBy);
 
     await connection.execute(insertQuery, values);
     await connection.commit();
@@ -117,45 +117,45 @@ export const createNotice = async (req, res, next) => {
 export const listNotices = async (req, res, next) => {
   try {
     const {
-      notice_type,
-      target_audience,
-      department_id,
-      employee_id,
-      is_published,
-      active_only,
+      noticeType,
+      targetAudience,
+      departmentId,
+      employeeId,
+      isPublished,
+      activeOnly,
     } = req.query;
 
     const conditions = [];
     const params = [];
 
-    if (notice_type) {
-      conditions.push("n.notice_type = ?");
-      params.push(notice_type);
+    if (noticeType) {
+      conditions.push("n.noticeType = ?");
+      params.push(noticeType);
     }
 
-    if (target_audience) {
-      conditions.push("n.target_audience = ?");
-      params.push(target_audience);
+    if (targetAudience) {
+      conditions.push("n.targetAudience = ?");
+      params.push(targetAudience);
     }
 
-    if (typeof is_published === "boolean") {
-      conditions.push("n.is_published = ?");
-      params.push(is_published ? 1 : 0);
+    if (typeof isPublished === "boolean") {
+      conditions.push("n.isPublished = ?");
+      params.push(isPublished ? 1 : 0);
     }
 
-    if (department_id) {
-      conditions.push("n.target_department_id = UUID_TO_BIN(?)");
-      params.push(department_id);
+    if (departmentId) {
+      conditions.push("n.targetDepartmentId = UUID_TO_BIN(?)");
+      params.push(departmentId);
     }
 
-    if (employee_id) {
-      conditions.push("n.target_employee_id = UUID_TO_BIN(?)");
-      params.push(employee_id);
+    if (employeeId) {
+      conditions.push("n.targetEmployeeId = UUID_TO_BIN(?)");
+      params.push(employeeId);
     }
 
-    if (active_only) {
+    if (activeOnly) {
       conditions.push(
-        "(n.is_published = TRUE AND n.publish_date <= CURDATE() AND (n.expiry_date IS NULL OR n.expiry_date >= CURDATE()))"
+        "(n.isPublished = TRUE AND n.publishDate <= CURDATE() AND (n.expiryDate IS NULL OR n.expiryDate >= CURDATE()))"
       );
     }
 
@@ -165,28 +165,28 @@ export const listNotices = async (req, res, next) => {
       SELECT
         BIN_TO_UUID(n.id) AS id,
         n.title,
-        n.title_amharic,
+        n.titleAmharic,
         n.content,
-        n.content_amharic,
-        n.notice_type,
-        n.target_audience,
-        BIN_TO_UUID(n.target_department_id) AS target_department_id,
-        BIN_TO_UUID(n.target_employee_id) AS target_employee_id,
-        n.publish_date,
-        n.expiry_date,
-        n.is_published,
-        BIN_TO_UUID(n.created_by) AS created_by,
-        n.created_at,
-        n.updated_at,
-        d.department_name AS target_department_name,
-        CONCAT_WS(' ', ep.first_name, ep.middle_name, ep.last_name) AS target_employee_name,
-        u.username AS created_by_username
+        n.contentAmharic,
+        n.noticeType,
+        n.targetAudience,
+        BIN_TO_UUID(n.targetDepartmentId) AS targetDepartmentId,
+        BIN_TO_UUID(n.targetEmployeeId) AS targetEmployeeId,
+        n.publishDate,
+        n.expiryDate,
+        n.isPublished,
+        BIN_TO_UUID(n.createdBy) AS createdBy,
+        n.createdAt,
+        n.updatedAt,
+        d.departmentName AS targetDepartmentName,
+        CONCAT_WS(' ', ep.firstName, ep.middleName, ep.lastName) AS targetEmployeeName,
+        u.username AS createdByUsername
       FROM notices n
-      LEFT JOIN department d ON n.target_department_id = d.id
-      LEFT JOIN employee_personal ep ON n.target_employee_id = ep.employee_id
-      LEFT JOIN users u ON n.created_by = u.id
+      LEFT JOIN department d ON n.targetDepartmentId = d.id
+      LEFT JOIN employeePersonal ep ON n.targetEmployeeId = ep.employeeId
+      LEFT JOIN users u ON n.createdBy = u.id
       ${whereClause}
-      ORDER BY n.publish_date DESC, n.created_at DESC
+      ORDER BY n.publishDate DESC, n.createdAt DESC
     `;
 
     const [rows] = await pool.query(query, params);
@@ -207,26 +207,26 @@ export const getNoticeById = async (req, res, next) => {
       SELECT
         BIN_TO_UUID(n.id) AS id,
         n.title,
-        n.title_amharic,
+        n.titleAmharic,
         n.content,
-        n.content_amharic,
-        n.notice_type,
-        n.target_audience,
-        BIN_TO_UUID(n.target_department_id) AS target_department_id,
-        BIN_TO_UUID(n.target_employee_id) AS target_employee_id,
-        n.publish_date,
-        n.expiry_date,
-        n.is_published,
-        BIN_TO_UUID(n.created_by) AS created_by,
-        n.created_at,
-        n.updated_at,
-        d.department_name AS target_department_name,
-        CONCAT_WS(' ', ep.first_name, ep.middle_name, ep.last_name) AS target_employee_name,
-        u.username AS created_by_username
+        n.contentAmharic,
+        n.noticeType,
+        n.targetAudience,
+        BIN_TO_UUID(n.targetDepartmentId) AS targetDepartmentId,
+        BIN_TO_UUID(n.targetEmployeeId) AS targetEmployeeId,
+        n.publishDate,
+        n.expiryDate,
+        n.isPublished,
+        BIN_TO_UUID(n.createdBy) AS createdBy,
+        n.createdAt,
+        n.updatedAt,
+        d.departmentName AS targetDepartmentName,
+        CONCAT_WS(' ', ep.firstName, ep.middleName, ep.lastName) AS targetEmployeeName,
+        u.username AS createdByUsername
       FROM notices n
-      LEFT JOIN department d ON n.target_department_id = d.id
-      LEFT JOIN employee_personal ep ON n.target_employee_id = ep.employee_id
-      LEFT JOIN users u ON n.created_by = u.id
+      LEFT JOIN department d ON n.targetDepartmentId = d.id
+      LEFT JOIN employeePersonal ep ON n.targetEmployeeId = ep.employeeId
+      LEFT JOIN users u ON n.createdBy = u.id
       WHERE n.id = UUID_TO_BIN(?)
     `;
 
@@ -251,16 +251,16 @@ export const updateNotice = async (req, res, next) => {
 
   const allowedFields = [
     "title",
-    "title_amharic",
+    "titleAmharic",
     "content",
-    "content_amharic",
-    "notice_type",
-    "target_audience",
-    "target_department_id",
-    "target_employee_id",
-    "publish_date",
-    "expiry_date",
-    "is_published",
+    "contentAmharic",
+    "noticeType",
+    "targetAudience",
+    "targetDepartmentId",
+    "targetEmployeeId",
+    "publishDate",
+    "expiryDate",
+    "isPublished",
   ];
 
   const setClauses = [];
@@ -271,7 +271,7 @@ export const updateNotice = async (req, res, next) => {
       continue;
     }
 
-    if (key === "target_department_id" || key === "target_employee_id") {
+    if (key === "targetDepartmentId" || key === "targetEmployeeId") {
       if (value) {
         setClauses.push(`${key} = UUID_TO_BIN(?)`);
         values.push(value);
@@ -281,7 +281,7 @@ export const updateNotice = async (req, res, next) => {
       continue;
     }
 
-    if (key === "is_published") {
+    if (key === "isPublished") {
       setClauses.push(`${key} = ?`);
       values.push(value ? 1 : 0);
       continue;
@@ -297,7 +297,7 @@ export const updateNotice = async (req, res, next) => {
 
   const query = `
     UPDATE notices
-    SET ${setClauses.join(", ")}, updated_at = CURRENT_TIMESTAMP
+    SET ${setClauses.join(", ")}, updatedAt = CURRENT_TIMESTAMP
     WHERE id = UUID_TO_BIN(?)
   `;
 
@@ -317,30 +317,30 @@ export const updateNotice = async (req, res, next) => {
 
 export const publishNotice = async (req, res, next) => {
   const { id } = req.params;
-  const { is_published, publish_date, expiry_date } = req.body;
+  const { isPublished, publishDate, expiryDate } = req.body;
 
-  const setClauses = ["is_published = ?"];
-  const values = [is_published ? 1 : 0];
+  const setClauses = ["isPublished = ?"];
+  const values = [isPublished ? 1 : 0];
 
-  if (publish_date) {
-    setClauses.push("publish_date = ?");
-    values.push(publish_date);
-  } else if (is_published) {
-    setClauses.push("publish_date = CURDATE()");
+  if (publishDate) {
+    setClauses.push("publishDate = ?");
+    values.push(publishDate);
+  } else if (isPublished) {
+    setClauses.push("publishDate = CURDATE()");
   }
 
-  if (typeof expiry_date !== "undefined") {
-    if (expiry_date) {
-      setClauses.push("expiry_date = ?");
-      values.push(expiry_date);
+  if (typeof expiryDate !== "undefined") {
+    if (expiryDate) {
+      setClauses.push("expiryDate = ?");
+      values.push(expiryDate);
     } else {
-      setClauses.push("expiry_date = NULL");
+      setClauses.push("expiryDate = NULL");
     }
   }
 
   const query = `
     UPDATE notices
-    SET ${setClauses.join(", ")}, updated_at = CURRENT_TIMESTAMP
+    SET ${setClauses.join(", ")}, updatedAt = CURRENT_TIMESTAMP
     WHERE id = UUID_TO_BIN(?)
   `;
 

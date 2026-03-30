@@ -4,762 +4,752 @@ USE HRMS;
 -- ORGANIZATION STRUCTURE
 CREATE TABLE company (
     id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
-    company_name VARCHAR(255) NOT NULL,
-    company_name_amharic VARCHAR(255),
-    company_address TEXT,
-    company_address_amharic TEXT,
-    company_phone VARCHAR(20) UNIQUE,
-    company_email VARCHAR(150) UNIQUE,
-    company_website VARCHAR(255) NULL,
-    company_logo VARCHAR(255) NULL,
-    company_established_date DATE,
-    company_tin_number VARCHAR(50),
-    status ENUM('active', 'inactive') DEFAULT 'active',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    companyName VARCHAR(100) NOT NULL,
+    companyNameAmharic VARCHAR(100),
+    companyAddress TEXT,
+    companyAddressAmharic TEXT,
+    companyPhone VARCHAR(20) UNIQUE,
+    companyEmail VARCHAR(50) UNIQUE,
+    companyWebsite VARCHAR(100) NULL,
+    companyLogo VARCHAR(255) NULL,
+    companyEstablishedDate DATE,
+    companyTinNumber VARCHAR(50),
+    status ENUM('ACTIVE', 'INACTIVE') DEFAULT 'ACTIVE',
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 -- OUTSOURCING VENDORS
-CREATE TABLE outsourcing_companies (
+CREATE TABLE outsourcingCompanies (
     id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
-    company_id BINARY(16) NOT NULL,
-    company_name VARCHAR(255) NOT NULL,
-    company_name_amharic VARCHAR(255),
-    company_address TEXT,
-    company_address_amharic TEXT,
-    company_phone VARCHAR(20),
-    company_email VARCHAR(150),
-    company_service_type ENUM('security', 'cleaning',  'maintenance', 'other') NOT NULL,
-    company_contract_start_date DATE,
-    company_contract_end_date DATE,
-    company_status ENUM('active', 'inactive', 'suspended') DEFAULT 'active',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    companyId BINARY(16) NOT NULL,
+    companyName VARCHAR(100) NOT NULL,
+    companyNameAmharic VARCHAR(100),
+    companyAddress TEXT,
+    companyAddressAmharic TEXT,
+    companyPhone VARCHAR(20),
+    companyEmail VARCHAR(100),
+    companyServiceType ENUM('SECURITY', 'CLEANING', 'MAINTENANCE', 'OTHER') NOT NULL,
+    companyContractStartDate DATE,
+    companyContractEndDate DATE,
+    companyStatus ENUM('ACTIVE', 'INACTIVE', 'SUSPENDED') DEFAULT 'ACTIVE',
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 -- COLLEGE
 CREATE TABLE college (
     id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
-    company_id BINARY(16) NOT NULL,
-    college_name VARCHAR(255) NOT NULL,
-    college_name_amharic VARCHAR(255),
-    college_description TEXT NULL,
-    college_description_amharic TEXT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    companyId BINARY(16) NOT NULL,
+    collegeName VARCHAR(100) NOT NULL,
+    collegeNameAmharic VARCHAR(100),
+    collegeDescription TEXT NULL,
+    collegeDescriptionAmharic TEXT NULL,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 -- DEPARTMENT WITH TYPE
 CREATE TABLE department (
     id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
-    company_id BINARY(16) NOT NULL,
-    college_id BINARY(16) NULL,
-    parent_department_id BINARY(16) NULL,
-    department_name VARCHAR(255) NOT NULL,
-    department_level INT DEFAULT 1,
-    department_name_amharic VARCHAR(255),
-    department_description TEXT NULL,
-    department_description_amharic TEXT NULL,
-    department_type ENUM('academic','administrative') NOT NULL,
-    manager_id BINARY(16),
-    department_status ENUM('active', 'inactive') DEFAULT 'active',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    companyId BINARY(16) NOT NULL,
+    collegeId BINARY(16) NULL,
+    parentDepartmentId BINARY(16) NULL,
+    departmentName VARCHAR(100) NOT NULL,
+    departmentLevel INT DEFAULT 1,
+    departmentNameAmharic VARCHAR(100),
+    departmentDescription TEXT NULL,
+    departmentDescriptionAmharic TEXT NULL,
+    departmentType ENUM('ACADEMIC', 'ADMINISTRATIVE') NOT NULL,
+    managerId BINARY(16),
+    departmentStatus ENUM('ACTIVE', 'INACTIVE') DEFAULT 'ACTIVE',
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 
--- SINGLE EMPLOYEE TABLE WITH ROLE (designation_id removed)
+-- SINGLE EMPLOYEE TABLE WITH ROLE 
 CREATE TABLE employee (
     id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
-    employee_code VARCHAR(50) UNIQUE NOT NULL,
-    company_id BINARY(16) NOT NULL,
-    employee_type ENUM('academic','administrative','outsource') NOT NULL,
-    employee_role ENUM('HR_MANAGER','DEAN','HEAD','HR_OFFICER','RECRUITER','PAYROLL_OFFICER','EMPLOYEE') DEFAULT 'EMPLOYEE',
-    department_id BINARY(16)  NULL,
-    manager_id BINARY(16),
-    hire_date DATE NOT NULL,
-    employment_type ENUM('full_time', 'part_time', 'contract', 'intern') NOT NULL DEFAULT 'full_time',
-    employment_status ENUM('active', 'on_leave', 'terminated', 'resigned') DEFAULT 'active',
-    termination_date DATE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    employeeCode VARCHAR(50) UNIQUE NOT NULL,
+    companyId BINARY(16) NOT NULL,
+    employeeType ENUM('ACADEMIC', 'ADMINISTRATIVE', 'OUTSOURCE') NOT NULL,
+    employeeRole ENUM('HRMANAGER', 'DEAN', 'HEAD', 'HROFFICER', 'RECRUITER', 'PAYROLLOFFICER', 'EMPLOYEE') DEFAULT 'EMPLOYEE',
+    departmentId BINARY(16)  NULL,
+    managerId BINARY(16),
+    hireDate DATE NOT NULL,
+    employmentType ENUM('FULLTIME', 'PARTTIME', 'CONTRACT', 'INTERN') NOT NULL DEFAULT 'FULLTIME',
+    employmentStatus ENUM('ACTIVE', 'ONLEAVE', 'TERMINATED', 'RESIGNED') DEFAULT 'ACTIVE',
+    terminationDate DATE,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
-CREATE TABLE employee_personal (
+CREATE TABLE employeePersonal (
     id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
-    employee_id BINARY(16) NOT NULL,
-    first_name VARCHAR(100) NOT NULL,
-    first_name_amharic VARCHAR(100),
-    middle_name VARCHAR(100),
-    middle_name_amharic VARCHAR(100),
-    last_name VARCHAR(100) NOT NULL,
-    last_name_amharic VARCHAR(100),
+    employeeId BINARY(16) NOT NULL,
+    firstName VARCHAR(100) NOT NULL,
+    firstNameAmharic VARCHAR(100),
+    middleName VARCHAR(100),
+    middleNameAmharic VARCHAR(100),
+    lastName VARCHAR(100) NOT NULL,
+    lastNameAmharic VARCHAR(100),
     gender VARCHAR(20),
-    date_of_birth DATE,
-    personal_email VARCHAR(150) UNIQUE,
-    personal_phone VARCHAR(20) UNIQUE,
-    emergency_contact_name VARCHAR(150) NULL,
-    emergency_contact_name_amharic VARCHAR(150) NULL,
-    emergency_contact_phone VARCHAR(20) NULL,
-    profile_picture VARCHAR(255) NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    dateOfBirth DATE,
+    personalEmail VARCHAR(100) UNIQUE,
+    personalPhone VARCHAR(20) UNIQUE,
+    emergencyContactName VARCHAR(100) NULL,
+    emergencyContactNameAmharic VARCHAR(100) NULL,
+    emergencyContactPhone VARCHAR(20) NULL,
+    profilePicture VARCHAR(255) NULL,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
-CREATE TABLE employee_employment (
+CREATE TABLE employeeEmployment (
     id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
-    employee_id BINARY(16) NOT NULL,
-    official_email VARCHAR(150),
-    official_phone VARCHAR(20),
+    employeeId BINARY(16) NOT NULL,
+    officialEmail VARCHAR(100),
+    officialPhone VARCHAR(20),
     salary DECIMAL(10,2),
-    qualification VARCHAR(150),
-    qualification_amharic VARCHAR(150),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    qualification VARCHAR(100),
+    qualificationAmharic VARCHAR(100),
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
-CREATE TABLE employee_academic (
+CREATE TABLE employeeAcademic (
     id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
-    employee_id BINARY(16) NOT NULL,
-    college_id BINARY(16),
-    academic_rank VARCHAR(50),
-    academic_rank_amharic VARCHAR(50),
-    academic_status ENUM('active', 'on_leave', 'sabbatical') DEFAULT 'active',
-    field_of_specialization VARCHAR(100),
-    field_of_specialization_amharic VARCHAR(100),
-    FOREIGN KEY (employee_id) REFERENCES employee(id) ON DELETE CASCADE
+    employeeId BINARY(16) NOT NULL,
+    collegeId BINARY(16),
+    academicRank VARCHAR(50),
+    academicRankAmharic VARCHAR(50),
+    academicStatus ENUM('ACTIVE', 'ONLEAVE', 'SABBATICAL') DEFAULT 'ACTIVE',
+    fieldOfSpecialization VARCHAR(100),
+    fieldOfSpecializationAmharic VARCHAR(100),
+    FOREIGN KEY (employeeId) REFERENCES employee(id) ON DELETE CASCADE
 );
 
--- HR-SPECIFIC INFORMATION
-CREATE TABLE employee_hr (
+CREATE TABLE employeeOutsource (
     id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
-    employee_id BINARY(16) NOT NULL,
-    hr_specialization ENUM('recruitment', 'payroll', 'training', 'employee_relations', 'compliance', 'generalist') DEFAULT 'generalist',
-    hr_level ENUM('officer', 'supervisor', 'manager', 'director') DEFAULT 'officer',
-    certifications JSON,
-    FOREIGN KEY (employee_id) REFERENCES employee(id) ON DELETE CASCADE
+    employeeId BINARY(16) NOT NULL,
+    outsourcingCompanyId BINARY(16) NOT NULL,
+    contractStartDate DATE,
+    contractEndDate DATE,
+    serviceType ENUM('SECURITY', 'CLEANING', 'IT', 'CATERING', 'MAINTENANCE', 'OTHER') NOT NULL,
+    FOREIGN KEY (employeeId) REFERENCES employee(id) ON DELETE CASCADE
 );
 
-
-CREATE TABLE employee_outsource (
+-- Create employeeDocuments table for ID documents and other documents
+CREATE TABLE employeeDocuments (
     id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
-    employee_id BINARY(16) NOT NULL,
-    outsourcing_company_id BINARY(16) NOT NULL,
-    contract_start_date DATE,
-    contract_end_date DATE,
-    service_type ENUM('security', 'cleaning', 'it', 'catering', 'maintenance', 'other') NOT NULL,
-    FOREIGN KEY (employee_id) REFERENCES employee(id) ON DELETE CASCADE
-);
-
--- Create employee_documents table for ID documents and other documents
-CREATE TABLE employee_documents (
-    id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
-    employee_id BINARY(16) NOT NULL,
-    document_type ENUM('id_document', 'education', 'certification', 'contract', 'other') NOT NULL,
-    document_name VARCHAR(255) NOT NULL,
-    document_name_amharic VARCHAR(255),
-    file_name VARCHAR(255) NOT NULL,
-    file_path VARCHAR(500) NOT NULL,
-    file_size INT,
-    mime_type VARCHAR(100),
-    issue_date DATE,
-    expiry_date DATE,
-    issuing_authority VARCHAR(255),
+    employeeId BINARY(16) NOT NULL,
+    documentType ENUM('IDDOCUMENT', 'EDUCATION', 'CERTIFICATION', 'CONTRACT', 'OTHER') NOT NULL,
+    documentName VARCHAR(100) NOT NULL,
+    documentNameAmharic VARCHAR(255),
+    fileName VARCHAR(100) NOT NULL,
+    filePath VARCHAR(100) NOT NULL,
+    fileSize INT,
+    mimeType VARCHAR(100),
+    issueDate DATE,
+    expiryDate DATE,
+    issuingAuthority VARCHAR(255),
     description TEXT,
-    description_amharic TEXT,
-    is_verified BOOLEAN DEFAULT FALSE,
-    verified_by BINARY(16),
-    verified_at TIMESTAMP NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (employee_id) REFERENCES employee(id) ON DELETE CASCADE,
-    FOREIGN KEY (verified_by) REFERENCES employee(id) ON DELETE SET NULL
+    descriptionAmharic TEXT,
+    isVerified BOOLEAN DEFAULT FALSE,
+    verifiedBy BINARY(16),
+    verifiedAt TIMESTAMP NULL,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (employeeId) REFERENCES employee(id) ON DELETE CASCADE,
+    FOREIGN KEY (verifiedBy) REFERENCES employee(id) ON DELETE SET NULL
 );
 
--- Create employee_education table for structured education data
-CREATE TABLE employee_education (
+-- Create employeeEducation table for structured education data
+CREATE TABLE employeeEducation (
     id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
-    employee_id BINARY(16) NOT NULL,
-    institution_name VARCHAR(255) NOT NULL,
-    institution_name_amharic VARCHAR(255),
+    employeeId BINARY(16) NOT NULL,
+    institutionName VARCHAR(100) NOT NULL,
+    institutionNameAmharic VARCHAR(100),
     qualification VARCHAR(100) NOT NULL,
-    qualification_amharic VARCHAR(100),
-    field_of_study VARCHAR(255),
-    field_of_study_amharic VARCHAR(255),
-    start_date DATE NOT NULL,
-    end_date DATE,
-    graduation_date DATE,
+    qualificationAmharic VARCHAR(100),
+    fieldOfStudy VARCHAR(100),
+    fieldOfStudyAmharic VARCHAR(100),
+    startDate DATE NOT NULL,
+    endDate DATE,
+    graduationDate DATE,
     grade VARCHAR(50),
     description TEXT,
-    description_amharic TEXT,
-    document_id BINARY(16), -- Reference to document in employee_documents
-    is_verified BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (employee_id) REFERENCES employee(id) ON DELETE CASCADE,
-    FOREIGN KEY (document_id) REFERENCES employee_documents(id) ON DELETE SET NULL
+    descriptionAmharic TEXT,
+    documentId BINARY(16), -- Reference to document in employeeDocuments
+    isVerified BOOLEAN DEFAULT FALSE,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (employeeId) REFERENCES employee(id) ON DELETE CASCADE,
+    FOREIGN KEY (documentId) REFERENCES employeeDocuments(id) ON DELETE SET NULL
 );
 
 -- DESIGNATION WITH ASSIGNED EMPLOYEE
 CREATE TABLE designations (
     id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
-    employee_id BINARY(16) NOT NULL,
-    department_id BINARY(16),
-    college_id BINARY(16),
-    title VARCHAR(255) NOT NULL,
-    title_amharic VARCHAR(255),
-    job_description TEXT,
-    job_description_amharic TEXT,
-    grade_level VARCHAR(50),
-    min_salary DECIMAL(10,2),
-    max_salary DECIMAL(10,2),
-    designation_type ENUM('academic', 'administrative', 'hr', 'support') DEFAULT 'administrative',
-    status ENUM('active', 'inactive') DEFAULT 'active',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY uq_designation_employee (employee_id),
-    FOREIGN KEY (employee_id) REFERENCES employee(id) ON DELETE CASCADE
+    employeeId BINARY(16) NOT NULL,
+    departmentId BINARY(16),
+    collegeId BINARY(16),
+    title VARCHAR(100) NOT NULL,
+    titleAmharic VARCHAR(100),
+    jobDescription TEXT,
+    jobDescriptionAmharic TEXT,
+    gradeLevel VARCHAR(50),
+    minSalary DECIMAL(10,2),
+    maxSalary DECIMAL(10,2),
+    designationType ENUM('ACADEMIC', 'ADMINISTRATIVE', 'HR', 'SUPPORT') DEFAULT 'ADMINISTRATIVE',
+    status ENUM('ACTIVE', 'INACTIVE') DEFAULT 'ACTIVE',
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uqDesignationEmployee (employeeId),
+    FOREIGN KEY (employeeId) REFERENCES employee(id) ON DELETE CASCADE
 );
 
 -- USER AUTHENTICATION
 CREATE TABLE users(
     id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
-    employee_id BINARY(16) UNIQUE NOT NULL,
+    employeeId BINARY(16) UNIQUE NOT NULL,
     username VARCHAR(100) UNIQUE NOT NULL,
-    system_role ENUM(  'HR_MANAGER','DEAN','HEAD',  'HR_OFFICER','RECRUITER','PAYROLL_OFFICER','EMPLOYEE') DEFAULT 'EMPLOYEE',
-    password_hash VARCHAR(255) NOT NULL,
-    preferred_language ENUM('en', 'am') DEFAULT 'am',
-    last_login TIMESTAMP NULL,
-    must_change_password BOOLEAN DEFAULT FALSE,
-    password_changed_at TIMESTAMP NULL,
-    is_active BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    systemRole ENUM('HRMANAGER', 'DEAN', 'HEAD', 'HROFFICER', 'RECRUITER', 'PAYROLLOFFICER', 'EMPLOYEE') DEFAULT 'EMPLOYEE',
+    passwordHash VARCHAR(255) NOT NULL,
+    preferredLanguage ENUM('EN', 'AM') DEFAULT 'AM',
+    lastLogin TIMESTAMP NULL,
+    mustChangePassword BOOLEAN DEFAULT FALSE,
+    passwordChangedAt TIMESTAMP NULL,
+    isActive BOOLEAN DEFAULT TRUE,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 -- ATTENDANCE MANAGEMENT
 CREATE TABLE attendance (
     id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
-    employee_id BINARY(16) NOT NULL,
-    date DATE NOT NULL,
-    check_in TIME,
-    check_out TIME,
-    status ENUM('Present', 'Late', 'Absent', 'half_day', 'holiday', 'weekend') DEFAULT 'Absent',
-    late_minutes INT DEFAULT 0,
-    overtime_minutes INT DEFAULT 0,
+    employeeId BINARY(16) NOT NULL,
+    Date DATE NOT NULL,
+    checkIn TIME,
+    checkOut TIME,
+    status ENUM('PRESENT', 'LATE', 'ABSENT', 'HALFDAY', 'HOLIDAY', 'WEEKEND') DEFAULT 'ABSENT',
+    lateMinutes INT DEFAULT 0,
+    overtimeMinutes INT DEFAULT 0,
     notes TEXT,
-    notes_amharic TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY unique_employee_date (employee_id, date)
+    notesAmharic TEXT,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    shiftId BINARY(16) NOT NULL,
+    UNIQUE KEY uniqueEmployeeDateShift (employeeId, Date, shiftId)
 );
 
-CREATE TABLE shift_schedule (
+CREATE TABLE shiftSchedule (
     id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
-    shift_name VARCHAR(100) NOT NULL,
-    shift_name_amharic VARCHAR(100),
-    start_time TIME NOT NULL,
-    end_time TIME NOT NULL,
-    break_duration_minutes INT DEFAULT 60,
+    shiftName VARCHAR(100) NOT NULL,
+    shiftNameAmharic VARCHAR(100),
+    startTime TIME NOT NULL,
+    endTime TIME NOT NULL,
+    breakDurationMinutes INT DEFAULT 60,
     description TEXT,
-    description_amharic TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    descriptionAmharic TEXT,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE employee_shift (
+CREATE TABLE employeeShift (
     id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
-    employee_id BINARY(16) NOT NULL,
-    shift_id BINARY(16) NOT NULL,
-    effective_date DATE NOT NULL,
-    end_date DATE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    employeeId BINARY(16) NOT NULL,
+    shiftId BINARY(16) NOT NULL,
+    effectiveDate DATE NOT NULL,
+    endDate DATE,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- LEAVE MANAGEMENT
-CREATE TABLE leave_types (
+CREATE TABLE leaveTypes (
     id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
-    leave_name VARCHAR(100) NOT NULL,
-    leave_name_amharic VARCHAR(100),
-    leave_description TEXT,
-    leave_description_amharic TEXT,
-    max_days_per_year INT NOT NULL,
-    carry_forward_days INT DEFAULT 0,
-    requires_approval BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    leaveName VARCHAR(100) NOT NULL,
+    leaveNameAmharic VARCHAR(100),
+    leaveDescription TEXT,
+    leaveDescriptionAmharic TEXT,
+    maxDaysPerYear INT NOT NULL,
+    carryForwardDays INT DEFAULT 0,
+    requiresApproval BOOLEAN DEFAULT TRUE,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE leave_balance (
+CREATE TABLE leaveBalance (
     id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
-    employee_id BINARY(16) NOT NULL,
-    leave_type_id BINARY(16) NOT NULL,
+    employeeId BINARY(16) NOT NULL,
+    leaveTypeId BINARY(16) NOT NULL,
     year INT NOT NULL,
-    total_allocated_days INT NOT NULL,
-    used_days INT DEFAULT 0,
-    remaining_days INT NOT NULL,
-    carry_forward_days INT DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY unique_employee_leave_year (employee_id, leave_type_id, year)
+    totalAllocatedDays INT NOT NULL,
+    usedDays INT DEFAULT 0,
+    remainingDays INT NOT NULL,
+    carryForwardDays INT DEFAULT 0,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uniqueEmployeeLeaveYear (employeeId, leaveTypeId, year)
 );
 
-CREATE TABLE leave_request (
+CREATE TABLE leaveRequest (
     id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
-    employee_id BINARY(16) NOT NULL,
-    leave_type_id BINARY(16) NOT NULL,
-    start_date DATE NOT NULL,
-    end_date DATE NOT NULL,
-    total_days INT NOT NULL,
+    employeeId BINARY(16) NOT NULL,
+    leaveTypeId BINARY(16) NOT NULL,
+    startDate DATE NOT NULL,
+    endDate DATE NOT NULL,
+    totalDays INT NOT NULL,
     reason TEXT,
-    reason_amharic TEXT,
-    status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
-    approved_by BINARY(16),
-    approved_at TIMESTAMP NULL,
+    reasonAmharic TEXT,
+    status ENUM('PENDING', 'APPROVED', 'REJECTED') DEFAULT 'PENDING',
+    approvedBy BINARY(16),
+    approvedAt TIMESTAMP NULL,
     comments TEXT,
-    comments_amharic TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    commentsAmharic TEXT,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 -- SIMPLIFIED PAYROLL TABLE FOR PAYSLIP GENERATION
 CREATE TABLE payroll (
     id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
-    employee_id BINARY(16) NOT NULL,
-    pay_period_start DATE NOT NULL,
-    pay_period_end DATE NOT NULL,
+    employeeId BINARY(16) NOT NULL,
+    payPeriodStart DATE NOT NULL,
+    payPeriodEnd DATE NOT NULL,
     
     -- Earnings
-    basic_salary DECIMAL(10,2) NOT NULL,
-    house_rent_allowance DECIMAL(10,2) DEFAULT 0,
-    travel_allowance DECIMAL(10,2) DEFAULT 0,
-    medical_allowance DECIMAL(10,2) DEFAULT 0,
-    overtime_allowance DECIMAL(10,2) DEFAULT 0,
-    other_allowances DECIMAL(10,2) DEFAULT 0,
-    total_earnings DECIMAL(10,2) NOT NULL,
+    basicSalary DECIMAL(10,2) NOT NULL,
+    houseRentAllowance DECIMAL(10,2) DEFAULT 0,
+    travelAllowance DECIMAL(10,2) DEFAULT 0,
+    medicalAllowance DECIMAL(10,2) DEFAULT 0,
+    overtimeAllowance DECIMAL(10,2) DEFAULT 0,
+    otherAllowances DECIMAL(10,2) DEFAULT 0,
+    totalEarnings DECIMAL(10,2) NOT NULL,
     
     -- Deductions
-    tax_deduction DECIMAL(10,2) DEFAULT 0,
-    provident_fund DECIMAL(10,2) DEFAULT 0,
-    leave_deduction DECIMAL(10,2) DEFAULT 0,
-    other_deductions DECIMAL(10,2) DEFAULT 0,
-    total_deductions DECIMAL(10,2) DEFAULT 0,
+    taxDeduction DECIMAL(10,2) DEFAULT 0,
+    providentFund DECIMAL(10,2) DEFAULT 0,
+    leaveDeduction DECIMAL(10,2) DEFAULT 0,
+    otherDeductions DECIMAL(10,2) DEFAULT 0,
+    totalDeductions DECIMAL(10,2) DEFAULT 0,
     
-    net_salary DECIMAL(10,2) NOT NULL,
-    payment_date DATE,
-    payment_status ENUM('Pending', 'Paid', 'Unpaid') DEFAULT 'Pending',
-    generated_by BINARY(16) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    netSalary DECIMAL(10,2) NOT NULL,
+    paymentDate DATE,
+    paymentStatus ENUM('PENDING', 'PAID', 'UNPAID') DEFAULT 'PENDING',
+    generatedBy BINARY(16) NOT NULL,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 -- BENEFITS MANAGEMENT
 CREATE TABLE benefits (
     id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
-    benefit_name VARCHAR(255) NOT NULL,
-    benefit_name_amharic VARCHAR(255),
+    benefitName VARCHAR(255) NOT NULL,
+    benefitNameAmharic VARCHAR(255),
     description TEXT,
-    description_amharic TEXT,
-    benefit_type ENUM('health', 'retirement', 'insurance', 'wellness', 'other') NOT NULL,
-    cost_to_company DECIMAL(10,2),
-    is_active BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    descriptionAmharic TEXT,
+    benefitType ENUM('HEALTH', 'RETIREMENT', 'INSURANCE', 'WELLNESS', 'OTHER') NOT NULL,
+    costToCompany DECIMAL(10,2),
+    isActive BOOLEAN DEFAULT TRUE,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE employee_benefits (
+CREATE TABLE employeeBenefits (
     id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
-    employee_id BINARY(16) NOT NULL,
-    benefit_id BINARY(16) NOT NULL,
-    enrollment_date DATE NOT NULL,
-    coverage_amount DECIMAL(10,2),
-    employee_contribution DECIMAL(10,2),
-    company_contribution DECIMAL(10,2),
-    status ENUM('active', 'cancelled', 'suspended') DEFAULT 'active',
-    end_date DATE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    employeeId BINARY(16) NOT NULL,
+    benefitId BINARY(16) NOT NULL,
+    enrollmentDate DATE NOT NULL,
+    coverageAmount DECIMAL(10,2),
+    employeeContribution DECIMAL(10,2),
+    companyContribution DECIMAL(10,2),
+    status ENUM('ACTIVE', 'CANCELLED', 'SUSPENDED') DEFAULT 'ACTIVE',
+    endDate DATE,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 -- TRAINING & DEVELOPMENT
-CREATE TABLE training_programs (
+CREATE TABLE trainingPrograms (
     id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
-    program_name VARCHAR(255) NOT NULL,
-    program_name_amharic VARCHAR(255),
+    programName VARCHAR(255) NOT NULL,
+    programNameAmharic VARCHAR(255),
     description TEXT,
-    description_amharic TEXT,
-    trainer_name VARCHAR(255),
-    trainer_name_amharic VARCHAR(255),
-    duration_hours INT,
+    descriptionAmharic TEXT,
+    trainerName VARCHAR(255),
+    trainerNameAmharic VARCHAR(255),
+    durationHours INT,
     cost DECIMAL(10,2),
-    status ENUM('draft', 'scheduled', 'completed', 'cancelled') DEFAULT 'draft',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    status ENUM('DRAFT', 'SCHEDULED', 'COMPLETED', 'CANCELLED') DEFAULT 'DRAFT',
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE training_sessions (
+CREATE TABLE trainingSessions (
     id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
-    training_program_id BINARY(16) NOT NULL,
-    session_date DATE NOT NULL,
-    start_time TIME,
-    end_time TIME,
+    trainingProgramId BINARY(16) NOT NULL,
+    sessionDate DATE NOT NULL,
+    startTime TIME,
+    endTime TIME,
     location VARCHAR(255),
-    location_amharic VARCHAR(255),
-    max_participants INT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    locationAmharic VARCHAR(255),
+    maxParticipants INT,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE training_participants (
+CREATE TABLE trainingParticipants (
     id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
-    training_session_id BINARY(16) NOT NULL,
-    employee_id BINARY(16) NOT NULL,
-    status ENUM('registered', 'attended', 'absent', 'completed') DEFAULT 'registered',
+    trainingSessionId BINARY(16) NOT NULL,
+    employeeId BINARY(16) NOT NULL,
+    status ENUM('REGISTERED', 'ATTENDED', 'ABSENT', 'COMPLETED') DEFAULT 'REGISTERED',
     feedback TEXT,
-    feedback_amharic TEXT,
+    feedbackAmharic TEXT,
     rating INT CHECK (rating >= 1 AND rating <= 5),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 -- RECRUITMENT MANAGEMENT
 CREATE TABLE recruitment (
     id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
-    job_title VARCHAR(255) NOT NULL,
-    job_title_amharic VARCHAR(255),
-    department_id BINARY(16) NOT NULL,
-    designation_id BINARY(16) NOT NULL,
-    job_description TEXT,
-    job_description_amharic TEXT,
+    jobTitle VARCHAR(255) NOT NULL,
+    jobTitleAmharic VARCHAR(255),
+    departmentId BINARY(16) NOT NULL,
+    designationId BINARY(16) NOT NULL,
+    jobDescription TEXT,
+    jobDescriptionAmharic TEXT,
     requirements TEXT,
-    requirements_amharic TEXT,
+    requirementsAmharic TEXT,
     vacancies INT NOT NULL,
-    experience_required VARCHAR(100),
-    salary_range VARCHAR(100),
-    status ENUM('draft', 'open', 'closed', 'cancelled') DEFAULT 'draft',
-    posted_date DATE,
-    closing_date DATE,
-    created_by BINARY(16) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    experienceRequired VARCHAR(100),
+    salaryRange VARCHAR(100),
+    status ENUM('DRAFT', 'OPEN', 'CLOSED', 'CANCELLED') DEFAULT 'DRAFT',
+    postedDate DATE,
+    closingDate DATE,
+    createdBy BINARY(16) NOT NULL,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 CREATE TABLE applicant (
     id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
-    recruitment_id BINARY(16) NOT NULL,
-    first_name VARCHAR(100) NOT NULL,
-    first_name_amharic VARCHAR(100),
-    last_name VARCHAR(100) NOT NULL,
-    last_name_amharic VARCHAR(100),
+    recruitmentId BINARY(16) NOT NULL,
+    firstName VARCHAR(100) NOT NULL,
+    firstNameAmharic VARCHAR(100),
+    lastName VARCHAR(100) NOT NULL,
+    lastNameAmharic VARCHAR(100),
     email VARCHAR(150) NOT NULL,
     phone VARCHAR(20),
-    resume_url VARCHAR(255),
-    cover_letter TEXT,
-    cover_letter_amharic TEXT,
-    current_company VARCHAR(255),
-    current_position VARCHAR(255),
-    total_experience DECIMAL(3,1),
-    current_salary DECIMAL(10,2),
-    expected_salary DECIMAL(10,2),
-    notice_period INT,
-    status ENUM('applied', 'screening', 'interview', 'offered', 'rejected', 'hired') DEFAULT 'applied',
-    applied_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    resumeUrl VARCHAR(255),
+    coverLetter TEXT,
+    coverLetterAmharic TEXT,
+    currentCompany VARCHAR(255),
+    currentPosition VARCHAR(255),
+    totalExperience DECIMAL(3,1),
+    currentSalary DECIMAL(10,2),
+    expectedSalary DECIMAL(10,2),
+    noticePeriod INT,
+    status ENUM('APPLIED', 'SCREENING', 'INTERVIEW', 'OFFERED', 'REJECTED', 'HIRED') DEFAULT 'APPLIED',
+    appliedDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
-CREATE TABLE interview_schedule (
+CREATE TABLE interviewSchedule (
     id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
-    applicant_id BINARY(16) NOT NULL,
-    interview_date DATE NOT NULL,
-    interview_time TIME NOT NULL,
-    interview_type ENUM('phone', 'video', 'in_person') NOT NULL,
+    applicantId BINARY(16) NOT NULL,
+    interviewDate DATE NOT NULL,
+    interviewTime TIME NOT NULL,
+    interviewType ENUM('PHONE', 'VIDEO', 'INPERSON') NOT NULL,
     interviewers JSON,
     location VARCHAR(255),
-    location_amharic VARCHAR(255),
-    status ENUM('scheduled', 'completed', 'cancelled', 'no_show') DEFAULT 'scheduled',
+    locationAmharic VARCHAR(255),
+    status ENUM('SCHEDULED', 'COMPLETED', 'CANCELLED', 'NOSHOW') DEFAULT 'SCHEDULED',
     feedback TEXT,
-    feedback_amharic TEXT,
+    feedbackAmharic TEXT,
     rating INT CHECK (rating >= 1 AND rating <= 5),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 -- ONBOARDING & OFFBOARDING
-CREATE TABLE onboarding_checklist (
+CREATE TABLE onboardingChecklist (
     id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
-    employee_id BINARY(16) NOT NULL,
-    task_name VARCHAR(255) NOT NULL,
-    task_name_amharic VARCHAR(255),
-    assigned_to BINARY(16) NOT NULL,
-    due_date DATE,
-    status ENUM('pending', 'in_progress', 'completed') DEFAULT 'pending',
-    completed_date DATE,
+    employeeId BINARY(16) NOT NULL,
+    taskName VARCHAR(255) NOT NULL,
+    taskNameAmharic VARCHAR(255),
+    assignedTo BINARY(16) NOT NULL,
+    dueDate DATE,
+    status ENUM('PENDING', 'INPROGRESS', 'COMPLETED') DEFAULT 'PENDING',
+    completedDate DATE,
     notes TEXT,
-    notes_amharic TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    notesAmharic TEXT,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 CREATE TABLE offboarding (
     id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
-    employee_id BINARY(16) NOT NULL,
-    separation_date DATE NOT NULL,
-    separation_type ENUM('resignation', 'termination', 'retirement', 'end_of_contract') NOT NULL,
+    employeeId BINARY(16) NOT NULL,
+    separationDate DATE NOT NULL,
+    separationType ENUM('RESIGNATION', 'TERMINATION', 'RETIREMENT', 'ENDOFCONTRACT') NOT NULL,
     reason TEXT,
-    reason_amharic TEXT,
-    exit_interview_notes TEXT,
-    exit_interview_notes_amharic TEXT,
-    last_working_date DATE,
-    status ENUM('initiated', 'in_progress', 'completed') DEFAULT 'initiated',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    reasonAmharic TEXT,
+    exitInterviewNotes TEXT,
+    exitInterviewNotesAmharic TEXT,
+    lastWorkingDate DATE,
+    status ENUM('INITIATED', 'INPROGRESS', 'COMPLETED') DEFAULT 'INITIATED',
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 -- ASSETS MANAGEMENT
-CREATE TABLE asset_category (
+CREATE TABLE assetCategory (
     id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
-    category_name VARCHAR(255) NOT NULL,
-    category_name_amharic VARCHAR(255),
+    categoryName VARCHAR(255) NOT NULL,
+    categoryNameAmharic VARCHAR(255),
     description TEXT,
-    description_amharic TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    descriptionAmharic TEXT,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE assets (
     id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
-    asset_name VARCHAR(255) NOT NULL,
-    asset_name_amharic VARCHAR(255),
-    asset_category_id BINARY(16) NOT NULL,
-    serial_number VARCHAR(100) UNIQUE,
+    assetName VARCHAR(255) NOT NULL,
+    assetNameAmharic VARCHAR(255),
+    assetCategoryId BINARY(16) NOT NULL,
+    serialNumber VARCHAR(100) UNIQUE,
     model VARCHAR(100),
-    purchase_date DATE,
-    purchase_cost DECIMAL(10,2),
-    current_value DECIMAL(10,2),
-    status ENUM('available', 'assigned', 'maintenance', 'disposed') DEFAULT 'available',
+    purchaseDate DATE,
+    purchaseCost DECIMAL(10,2),
+    currentValue DECIMAL(10,2),
+    status ENUM('AVAILABLE', 'ASSIGNED', 'MAINTENANCE', 'DISPOSED') DEFAULT 'AVAILABLE',
     location VARCHAR(255),
-    location_amharic VARCHAR(255),
+    locationAmharic VARCHAR(255),
     notes TEXT,
-    notes_amharic TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    notesAmharic TEXT,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
-CREATE TABLE asset_assignment (
+CREATE TABLE assetAssignment (
     id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
-    asset_id BINARY(16) NOT NULL,
-    employee_id BINARY(16) NOT NULL,
-    assigned_date DATE NOT NULL,
-    expected_return_date DATE,
-    actual_return_date DATE,
-    assignment_reason TEXT,
-    assignment_reason_amharic TEXT,
-    condition_assigned TEXT,
-    condition_assigned_amharic TEXT,
-    condition_returned TEXT,
-    condition_returned_amharic TEXT,
-    status ENUM('assigned', 'returned', 'overdue') DEFAULT 'assigned',
-    assigned_by BINARY(16) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    assetId BINARY(16) NOT NULL,
+    employeeId BINARY(16) NOT NULL,
+    assignedDate DATE NOT NULL,
+    expectedReturnDate DATE,
+    actualReturnDate DATE,
+    assignmentReason TEXT,
+    assignmentReasonAmharic TEXT,
+    conditionAssigned TEXT,
+    conditionAssignedAmharic TEXT,
+    conditionReturned TEXT,
+    conditionReturnedAmharic TEXT,
+    status ENUM('ASSIGNED', 'RETURNED', 'OVERDUE') DEFAULT 'ASSIGNED',
+    assignedBy BINARY(16) NOT NULL,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 -- NOTICE MANAGEMENT
 CREATE TABLE notices (
     id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
     title VARCHAR(255) NOT NULL,
-    title_amharic VARCHAR(255),
+    titleAmharic VARCHAR(255),
     content TEXT NOT NULL,
-    content_amharic TEXT,
-    notice_type ENUM('general', 'policy', 'event', 'urgent') DEFAULT 'general',
-    target_audience ENUM('all', 'department', 'individual') DEFAULT 'all',
-    target_department_id BINARY(16),
-    target_employee_id BINARY(16),
-    publish_date DATE NOT NULL,
-    expiry_date DATE,
-    is_published BOOLEAN DEFAULT FALSE,
-    created_by BINARY(16) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    contentAmharic TEXT,
+    noticeType ENUM('GENERAL', 'POLICY', 'EVENT', 'URGENT') DEFAULT 'GENERAL',
+    targetAudience ENUM('ALL', 'DEPARTMENT', 'INDIVIDUAL') DEFAULT 'ALL',
+    targetDepartmentId BINARY(16),
+    targetEmployeeId BINARY(16),
+    publishDate DATE NOT NULL,
+    expiryDate DATE,
+    isPublished BOOLEAN DEFAULT FALSE,
+    createdBy BINARY(16) NOT NULL,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 -- NOTIFICATIONS MANAGEMENT
 CREATE TABLE notifications (
     id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
-    user_id BINARY(16) NOT NULL,
+    userId BINARY(16) NOT NULL,
     title VARCHAR(255) NOT NULL,
-    title_amharic VARCHAR(255),
+    titleAmharic VARCHAR(255),
     message TEXT NOT NULL,
-    message_amharic TEXT,
-    notification_type ENUM('info', 'warning', 'success', 'error') DEFAULT 'info',
-    related_module ENUM('attendance', 'leave', 'payroll', 'recruitment', 'performance', 'general') DEFAULT 'general',
-    related_id BINARY(16),
-    is_read BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    messageAmharic TEXT,
+    notificationType ENUM('INFO', 'WARNING', 'SUCCESS', 'ERROR') DEFAULT 'INFO',
+    relatedModule ENUM('ATTENDANCE', 'LEAVE', 'PAYROLL', 'RECRUITMENT', 'PERFORMANCE', 'GENERAL') DEFAULT 'GENERAL',
+    relatedId BINARY(16),
+    isRead BOOLEAN DEFAULT FALSE,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- ADD ALL FOREIGN KEY CONSTRAINTS
-ALTER TABLE college ADD FOREIGN KEY (company_id) REFERENCES company(id) ON DELETE CASCADE;
+ALTER TABLE college ADD FOREIGN KEY (companyId) REFERENCES company(id) ON DELETE CASCADE;
 
 ALTER TABLE department 
-ADD FOREIGN KEY (company_id) REFERENCES company(id) ON DELETE CASCADE,
-ADD FOREIGN KEY (college_id) REFERENCES college(id) ON DELETE SET NULL,
-ADD FOREIGN KEY (manager_id) REFERENCES employee(id) ON DELETE SET NULL;
+ADD FOREIGN KEY (companyId) REFERENCES company(id) ON DELETE CASCADE,
+ADD FOREIGN KEY (collegeId) REFERENCES college(id) ON DELETE SET NULL,
+ADD FOREIGN KEY (managerId) REFERENCES employee(id) ON DELETE SET NULL;
 
-ALTER TABLE designations ADD FOREIGN KEY (department_id) REFERENCES department(id) ON DELETE CASCADE;
-ALTER TABLE designations ADD FOREIGN KEY (college_id) REFERENCES college(id) ON DELETE SET NULL;
+ALTER TABLE designations ADD FOREIGN KEY (departmentId) REFERENCES department(id) ON DELETE CASCADE;
+ALTER TABLE designations ADD FOREIGN KEY (collegeId) REFERENCES college(id) ON DELETE SET NULL;
 
 ALTER TABLE employee 
-ADD FOREIGN KEY (company_id) REFERENCES company(id) ON DELETE CASCADE,
-ADD FOREIGN KEY (department_id) REFERENCES department(id) ON DELETE CASCADE,
-ADD FOREIGN KEY (manager_id) REFERENCES employee(id) ON DELETE SET NULL;
+ADD FOREIGN KEY (companyId) REFERENCES company(id) ON DELETE CASCADE,
+ADD FOREIGN KEY (departmentId) REFERENCES department(id) ON DELETE CASCADE,
+ADD FOREIGN KEY (managerId) REFERENCES employee(id) ON DELETE SET NULL;
 
-ALTER TABLE employee_personal ADD FOREIGN KEY (employee_id) REFERENCES employee(id) ON DELETE CASCADE;
-ALTER TABLE employee_employment ADD FOREIGN KEY (employee_id) REFERENCES employee(id) ON DELETE CASCADE;
-ALTER TABLE employee_academic ADD FOREIGN KEY (employee_id) REFERENCES employee(id) ON DELETE CASCADE;
-ALTER TABLE employee_academic ADD FOREIGN KEY (college_id) REFERENCES college(id) ON DELETE SET NULL;
-ALTER TABLE employee_hr ADD FOREIGN KEY (employee_id) REFERENCES employee(id) ON DELETE CASCADE;
-ALTER TABLE employee_outsource ADD FOREIGN KEY (employee_id) REFERENCES employee(id) ON DELETE CASCADE;
-ALTER TABLE employee_outsource ADD FOREIGN KEY (outsourcing_company_id) REFERENCES outsourcing_companies(id) ON DELETE CASCADE;
-ALTER TABLE outsourcing_companies ADD FOREIGN KEY (company_id) REFERENCES company(id) ON DELETE CASCADE;
-ALTER TABLE users ADD FOREIGN KEY (employee_id) REFERENCES employee(id) ON DELETE CASCADE;
-ALTER TABLE attendance ADD FOREIGN KEY (employee_id) REFERENCES employee(id) ON DELETE CASCADE;
-ALTER TABLE employee_shift ADD FOREIGN KEY (employee_id) REFERENCES employee(id) ON DELETE CASCADE;
-ALTER TABLE employee_shift ADD FOREIGN KEY (shift_id) REFERENCES shift_schedule(id) ON DELETE CASCADE;
-ALTER TABLE leave_balance ADD FOREIGN KEY (employee_id) REFERENCES employee(id) ON DELETE CASCADE;
-ALTER TABLE leave_balance ADD FOREIGN KEY (leave_type_id) REFERENCES leave_types(id) ON DELETE CASCADE;
-ALTER TABLE leave_request ADD FOREIGN KEY (employee_id) REFERENCES employee(id) ON DELETE CASCADE;
-ALTER TABLE leave_request ADD FOREIGN KEY (leave_type_id) REFERENCES leave_types(id) ON DELETE CASCADE;
-ALTER TABLE leave_request ADD FOREIGN KEY (approved_by) REFERENCES employee(id) ON DELETE SET NULL;
-ALTER TABLE payroll ADD FOREIGN KEY (employee_id) REFERENCES employee(id) ON DELETE CASCADE;
-ALTER TABLE payroll ADD FOREIGN KEY (generated_by) REFERENCES users(id) ON DELETE CASCADE;
-ALTER TABLE training_sessions ADD FOREIGN KEY (training_program_id) REFERENCES training_programs(id) ON DELETE CASCADE;
-ALTER TABLE training_participants ADD FOREIGN KEY (training_session_id) REFERENCES training_sessions(id) ON DELETE CASCADE;
-ALTER TABLE training_participants ADD FOREIGN KEY (employee_id) REFERENCES employee(id) ON DELETE CASCADE;
-ALTER TABLE recruitment ADD FOREIGN KEY (department_id) REFERENCES department(id) ON DELETE CASCADE;
-ALTER TABLE recruitment ADD FOREIGN KEY (designation_id) REFERENCES designations(id) ON DELETE CASCADE;
-ALTER TABLE recruitment ADD FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE;
-ALTER TABLE applicant ADD FOREIGN KEY (recruitment_id) REFERENCES recruitment(id) ON DELETE CASCADE;
-ALTER TABLE interview_schedule ADD FOREIGN KEY (applicant_id) REFERENCES applicant(id) ON DELETE CASCADE;
-ALTER TABLE onboarding_checklist ADD FOREIGN KEY (employee_id) REFERENCES employee(id) ON DELETE CASCADE;
-ALTER TABLE onboarding_checklist ADD FOREIGN KEY (assigned_to) REFERENCES employee(id) ON DELETE CASCADE;
-ALTER TABLE offboarding ADD FOREIGN KEY (employee_id) REFERENCES employee(id) ON DELETE CASCADE;
-ALTER TABLE assets ADD FOREIGN KEY (asset_category_id) REFERENCES asset_category(id) ON DELETE CASCADE;
-ALTER TABLE asset_assignment ADD FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE CASCADE;
-ALTER TABLE asset_assignment ADD FOREIGN KEY (employee_id) REFERENCES employee(id) ON DELETE CASCADE;
-ALTER TABLE asset_assignment ADD FOREIGN KEY (assigned_by) REFERENCES users(id) ON DELETE CASCADE;
-ALTER TABLE employee_benefits ADD FOREIGN KEY (employee_id) REFERENCES employee(id) ON DELETE CASCADE;
-ALTER TABLE employee_benefits ADD FOREIGN KEY (benefit_id) REFERENCES benefits(id) ON DELETE CASCADE;
-ALTER TABLE notices ADD FOREIGN KEY (target_department_id) REFERENCES department(id) ON DELETE CASCADE;
-ALTER TABLE notices ADD FOREIGN KEY (target_employee_id) REFERENCES employee(id) ON DELETE CASCADE;
-ALTER TABLE notices ADD FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE;
-ALTER TABLE notifications ADD FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+ALTER TABLE employeePersonal ADD FOREIGN KEY (employeeId) REFERENCES employee(id) ON DELETE CASCADE;
+ALTER TABLE employeeEmployment ADD FOREIGN KEY (employeeId) REFERENCES employee(id) ON DELETE CASCADE;
+ALTER TABLE employeeAcademic ADD FOREIGN KEY (employeeId) REFERENCES employee(id) ON DELETE CASCADE;
+ALTER TABLE employeeAcademic ADD FOREIGN KEY (collegeId) REFERENCES college(id) ON DELETE SET NULL;
+ALTER TABLE employeeHr ADD FOREIGN KEY (employeeId) REFERENCES employee(id) ON DELETE CASCADE;
+ALTER TABLE employeeOutsource ADD FOREIGN KEY (employeeId) REFERENCES employee(id) ON DELETE CASCADE;
+ALTER TABLE employeeOutsource ADD FOREIGN KEY (outsourcingCompanyId) REFERENCES outsourcingCompanies(id) ON DELETE CASCADE;
+ALTER TABLE outsourcingCompanies ADD FOREIGN KEY (companyId) REFERENCES company(id) ON DELETE CASCADE;
+ALTER TABLE users ADD FOREIGN KEY (employeeId) REFERENCES employee(id) ON DELETE CASCADE;
+ALTER TABLE attendance ADD FOREIGN KEY (employeeId) REFERENCES employee(id) ON DELETE CASCADE;
+ALTER TABLE employeeShift ADD FOREIGN KEY (employeeId) REFERENCES employee(id) ON DELETE CASCADE;
+ALTER TABLE employeeShift ADD FOREIGN KEY (shiftId) REFERENCES shiftSchedule(id) ON DELETE CASCADE;
+ALTER TABLE leaveBalance ADD FOREIGN KEY (employeeId) REFERENCES employee(id) ON DELETE CASCADE;
+ALTER TABLE leaveBalance ADD FOREIGN KEY (leaveTypeId) REFERENCES leaveTypes(id) ON DELETE CASCADE;
+ALTER TABLE leaveRequest ADD FOREIGN KEY (employeeId) REFERENCES employee(id) ON DELETE CASCADE;
+ALTER TABLE leaveRequest ADD FOREIGN KEY (leaveTypeId) REFERENCES leaveTypes(id) ON DELETE CASCADE;
+ALTER TABLE leaveRequest ADD FOREIGN KEY (approvedBy) REFERENCES employee(id) ON DELETE SET NULL;
+ALTER TABLE payroll ADD FOREIGN KEY (employeeId) REFERENCES employee(id) ON DELETE CASCADE;
+ALTER TABLE payroll ADD FOREIGN KEY (generatedBy) REFERENCES users(id) ON DELETE CASCADE;
+ALTER TABLE trainingSessions ADD FOREIGN KEY (trainingProgramId) REFERENCES trainingPrograms(id) ON DELETE CASCADE;
+ALTER TABLE trainingParticipants ADD FOREIGN KEY (trainingSessionId) REFERENCES trainingSessions(id) ON DELETE CASCADE;
+ALTER TABLE trainingParticipants ADD FOREIGN KEY (employeeId) REFERENCES employee(id) ON DELETE CASCADE;
+ALTER TABLE recruitment ADD FOREIGN KEY (departmentId) REFERENCES department(id) ON DELETE CASCADE;
+ALTER TABLE recruitment ADD FOREIGN KEY (designationId) REFERENCES designations(id) ON DELETE CASCADE;
+ALTER TABLE recruitment ADD FOREIGN KEY (createdBy) REFERENCES users(id) ON DELETE CASCADE;
+ALTER TABLE applicant ADD FOREIGN KEY (recruitmentId) REFERENCES recruitment(id) ON DELETE CASCADE;
+ALTER TABLE interviewSchedule ADD FOREIGN KEY (applicantId) REFERENCES applicant(id) ON DELETE CASCADE;
+ALTER TABLE onboardingChecklist ADD FOREIGN KEY (employeeId) REFERENCES employee(id) ON DELETE CASCADE;
+ALTER TABLE onboardingChecklist ADD FOREIGN KEY (assignedTo) REFERENCES employee(id) ON DELETE CASCADE;
+ALTER TABLE offboarding ADD FOREIGN KEY (employeeId) REFERENCES employee(id) ON DELETE CASCADE;
+ALTER TABLE assets ADD FOREIGN KEY (assetCategoryId) REFERENCES assetCategory(id) ON DELETE CASCADE;
+ALTER TABLE assetAssignment ADD FOREIGN KEY (assetId) REFERENCES assets(id) ON DELETE CASCADE;
+ALTER TABLE assetAssignment ADD FOREIGN KEY (employeeId) REFERENCES employee(id) ON DELETE CASCADE;
+ALTER TABLE assetAssignment ADD FOREIGN KEY (assignedBy) REFERENCES users(id) ON DELETE CASCADE;
+ALTER TABLE employeeBenefits ADD FOREIGN KEY (employeeId) REFERENCES employee(id) ON DELETE CASCADE;
+ALTER TABLE employeeBenefits ADD FOREIGN KEY (benefitId) REFERENCES benefits(id) ON DELETE CASCADE;
+ALTER TABLE notices ADD FOREIGN KEY (targetDepartmentId) REFERENCES department(id) ON DELETE CASCADE;
+ALTER TABLE notices ADD FOREIGN KEY (targetEmployeeId) REFERENCES employee(id) ON DELETE CASCADE;
+ALTER TABLE notices ADD FOREIGN KEY (createdBy) REFERENCES users(id) ON DELETE CASCADE;
+ALTER TABLE notifications ADD FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE;
 
 -- CREATE INDEXES FOR PERFORMANCE
-CREATE INDEX idx_employee_department ON employee(department_id);
-CREATE INDEX idx_employee_manager ON employee(manager_id);
-CREATE INDEX idx_employee_status ON employee(employment_status);
-CREATE INDEX idx_employee_type ON employee(employee_type);
-CREATE INDEX idx_employee_role ON employee(employee_role);
-CREATE INDEX idx_employee_company ON employee(company_id);
-CREATE INDEX idx_company_status ON company(status);
-CREATE INDEX idx_college_company ON college(company_id);
-CREATE INDEX idx_department_company ON department(company_id);
-CREATE INDEX idx_outsourcing_company_company ON outsourcing_companies(company_id);
-CREATE INDEX idx_designation_department ON designations(department_id);
-CREATE INDEX idx_designation_college ON designations(college_id);
-CREATE INDEX idx_attendance_employee_date ON attendance(employee_id, date);
-CREATE INDEX idx_leave_request_employee ON leave_request(employee_id);
-CREATE INDEX idx_leave_request_status ON leave_request(status);
-CREATE INDEX idx_payroll_employee_period ON payroll(employee_id, pay_period_start);
-CREATE INDEX idx_recruitment_status ON recruitment(status);
-CREATE INDEX idx_applicant_recruitment_status ON applicant(recruitment_id, status);
-CREATE INDEX idx_asset_status ON assets(status);
-CREATE INDEX idx_notices_publish ON notices(publish_date, is_published);
-CREATE INDEX idx_notifications_user_read ON notifications(user_id, is_read);
-CREATE INDEX idx_employee_personal_employee ON employee_personal(employee_id);
-CREATE INDEX idx_employee_employment_employee ON employee_employment(employee_id);
-CREATE INDEX idx_employee_academic_employee ON employee_academic(employee_id);
-CREATE INDEX idx_employee_hr_employee ON employee_hr(employee_id);
-CREATE INDEX idx_employee_outsource_employee ON employee_outsource(employee_id);
-CREATE INDEX idx_department_type ON department(department_type);
-CREATE INDEX idx_designation_type ON designations(designation_type);
-CREATE INDEX idx_department_college ON department(college_id);
+CREATE INDEX idxEmployeeDepartment ON employee(departmentId);
+CREATE INDEX idxEmployeeManager ON employee(managerId);
+CREATE INDEX idxEmployeeStatus ON employee(employmentStatus);
+CREATE INDEX idxEmployeeType ON employee(employeeType);
+CREATE INDEX idxEmployeeRole ON employee(employeeRole);
+CREATE INDEX idxEmployeeCompany ON employee(companyId);
+CREATE INDEX idxCompanyStatus ON company(status);
+CREATE INDEX idxCollegeCompany ON college(companyId);
+CREATE INDEX idxDepartmentCompany ON department(companyId);
+CREATE INDEX idxOutsourcingCompanyCompany ON outsourcingCompanies(companyId);
+CREATE INDEX idxDesignationDepartment ON designations(departmentId);
+CREATE INDEX idxDesignationCollege ON designations(collegeId);
+CREATE INDEX idxAttendanceEmployeeDate ON attendance(employeeId, date);
+CREATE INDEX idxLeaveRequestEmployee ON leaveRequest(employeeId);
+CREATE INDEX idxLeaveRequestStatus ON leaveRequest(status);
+CREATE INDEX idxPayrollEmployeePeriod ON payroll(employeeId, payPeriodStart);
+CREATE INDEX idxRecruitmentStatus ON recruitment(status);
+CREATE INDEX idxApplicantRecruitmentStatus ON applicant(recruitmentId, status);
+CREATE INDEX idxAssetStatus ON assets(status);
+CREATE INDEX idxNoticesPublish ON notices(publishDate, isPublished);
+CREATE INDEX idxNotificationsUserRead ON notifications(userId, isRead);
+CREATE INDEX idxEmployeePersonalEmployee ON employeePersonal(employeeId);
+CREATE INDEX idxEmployeeEmploymentEmployee ON employeeEmployment(employeeId);
+CREATE INDEX idxEmployeeAcademicEmployee ON employeeAcademic(employeeId);
+CREATE INDEX idxEmployeeHrEmployee ON employeeHr(employeeId);
+CREATE INDEX idxEmployeeOutsourceEmployee ON employeeOutsource(employeeId);
+CREATE INDEX idxDepartmentType ON department(departmentType);
+CREATE INDEX idxDesignationType ON designations(designationType);
+CREATE INDEX idxDepartmentCollege ON department(collegeId);
 
 -- UNIQUE CONSTRAINTS FOR ONE-TO-ONE RELATIONSHIPS
-ALTER TABLE employee_personal ADD UNIQUE KEY unique_employee_personal (employee_id);
-ALTER TABLE employee_employment ADD UNIQUE KEY unique_employee_employment (employee_id);
-ALTER TABLE employee_academic ADD UNIQUE KEY unique_employee_academic (employee_id);
-ALTER TABLE employee_hr ADD UNIQUE KEY unique_employee_hr (employee_id);
-ALTER TABLE employee_outsource ADD UNIQUE KEY unique_employee_outsource (employee_id);
-ALTER TABLE company ADD CONSTRAINT unique_company_email UNIQUE (company_email);
-ALTER TABLE company ADD CONSTRAINT unique_company_phone UNIQUE (company_phone);
-ALTER TABLE college ADD CONSTRAINT unique_college_per_company UNIQUE (company_id, college_name);
+ALTER TABLE employeePersonal ADD UNIQUE KEY uniqueEmployeePersonal (employeeId);
+ALTER TABLE employeeEmployment ADD UNIQUE KEY uniqueEmployeeEmployment (employeeId);
+ALTER TABLE employeeAcademic ADD UNIQUE KEY uniqueEmployeeAcademic (employeeId);
+ALTER TABLE employeeHr ADD UNIQUE KEY uniqueEmployeeHr (employeeId);
+ALTER TABLE employeeOutsource ADD UNIQUE KEY uniqueEmployeeOutsource (employeeId);
+ALTER TABLE company ADD CONSTRAINT uniqueCompanyEmail UNIQUE (companyEmail);
+ALTER TABLE company ADD CONSTRAINT uniqueCompanyPhone UNIQUE (companyPhone);
+ALTER TABLE college ADD CONSTRAINT uniqueCollegePerCompany UNIQUE (companyId, collegeName);
 -- Remove old unique constraint if exists
-ALTER TABLE department DROP INDEX unique_department_per_company;
--- Add new unique constraint: for academic departments, uniqueness is (college_id, department_name); for administrative, (company_id, department_name, parent_department_id)
-CREATE UNIQUE INDEX unique_academic_department_per_college ON department (college_id, department_name) WHERE department_type = 'academic';
-CREATE UNIQUE INDEX unique_admin_department_per_company_parent ON department (company_id, department_name, parent_department_id) WHERE department_type = 'administrative';
-ALTER TABLE designations ADD CONSTRAINT unique_designation_per_department UNIQUE (department_id, title);
+ALTER TABLE department DROP INDEX uniqueDepartmentPerCompany;
+-- Add new unique constraint: for academic departments, uniqueness is (collegeId, departmentName); for administrative, (companyId, departmentName, parentDepartmentId)
+CREATE UNIQUE INDEX uniqueAcademicDepartmentPerCollege ON department (collegeId, departmentName) WHERE departmentType = 'ACADEMIC';
+CREATE UNIQUE INDEX uniqueAdminDepartmentPerCompanyParent ON department (companyId, departmentName, parentDepartmentId) WHERE departmentType = 'ADMINISTRATIVE';
+ALTER TABLE designations ADD CONSTRAINT uniqueDesignationPerDepartment UNIQUE (departmentId, title);
 
 
 -- VALIDATION TRIGGERS
 DELIMITER //
 
 -- Department validation for college requirement
-CREATE TRIGGER validate_department_college_requirement
+CREATE TRIGGER validateDepartmentCollegeRequirement
 BEFORE INSERT ON department
 FOR EACH ROW
 BEGIN
-    -- If department type is academic, college_id must be provided
-    IF NEW.department_type = 'academic' AND NEW.college_id IS NULL THEN
+    -- If department type is academic, collegeId must be provided
+    IF NEW.departmentType = 'ACADEMIC' AND NEW.collegeId IS NULL THEN
         SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'Academic departments must be associated with a college';
     END IF;
     
-    -- If department type is not academic, college_id should be NULL
-    IF NEW.department_type != 'academic' AND NEW.college_id IS NOT NULL THEN
+    -- If department type is not academic, collegeId should be NULL
+    IF NEW.departmentType != 'ACADEMIC' AND NEW.collegeId IS NOT NULL THEN
         SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'Non-academic departments cannot be associated with a college';
     END IF;
 END//
 
-CREATE TRIGGER validate_department_college_requirement_update
+CREATE TRIGGER validateDepartmentCollegeRequirementUpdate
 BEFORE UPDATE ON department
 FOR EACH ROW
 BEGIN
-    -- If department type is academic, college_id must be provided
-    IF NEW.department_type = 'academic' AND NEW.college_id IS NULL THEN
+    -- If department type is academic, collegeId must be provided
+    IF NEW.departmentType = 'ACADEMIC' AND NEW.collegeId IS NULL THEN
         SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'Academic departments must be associated with a college';
     END IF;
     
-    -- If department type is not academic, college_id should be NULL
-    IF NEW.department_type != 'academic' AND NEW.college_id IS NOT NULL THEN
+    -- If department type is not academic, collegeId should be NULL
+    IF NEW.departmentType != 'ACADEMIC' AND NEW.collegeId IS NOT NULL THEN
         SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'Non-academic departments cannot be associated with a college';
     END IF;
 END//
 
 -- Employee validation
-CREATE TRIGGER validate_employee_type_consistency
+CREATE TRIGGER validateEmployeeTypeConsistency
 BEFORE INSERT ON employee
 FOR EACH ROW
 BEGIN
-    DECLARE dept_type ENUM('academic', 'administrative', 'support', 'hr');
+    DECLARE deptType ENUM('ACADEMIC', 'ADMINISTRATIVE', 'SUPPORT', 'HR');
     
-    IF NEW.manager_id IS NOT NULL AND NEW.manager_id = NEW.id THEN
+    IF NEW.managerId IS NOT NULL AND NEW.managerId = NEW.id THEN
         SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'Employee cannot be their own manager';
     END IF;
     
     -- Get department type
-    SELECT department_type INTO dept_type 
+    SELECT departmentType INTO deptType 
     FROM department 
-    WHERE id = NEW.department_id;
+    WHERE id = NEW.departmentId;
     
     -- Validate employee type matches department type
-    IF NEW.employee_type = 'academic' AND dept_type != 'academic' THEN
+    IF NEW.employeeType = 'ACADEMIC' AND deptType != 'ACADEMIC' THEN
         SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'Academic employees must be assigned to academic departments';
     END IF;
     
-    IF NEW.employee_type = 'hr_officer' AND dept_type != 'hr' THEN
+    IF NEW.employeeType = 'HROFFICER' AND deptType != 'HR' THEN
         SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'HR officers must be assigned to HR departments';
     END IF;
@@ -767,31 +757,31 @@ BEGIN
     -- Outsource employees can be in any department type
 END//
 
-CREATE TRIGGER validate_employee_type_consistency_update
+CREATE TRIGGER validateEmployeeTypeConsistencyUpdate
 BEFORE UPDATE ON employee
 FOR EACH ROW
 BEGIN
-    DECLARE dept_type ENUM('academic', 'administrative', 'support', 'hr');
+    DECLARE deptType ENUM('ACADEMIC', 'ADMINISTRATIVE', 'SUPPORT', 'HR');
     
-    IF NEW.manager_id IS NOT NULL AND NEW.manager_id = NEW.id THEN
+    IF NEW.managerId IS NOT NULL AND NEW.managerId = NEW.id THEN
         SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'Employee cannot be their own manager';
     END IF;
     
     -- Only validate if department is being changed
-    IF NEW.department_id != OLD.department_id THEN
+    IF NEW.departmentId != OLD.departmentId THEN
         -- Get department type
-        SELECT department_type INTO dept_type 
+        SELECT departmentType INTO deptType 
         FROM department 
-        WHERE id = NEW.department_id;
+        WHERE id = NEW.departmentId;
         
         -- Validate employee type matches department type
-        IF NEW.employee_type = 'academic' AND dept_type != 'academic' THEN
+        IF NEW.employeeType = 'ACADEMIC' AND deptType != 'ACADEMIC' THEN
             SIGNAL SQLSTATE '45000'
             SET MESSAGE_TEXT = 'Academic employees must be assigned to academic departments';
         END IF;
         
-        IF NEW.employee_type = 'hr_officer' AND dept_type != 'hr' THEN
+        IF NEW.employeeType = 'HROFFICER' AND deptType != 'HR' THEN
             SIGNAL SQLSTATE '45000'
             SET MESSAGE_TEXT = 'HR officers must be assigned to HR departments';
         END IF;
@@ -799,75 +789,75 @@ BEGIN
 END//
 
 -- Trigger to validate academic employees have college assigned
-CREATE TRIGGER validate_academic_employee_consistency
-AFTER INSERT ON employee_academic
+CREATE TRIGGER validateAcademicEmployeeConsistency
+AFTER INSERT ON employeeAcademic
 FOR EACH ROW
 BEGIN
-    DECLARE emp_type ENUM('academic', 'hr_officer', 'outsource');
-    DECLARE emp_college_id BINARY(16);
+    DECLARE empType ENUM('ACADEMIC', 'HROFFICER', 'OUTSOURCE');
+    DECLARE empCollegeId BINARY(16);
     
-    SELECT e.employee_type, ea.college_id INTO emp_type, emp_college_id
+    SELECT e.employeeType, ea.collegeId INTO empType, empCollegeId
     FROM employee e
-    LEFT JOIN employee_academic ea ON e.id = ea.employee_id
-    WHERE e.id = NEW.employee_id;
+    LEFT JOIN employeeAcademic ea ON e.id = ea.employeeId
+    WHERE e.id = NEW.employeeId;
     
-    IF emp_type = 'academic' AND emp_college_id IS NULL THEN
+    IF empType = 'ACADEMIC' AND empCollegeId IS NULL THEN
         SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Academic employees must have a college assigned in employee_academic table';
+        SET MESSAGE_TEXT = 'Academic employees must have a college assigned in employeeAcademic table';
     END IF;
 END//
 
 -- Trigger to validate outsourced employees have outsourcing company assigned
-CREATE TRIGGER validate_outsource_employee_consistency
-AFTER INSERT ON employee_outsource
+CREATE TRIGGER validateOutsourceEmployeeConsistency
+AFTER INSERT ON employeeOutsource
 FOR EACH ROW
 BEGIN
-    DECLARE emp_type ENUM('academic', 'hr_officer', 'outsource');
-    SELECT employee_type INTO emp_type FROM employee WHERE id = NEW.employee_id;
+    DECLARE empType ENUM('ACADEMIC', 'HROFFICER', 'OUTSOURCE');
+    SELECT employeeType INTO empType FROM employee WHERE id = NEW.employeeId;
     
-    IF emp_type != 'outsource' THEN
+    IF empType != 'outsource' THEN
         SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'Outsource info can only be added for outsourced employees';
     END IF;
 END//
 
 -- Trigger to prevent wrong employee type data in academic table
-CREATE TRIGGER prevent_wrong_type_academic
-BEFORE INSERT ON employee_academic
+CREATE TRIGGER preventWrongTypeAcademic
+BEFORE INSERT ON employeeAcademic
 FOR EACH ROW
 BEGIN
-    DECLARE emp_type ENUM('academic', 'hr_officer', 'outsource');
-    SELECT employee_type INTO emp_type FROM employee WHERE id = NEW.employee_id;
+    DECLARE empType ENUM('ACADEMIC', 'HROFFICER', 'OUTSOURCE');
+    SELECT employeeType INTO empType FROM employee WHERE id = NEW.employeeId;
     
-    IF emp_type != 'academic' THEN
+    IF empType != 'ACADEMIC' THEN
         SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'Academic information can only be added for academic employees';
     END IF;
 END//
 
 -- Trigger to prevent wrong employee type data in HR table
-CREATE TRIGGER prevent_wrong_type_hr
-BEFORE INSERT ON employee_hr
+CREATE TRIGGER preventWrongTypeHr
+BEFORE INSERT ON employeeHr
 FOR EACH ROW
 BEGIN
-    DECLARE emp_type ENUM('academic', 'hr_officer', 'outsource');
-    SELECT employee_type INTO emp_type FROM employee WHERE id = NEW.employee_id;
+    DECLARE empType ENUM('ACADEMIC', 'HROFFICER', 'OUTSOURCE');
+    SELECT employeeType INTO empType FROM employee WHERE id = NEW.employeeId;
     
-    IF emp_type != 'hr_officer' THEN
+    IF empType != 'HROFFICER' THEN
         SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'HR information can only be added for HR officer employees';
     END IF;
 END//
 
 -- Trigger to prevent wrong employee type data in outsource table
-CREATE TRIGGER prevent_wrong_type_outsource
-BEFORE INSERT ON employee_outsource
+CREATE TRIGGER preventWrongTypeOutsource
+BEFORE INSERT ON employeeOutsource
 FOR EACH ROW
 BEGIN
-    DECLARE emp_type ENUM('academic', 'hr_officer', 'outsource');
-    SELECT employee_type INTO emp_type FROM employee WHERE id = NEW.employee_id;
+    DECLARE empType ENUM('ACADEMIC', 'HROFFICER', 'OUTSOURCE');
+    SELECT employeeType INTO empType FROM employee WHERE id = NEW.employeeId;
     
-    IF emp_type != 'outsource' THEN
+    IF empType != 'outsource' THEN
         SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'Outsource information can only be added for outsourced employees';
     END IF;
@@ -876,85 +866,85 @@ END//
 DELIMITER ;
 
 -- UPDATED BILINGUAL VIEW
-CREATE VIEW employee_bilingual AS
+CREATE VIEW employeeBilingual AS
 SELECT 
     e.*,
-    ep.first_name, ep.first_name_amharic, 
-    ep.middle_name, ep.middle_name_amharic,
-    ep.last_name, ep.last_name_amharic,
-    ep.gender, ep.date_of_birth,
-    ee.official_email, ee.official_phone, ee.salary,
-    ea.academic_rank, ea.academic_rank_amharic,
-    ea.field_of_specialization, ea.field_of_specialization_amharic,
-    eh.hr_specialization, eh.hr_level,
-    d.department_name, d.department_name_amharic,
-    d.department_type,
-    des.title as designation_title, des.title_amharic as designation_title_amharic,
-    des.designation_type,
-    u.preferred_language,
+    ep.firstName, ep.firstNameAmharic, 
+    ep.middleName, ep.middleNameAmharic,
+    ep.lastName, ep.lastNameAmharic,
+    ep.gender, ep.dateOfBirth,
+    ee.officialEmail, ee.officialPhone, ee.salary,
+    ea.academicRank, ea.academicRankAmharic,
+    ea.fieldOfSpecialization, ea.fieldOfSpecializationAmharic,
+    eh.hrSpecialization, eh.hrLevel,
+    d.departmentName, d.departmentNameAmharic,
+    d.departmentType,
+    des.title as designationTitle, des.titleAmharic as designationTitleAmharic,
+    des.designationType,
+    u.preferredLanguage,
     -- Display names based on preferred language
     CASE 
-        WHEN u.preferred_language = 'am' AND ep.first_name_amharic IS NOT NULL 
-        THEN ep.first_name_amharic 
-        ELSE ep.first_name 
-    END as display_first_name,
+        WHEN u.preferredLanguage = 'AM' AND ep.firstNameAmharic IS NOT NULL 
+        THEN ep.firstNameAmharic 
+        ELSE ep.firstName 
+    END as displayFirstName,
     CASE 
-        WHEN u.preferred_language = 'am' AND ep.last_name_amharic IS NOT NULL 
-        THEN ep.last_name_amharic 
-        ELSE ep.last_name 
-    END as display_last_name
+        WHEN u.preferredLanguage = 'AM' AND ep.lastNameAmharic IS NOT NULL 
+        THEN ep.lastNameAmharic 
+        ELSE ep.lastName 
+    END as displayLastName
 FROM employee e
-LEFT JOIN employee_personal ep ON e.id = ep.employee_id
-LEFT JOIN employee_employment ee ON e.id = ee.employee_id
-LEFT JOIN employee_academic ea ON e.id = ea.employee_id
-LEFT JOIN employee_hr eh ON e.id = eh.employee_id
-LEFT JOIN department d ON e.department_id = d.id
-LEFT JOIN designations des ON des.employee_id = e.id
-LEFT JOIN users u ON e.id = u.employee_id;
+LEFT JOIN employeePersonal ep ON e.id = ep.employeeId
+LEFT JOIN employeeEmployment ee ON e.id = ee.employeeId
+LEFT JOIN employeeAcademic ea ON e.id = ea.employeeId
+LEFT JOIN employeeHr eh ON e.id = eh.employeeId
+LEFT JOIN department d ON e.departmentId = d.id
+LEFT JOIN designations des ON des.employeeId = e.id
+LEFT JOIN users u ON e.id = u.employeeId;
 
 -- VIEW FOR DEPARTMENT-COLLEGE RELATIONSHIPS
-CREATE VIEW department_college_view AS
+CREATE VIEW departmentCollegeView AS
 SELECT 
     d.id,
-    d.department_name,
-    d.department_name_amharic,
-    d.department_type,
-    c.college_name,
-    c.college_name_amharic,
+    d.departmentName,
+    d.departmentNameAmharic,
+    d.departmentType,
+    c.collegeName,
+    c.collegeNameAmharic,
     CASE 
-        WHEN d.department_type = 'academic' THEN 'College Required'
+        WHEN d.departmentType = 'ACADEMIC' THEN 'College Required'
         ELSE 'No College Association'
-    END as college_requirement_status
+    END as collegeRequirementStatus
 FROM department d
-LEFT JOIN college c ON d.college_id = c.id;
+LEFT JOIN college c ON d.collegeId = c.id;
 
 -- FUNCTION TO CALCULATE LEAVE DEDUCTION FOR PAYROLL
 DELIMITER //
-CREATE FUNCTION calculate_leave_deduction(employee_id BINARY(16), pay_period_start DATE, pay_period_end DATE)
+CREATE FUNCTION calculateLeaveDeduction(employeeId BINARY(16), payPeriodStart DATE, payPeriodEnd DATE)
 RETURNS DECIMAL(10,2)
 READS SQL DATA
 DETERMINISTIC
 BEGIN
-    DECLARE total_leave_days INT;
-    DECLARE daily_salary DECIMAL(10,2);
-    DECLARE leave_deduction DECIMAL(10,2);
+    DECLARE totalLeaveDays INT;
+    DECLARE dailySalary DECIMAL(10,2);
+    DECLARE leaveDeduction DECIMAL(10,2);
     
     -- Get total approved leave days in the pay period
-    SELECT COALESCE(SUM(total_days), 0) INTO total_leave_days
-    FROM leave_request 
-    WHERE employee_id = employee_id 
-    AND status = 'approved'
-    AND start_date <= pay_period_end 
-    AND end_date >= pay_period_start;
+    SELECT COALESCE(SUM(totalDays), 0) INTO totalLeaveDays
+    FROM leaveRequest 
+    WHERE employeeId = employeeId 
+    AND status = 'APPROVED'
+    AND startDate <= payPeriodEnd 
+    AND endDate >= payPeriodStart;
     
     -- Get daily salary (assuming 22 working days per month)
-    SELECT COALESCE(salary, 0) / 22 INTO daily_salary
-    FROM employee_employment 
-    WHERE employee_id = employee_id;
+    SELECT COALESCE(salary, 0) / 22 INTO dailySalary
+    FROM employeeEmployment 
+    WHERE employeeId = employeeId;
     
     -- Calculate deduction
-    SET leave_deduction = total_leave_days * daily_salary;
+    SET leaveDeduction = totalLeaveDays * dailySalary;
     
-    RETURN leave_deduction;
+    RETURN leaveDeduction;
 END//
 DELIMITER ;

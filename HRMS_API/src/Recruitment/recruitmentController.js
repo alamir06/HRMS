@@ -22,66 +22,66 @@ const parseInterviewers = (value) => {
 
 const mapRecruitmentRecord = (record) => ({
   id: record.id,
-  jobTitle: record.job_title,
-  jobTitleAmharic: record.job_title_amharic,
-  departmentId: record.department_id,
-  designationId: record.designation_id,
-  departmentName: record.department_name,
-  designationName: record.designation_name,
-  jobDescription: record.job_description,
-  jobDescriptionAmharic: record.job_description_amharic,
+  jobTitle: record.jobTitle,
+  jobTitleAmharic: record.jobTitleAmharic,
+  departmentId: record.departmentId,
+  designationId: record.designationId,
+  departmentName: record.departmentName,
+  designationName: record.designationName,
+  jobDescription: record.jobDescription,
+  jobDescriptionAmharic: record.jobDescriptionAmharic,
   requirements: record.requirements,
-  requirementsAmharic: record.requirements_amharic,
+  requirementsAmharic: record.requirementsAmharic,
   vacancies: record.vacancies,
-  experienceRequired: record.experience_required,
-  salaryRange: record.salary_range,
+  experienceRequired: record.experienceRequired,
+  salaryRange: record.salaryRange,
   status: record.status,
-  postedDate: record.posted_date,
-  closingDate: record.closing_date,
-  createdBy: record.created_by,
-  createdAt: record.created_at,
-  updatedAt: record.updated_at,
+  postedDate: record.postedDate,
+  closingDate: record.closingDate,
+  createdBy: record.createdBy,
+  createdAt: record.createdAt,
+  updatedAt: record.updatedAt,
 });
 
 const mapApplicantRecord = (record) => ({
   id: record.id,
-  recruitmentId: record.recruitment_id,
-  recruitmentTitle: record.recruitment_job_title,
-  firstName: record.first_name,
-  firstNameAmharic: record.first_name_amharic,
-  lastName: record.last_name,
-  lastNameAmharic: record.last_name_amharic,
+  recruitmentId: record.recruitmentId,
+  recruitmentTitle: record.recruitmentJobTitle,
+  firstName: record.firstName,
+  firstNameAmharic: record.firstNameAmharic,
+  lastName: record.lastName,
+  lastNameAmharic: record.lastNameAmharic,
   email: record.email,
   phone: record.phone,
-  resumeUrl: record.resume_url,
-  coverLetter: record.cover_letter,
-  coverLetterAmharic: record.cover_letter_amharic,
-  currentCompany: record.current_company,
-  currentPosition: record.current_position,
-  totalExperience: record.total_experience,
-  currentSalary: record.current_salary,
-  expectedSalary: record.expected_salary,
-  noticePeriod: record.notice_period,
+  resumeUrl: record.resumeUrl,
+  coverLetter: record.coverLetter,
+  coverLetterAmharic: record.coverLetterAmharic,
+  currentCompany: record.currentCompany,
+  currentPosition: record.currentPosition,
+  totalExperience: record.totalExperience,
+  currentSalary: record.currentSalary,
+  expectedSalary: record.expectedSalary,
+  noticePeriod: record.noticePeriod,
   status: record.status,
-  createdAt: record.created_at,
-  updatedAt: record.updated_at,
+  createdAt: record.createdAt,
+  updatedAt: record.updatedAt,
 });
 
 const mapInterviewRecord = (record) => ({
   id: record.id,
-  applicantId: record.applicant_id,
-  interviewDate: record.interview_date,
-  interviewTime: record.interview_time,
-  interviewType: record.interview_type,
+  applicantId: record.applicantId,
+  interviewDate: record.interviewDate,
+  interviewTime: record.interviewTime,
+  interviewType: record.interviewType,
   interviewers: parseInterviewers(record.interviewers),
   location: record.location,
-  locationAmharic: record.location_amharic,
+  locationAmharic: record.locationAmharic,
   status: record.status,
   feedback: record.feedback,
-  feedbackAmharic: record.feedback_amharic,
+  feedbackAmharic: record.feedbackAmharic,
   rating: record.rating,
-  createdAt: record.created_at,
-  updatedAt: record.updated_at,
+  createdAt: record.createdAt,
+  updatedAt: record.updatedAt,
 });
 
 export const createRecruitment = async (req, res, next) => {
@@ -89,62 +89,62 @@ export const createRecruitment = async (req, res, next) => {
   try {
     const id = uuidv4();
     const {
-      job_title,
-      job_title_amharic,
-      department_id,
-      designation_id,
-      job_description,
-      job_description_amharic,
+      jobTitle,
+      jobTitleAmharic,
+      departmentId,
+      designationId,
+      jobDescription,
+      jobDescriptionAmharic,
       requirements,
-      requirements_amharic,
+      requirementsAmharic,
       vacancies,
-      experience_required,
-      salary_range,
-      status = "draft",
-      posted_date,
-      closing_date,
-      created_by,
+      experienceRequired,
+      salaryRange,
+      status = "DRAFT",
+      postedDate,
+      closingDate,
+      createdBy,
     } = req.body;
 
     await connection.beginTransaction();
 
     const insertQuery = `
       INSERT INTO recruitment (
-        id, job_title, job_title_amharic, department_id, designation_id,
-        job_description, job_description_amharic, requirements, requirements_amharic,
-        vacancies, experience_required, salary_range, status, posted_date, closing_date,
-        created_by
+        id, jobTitle, jobTitleAmharic, departmentId, designationId,
+        jobDescription, jobDescriptionAmharic, requirements, requirementsAmharic,
+        vacancies, experienceRequired, salaryRange, status, postedDate, closingDate,
+        createdBy
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     await connection.execute(insertQuery, [
       id,
-      job_title,
-      job_title_amharic,
-      department_id,
-      designation_id,
-      job_description,
-      job_description_amharic,
+      jobTitle,
+      jobTitleAmharic,
+      departmentId,
+      designationId,
+      jobDescription,
+      jobDescriptionAmharic,
       requirements,
-      requirements_amharic,
+      requirementsAmharic,
       vacancies,
-      experience_required,
-      salary_range,
+      experienceRequired,
+      salaryRange,
       status,
-      posted_date,
-      closing_date,
-      created_by,
+      postedDate,
+      closingDate,
+      createdBy,
     ]);
 
     await connection.commit();
 
-    if (status === "open") {
+    if (status === "OPEN") {
       await telegramNotifier.notifyJobPosting({
         id,
-        title: job_title,
-        description: job_description,
+        title: jobTitle,
+        description: jobDescription,
         requirements,
-        closingDate: closing_date,
+        closingDate: closingDate,
         vacancies,
       });
     }
@@ -165,11 +165,11 @@ export const createRecruitment = async (req, res, next) => {
 export const listRecruitment = async (_req, res, next) => {
   try {
     const query = `
-      SELECT r.*, d.name AS department_name, ds.name AS designation_name
+      SELECT r.*, d.name AS departmentName, ds.name AS designationName
       FROM recruitment r
-      LEFT JOIN department d ON d.id = r.department_id
-      LEFT JOIN designation ds ON ds.id = r.designation_id
-      ORDER BY r.created_at DESC
+      LEFT JOIN department d ON d.id = r.departmentId
+      LEFT JOIN designation ds ON ds.id = r.designationId
+      ORDER BY r.createdAt DESC
     `;
 
     const [rows] = await pool.query(query);
@@ -186,10 +186,10 @@ export const getRecruitmentById = async (req, res, next) => {
   const { id } = req.params;
   try {
     const query = `
-      SELECT r.*, d.name AS department_name, ds.name AS designation_name
+      SELECT r.*, d.name AS departmentName, ds.name AS designationName
       FROM recruitment r
-      LEFT JOIN department d ON d.id = r.department_id
-      LEFT JOIN designation ds ON ds.id = r.designation_id
+      LEFT JOIN department d ON d.id = r.departmentId
+      LEFT JOIN designation ds ON ds.id = r.designationId
       WHERE r.id = ?
     `;
 
@@ -218,20 +218,20 @@ export const updateRecruitment = async (req, res, next) => {
   }
 
   const allowedFields = [
-    "job_title",
-    "job_title_amharic",
-    "department_id",
-    "designation_id",
-    "job_description",
-    "job_description_amharic",
+    "jobTitle",
+    "jobTitleAmharic",
+    "departmentId",
+    "designationId",
+    "jobDescription",
+    "jobDescriptionAmharic",
     "requirements",
-    "requirements_amharic",
+    "requirementsAmharic",
     "vacancies",
-    "experience_required",
-    "salary_range",
+    "experienceRequired",
+    "salaryRange",
     "status",
-    "posted_date",
-    "closing_date",
+    "postedDate",
+    "closingDate",
   ];
 
   const setClauses = [];
@@ -250,7 +250,7 @@ export const updateRecruitment = async (req, res, next) => {
 
   values.push(id);
 
-  const query = `UPDATE recruitment SET ${setClauses.join(", ")}, updated_at = NOW() WHERE id = ?`;
+  const query = `UPDATE recruitment SET ${setClauses.join(", ")}, updatedAt = NOW() WHERE id = ?`;
 
   try {
     const [result] = await pool.execute(query, values);
@@ -258,9 +258,9 @@ export const updateRecruitment = async (req, res, next) => {
       return res.status(404).json({ success: false, message: "Recruitment not found" });
     }
 
-    if (fields.status === "open") {
+    if (fields.status === "OPEN") {
       const [records] = await pool.query(
-        `SELECT job_title, job_description, requirements, closing_date, vacancies FROM recruitment WHERE id = ?`,
+        `SELECT jobTitle, jobDescription, requirements, closingDate, vacancies FROM recruitment WHERE id = ?`,
         [id]
       );
 
@@ -268,10 +268,10 @@ export const updateRecruitment = async (req, res, next) => {
         const record = records[0];
         await telegramNotifier.notifyJobPosting({
           id,
-          title: record.job_title,
-          description: record.job_description,
+          title: record.jobTitle,
+          description: record.jobDescription,
           requirements: record.requirements,
-          closingDate: record.closing_date,
+          closingDate: record.closingDate,
           vacancies: record.vacancies,
         });
       }
@@ -304,53 +304,53 @@ export const createApplicant = async (req, res, next) => {
   try {
     const id = uuidv4();
     const {
-      recruitment_id,
-      first_name,
-      first_name_amharic,
-      last_name,
-      last_name_amharic,
+      recruitmentId,
+      firstName,
+      firstNameAmharic,
+      lastName,
+      lastNameAmharic,
       email,
       phone,
-      resume_url,
-      cover_letter,
-      cover_letter_amharic,
-      current_company,
-      current_position,
-      total_experience,
-      current_salary,
-      expected_salary,
-      notice_period,
-      status = "applied",
+      resumeUrl,
+      coverLetter,
+      coverLetterAmharic,
+      currentCompany,
+      currentPosition,
+      totalExperience,
+      currentSalary,
+      expectedSalary,
+      noticePeriod,
+      status = "APPLIED",
     } = req.body;
 
     await connection.beginTransaction();
 
     const insertQuery = `
       INSERT INTO applicant (
-        id, recruitment_id, first_name, first_name_amharic, last_name, last_name_amharic,
-        email, phone, resume_url, cover_letter, cover_letter_amharic, current_company,
-        current_position, total_experience, current_salary, expected_salary, notice_period, status
+        id, recruitmentId, firstName, firstNameAmharic, lastName, lastNameAmharic,
+        email, phone, resumeUrl, coverLetter, coverLetterAmharic, currentCompany,
+        currentPosition, totalExperience, currentSalary, expectedSalary, noticePeriod, status
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     await connection.execute(insertQuery, [
       id,
-      recruitment_id,
-      first_name,
-      first_name_amharic,
-      last_name,
-      last_name_amharic,
+      recruitmentId,
+      firstName,
+      firstNameAmharic,
+      lastName,
+      lastNameAmharic,
       email,
       phone,
-      resume_url,
-      cover_letter,
-      cover_letter_amharic,
-      current_company,
-      current_position,
-      total_experience,
-      current_salary,
-      expected_salary,
-      notice_period,
+      resumeUrl,
+      coverLetter,
+      coverLetterAmharic,
+      currentCompany,
+      currentPosition,
+      totalExperience,
+      currentSalary,
+      expectedSalary,
+      noticePeriod,
       status,
     ]);
 
@@ -373,11 +373,11 @@ export const listApplicants = async (req, res, next) => {
   const { recruitmentId } = req.query;
   try {
     const query = `
-      SELECT a.*, r.job_title AS recruitment_job_title
+      SELECT a.*, r.jobTitle AS recruitmentJobTitle
       FROM applicant a
-      LEFT JOIN recruitment r ON r.id = a.recruitment_id
-      WHERE (? IS NULL OR a.recruitment_id = ?)
-      ORDER BY a.created_at DESC
+      LEFT JOIN recruitment r ON r.id = a.recruitmentId
+      WHERE (? IS NULL OR a.recruitmentId = ?)
+      ORDER BY a.createdAt DESC
     `;
 
     const idFilter = recruitmentId || null;
@@ -400,7 +400,7 @@ export const updateApplicantStatus = async (req, res, next) => {
     return res.status(400).json({ success: false, message: "Status is required" });
   }
 
-  const query = `UPDATE applicant SET status = ?, updated_at = NOW() WHERE id = ?`;
+  const query = `UPDATE applicant SET status = ?, updatedAt = NOW() WHERE id = ?`;
 
   try {
     const [result] = await pool.execute(query, [status, id]);
@@ -419,16 +419,16 @@ export const createInterview = async (req, res, next) => {
   try {
     const id = uuidv4();
     const {
-      applicant_id,
-      interview_date,
-      interview_time,
-      interview_type,
+      applicantId,
+      interviewDate,
+      interviewTime,
+      interviewType,
       interviewers,
       location,
-      location_amharic,
-      status = "scheduled",
+      locationAmharic,
+      status = "SCHEDULED",
       feedback,
-      feedback_amharic,
+      feedbackAmharic,
       rating,
     } = req.body;
 
@@ -436,23 +436,23 @@ export const createInterview = async (req, res, next) => {
 
     const insertQuery = `
       INSERT INTO interview (
-        id, applicant_id, interview_date, interview_time, interview_type, interviewers,
-        location, location_amharic, status, feedback, feedback_amharic, rating
+        id, applicantId, interviewDate, interviewTime, interviewType, interviewers,
+        location, locationAmharic, status, feedback, feedbackAmharic, rating
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     await connection.execute(insertQuery, [
       id,
-      applicant_id,
-      interview_date,
-      interview_time,
-      interview_type,
+      applicantId,
+      interviewDate,
+      interviewTime,
+      interviewType,
       interviewers ? JSON.stringify(interviewers) : null,
       location,
-      location_amharic,
+      locationAmharic,
       status,
       feedback,
-      feedback_amharic,
+      feedbackAmharic,
       rating,
     ]);
 
@@ -475,11 +475,11 @@ export const listInterviews = async (req, res, next) => {
   const { applicantId } = req.query;
   try {
     const query = `
-      SELECT i.*, a.first_name, a.last_name
+      SELECT i.*, a.firstName, a.lastName
       FROM interview i
-      LEFT JOIN applicant a ON a.id = i.applicant_id
-      WHERE (? IS NULL OR i.applicant_id = ?)
-      ORDER BY i.interview_date DESC, i.interview_time DESC
+      LEFT JOIN applicant a ON a.id = i.applicantId
+      WHERE (? IS NULL OR i.applicantId = ?)
+      ORDER BY i.interviewDate DESC, i.interviewTime DESC
     `;
 
     const idFilter = applicantId || null;
@@ -503,15 +503,15 @@ export const updateInterview = async (req, res, next) => {
   }
 
   const allowedFields = [
-    "interview_date",
-    "interview_time",
-    "interview_type",
+    "interviewDate",
+    "interviewTime",
+    "interviewType",
     "interviewers",
     "location",
-    "location_amharic",
+    "locationAmharic",
     "status",
     "feedback",
-    "feedback_amharic",
+    "feedbackAmharic",
     "rating",
   ];
 
@@ -543,7 +543,7 @@ export const updateInterview = async (req, res, next) => {
 
   values.push(id);
 
-  const query = `UPDATE interview SET ${setClauses.join(", ")}, updated_at = NOW() WHERE id = ?`;
+  const query = `UPDATE interview SET ${setClauses.join(", ")}, updatedAt = NOW() WHERE id = ?`;
 
   try {
     const [result] = await pool.execute(query, values);

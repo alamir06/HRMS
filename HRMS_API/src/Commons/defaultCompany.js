@@ -39,7 +39,7 @@ export const getDefaultCompanyId = async () => {
 
     if (seedCompanyName) {
       const [rows] = await connection.execute(
-        "SELECT BIN_TO_UUID(id) AS id FROM company WHERE company_name = ? LIMIT 1",
+        "SELECT BIN_TO_UUID(id) AS id FROM company WHERE companyName = ? LIMIT 1",
         [seedCompanyName]
       );
 
@@ -62,7 +62,7 @@ export const getDefaultCompanyId = async () => {
 
     // Fallback: first (and only) company in DB.
     const [rows] = await connection.execute(
-      "SELECT BIN_TO_UUID(id) AS id FROM company ORDER BY created_at ASC LIMIT 1"
+      "SELECT BIN_TO_UUID(id) AS id FROM company ORDER BY createdAt ASC LIMIT 1"
     );
 
     if (!rows.length) {
@@ -86,8 +86,8 @@ export const ensureDefaultCompanyIdInBody = () => {
         return next();
       }
 
-      if (!req.body.company_id) {
-        req.body.company_id = await getDefaultCompanyId();
+      if (!req.body.companyId) {
+        req.body.companyId = await getDefaultCompanyId();
       }
 
       next();

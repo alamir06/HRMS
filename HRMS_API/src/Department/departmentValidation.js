@@ -2,165 +2,165 @@ import { z } from "zod";
 
 export const departmentValidationSchema = {
   create: z.object({
-    company_id: z
+    companyId: z
       .string()
       .uuid("Invalid company ID format")
       .min(1, "Company ID is required"),
-    department_type: z.enum(["academic", "administrative"], {
+    departmentType: z.enum(["ACADEMIC", "ADMINISTRATIVE"], {
       errorMap: () => ({ message: "Invalid department type" }),
     }),
-    college_id: z
+    collegeId: z
       .string()
       .uuid("Invalid college ID format")
       .optional()
       .nullable(),
-    department_name: z
+    departmentName: z
       .string()
       .min(1, "Department name is required")
       .max(255, "Department name must be less than 255 characters"),
-    department_name_amharic: z
+    departmentNameAmharic: z
       .string()
       .max(255, "Amharic department name must be less than 255 characters")
       .optional()
       .nullable(),
-    department_description: z
+    departmentDescription: z
       .string()
       .max(1000, "Description must be less than 1000 characters")
       .optional()
       .nullable(),
-    department_description_amharic: z
+    departmentDescriptionAmharic: z
       .string()
       .max(1000, "Amharic description must be less than 1000 characters")
       .optional()
       .nullable(),
-    parent_department_id: z.string().uuid("Invalid parent department ID format").optional().nullable(),
-    manager_id: z.string().uuid().nullable().optional(),
-    department_status: z.enum(["active", "inactive"]).default("active"),
-  }).superRefine((data, ctx) => {
-    const type = data.department_type;
-    const hasCollege = Boolean(data.college_id);
-    const hasParent = Boolean(data.parent_department_id);
+    parentDepartmentId: z.string().uuid("Invalid parent department ID format").optional().nullable(),
+    managerId: z.string().uuid().nullable().optional(),
+    departmentStatus: z.enum(["ACTIVE", "INACTIVE"]).default("ACTIVE"),
+  }).strict().superRefine((data, ctx) => {
+    const type = data.departmentType;
+    const hasCollege = Boolean(data.collegeId);
+    const hasParent = Boolean(data.parentDepartmentId);
 
-    if (type === "academic") {
+    if (type === "ACADEMIC") {
       if (!hasCollege) {
         ctx.addIssue({
-          path: ["college_id"],
+          path: ["collegeId"],
           code: z.ZodIssueCode.custom,
-          message: "college_id is required for academic departments",
+          message: "collegeId is required for academic departments",
         });
       }
       if (hasParent) {
         ctx.addIssue({
-          path: ["parent_department_id"],
+          path: ["parentDepartmentId"],
           code: z.ZodIssueCode.custom,
-          message: "parent_department_id must be omitted for academic departments",
+          message: "parentDepartmentId must be omitted for academic departments",
         });
       }
     } else {
       if (hasCollege) {
         ctx.addIssue({
-          path: ["college_id"],
+          path: ["collegeId"],
           code: z.ZodIssueCode.custom,
-          message: "college_id must be omitted for non-academic departments",
+          message: "collegeId must be omitted for non-academic departments",
         });
       }
-      // For administrative, parent_department_id is allowed (nullable for top-level)
+      // For administrative, parentDepartmentId is allowed (nullable for top-level)
     }
   }),
 
   update: z.object({
-    company_id: z.string().uuid("Invalid company ID format").optional(),
-    department_type: z
-      .enum(["academic", "administrative"], {
+    companyId: z.string().uuid("Invalid company ID format").optional(),
+    departmentType: z
+      .enum(["ACADEMIC", "ADMINISTRATIVE"], {
         errorMap: () => ({ message: "Invalid department type" }),
       })
       .optional(),
-    college_id: z
+    collegeId: z
       .string()
       .uuid("Invalid college ID format")
       .optional()
       .nullable(),
-    department_name: z
+    departmentName: z
       .string()
       .min(1, "Department name is required")
       .max(255, "Department name must be less than 255 characters")
       .optional(),
-    department_name_amharic: z
+    departmentNameAmharic: z
       .string()
       .max(255, "Amharic department name must be less than 255 characters")
       .optional()
       .nullable(),
-    department_description: z
+    departmentDescription: z
       .string()
       .max(1000, "Description must be less than 1000 characters")
       .optional()
       .nullable(),
-    department_description_amharic: z
+    departmentDescriptionAmharic: z
       .string()
       .max(1000, "Amharic description must be less than 1000 characters")
       .optional()
       .nullable(),
-    parent_department_id: z.string().uuid("Invalid parent department ID format").optional().nullable(),
-    manager_id: z
+    parentDepartmentId: z.string().uuid("Invalid parent department ID format").optional().nullable(),
+    managerId: z
       .string()
       .uuid("Invalid manager ID format")
       .optional()
       .nullable(),
-    department_status: z.enum(["active", "inactive"]).optional(),
-  }).superRefine((data, ctx) => {
-    if ("department_type" in data && data.department_type === "academic") {
-      if (!("college_id" in data) || !data.college_id) {
+    departmentStatus: z.enum(["ACTIVE", "INACTIVE"]).optional(),
+  }).strict().superRefine((data, ctx) => {
+    if ("departmentType" in data && data.departmentType === "ACADEMIC") {
+      if (!("collegeId" in data) || !data.collegeId) {
         ctx.addIssue({
-          path: ["college_id"],
+          path: ["collegeId"],
           code: z.ZodIssueCode.custom,
-          message: "Updating to 'academic' requires providing college_id",
+          message: "Updating to 'ACADEMIC' requires providing collegeId",
         });
       }
-      if ("parent_department_id" in data && data.parent_department_id) {
+      if ("parentDepartmentId" in data && data.parentDepartmentId) {
         ctx.addIssue({
-          path: ["parent_department_id"],
+          path: ["parentDepartmentId"],
           code: z.ZodIssueCode.custom,
-          message: "parent_department_id must be omitted for academic departments",
+          message: "parentDepartmentId must be omitted for academic departments",
         });
       }
     }
-    if ("department_type" in data && data.department_type === "administrative") {
-      if ("college_id" in data && data.college_id) {
+    if ("departmentType" in data && data.departmentType === "ADMINISTRATIVE") {
+      if ("collegeId" in data && data.collegeId) {
         ctx.addIssue({
-          path: ["college_id"],
+          path: ["collegeId"],
           code: z.ZodIssueCode.custom,
-          message: "college_id must be omitted for administrative departments",
+          message: "collegeId must be omitted for administrative departments",
         });
       }
-      // parent_department_id is allowed (nullable for top-level)
+      // parentDepartmentId is allowed (nullable for top-level)
     }
   }),
 
   id: z.object({
     id: z.string().uuid("Invalid department ID format"),
-  }),
+  }).strict(),
 };
 
 // Conditional rules enforced at application level to give clear errors before DB triggers
-// Create: require college_id when department_type === 'academic'; forbid college_id for non-academic
+// Create: require collegeId when departmentType === 'ACADEMIC'; forbid collegeId for non-academic
 departmentValidationSchema.create = departmentValidationSchema.create.superRefine((data, ctx) => {
-  const type = data.department_type;
-  const hasCollege = Boolean(data.college_id);
+  const type = data.departmentType;
+  const hasCollege = Boolean(data.collegeId);
 
-  if (type === "academic") {
+  if (type === "ACADEMIC") {
     if (!hasCollege) {
       ctx.addIssue({
-        path: ["college_id"],
+        path: ["collegeId"],
         code: z.ZodIssueCode.custom,
-        message: "college_id is required for academic departments",
+        message: "collegeId is required for academic departments",
       });
     }
   } else {
     if (hasCollege) {
       ctx.addIssue({
-        path: ["college_id"],
+        path: ["collegeId"],
         code: z.ZodIssueCode.custom,
-        message: "college_id must be omitted for non-academic departments",
+        message: "collegeId must be omitted for non-academic departments",
       });
     }
   }
@@ -168,21 +168,21 @@ departmentValidationSchema.create = departmentValidationSchema.create.superRefin
 
 // Update: enforce consistency only when both fields are present in the payload
 departmentValidationSchema.update = departmentValidationSchema.update.superRefine((data, ctx) => {
-  if ("department_type" in data && data.department_type === "academic") {
-    if (!("college_id" in data) || !data.college_id) {
+  if ("departmentType" in data && data.departmentType === "ACADEMIC") {
+    if (!("collegeId" in data) || !data.collegeId) {
       ctx.addIssue({
-        path: ["college_id"],
+        path: ["collegeId"],
         code: z.ZodIssueCode.custom,
-        message: "Updating to 'academic' requires providing college_id",
+        message: "Updating to 'ACADEMIC' requires providing collegeId",
       });
     }
   }
 
-  if ("college_id" in data && data.college_id && "department_type" in data && data.department_type !== "academic") {
+  if ("collegeId" in data && data.collegeId && "departmentType" in data && data.departmentType !== "ACADEMIC") {
     ctx.addIssue({
-      path: ["department_type"],
+      path: ["departmentType"],
       code: z.ZodIssueCode.custom,
-      message: "Cannot set college_id when department_type is not 'academic'",
+      message: "Cannot set collegeId when departmentType is not 'ACADEMIC'",
     });
   }
 });

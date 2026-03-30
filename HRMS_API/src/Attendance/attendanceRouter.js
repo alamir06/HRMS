@@ -20,28 +20,28 @@ attendanceRouter.use("/", attendanceCrudRouter);
 attendanceRouter.post(
   "/employees/:employeeId/check-in",
   authenticateToken,
-  authorize("HR_MANAGER", "HR_OFFICER", "HEAD", "employee"),
+  authorize("HRMANAGER", "HROFFICER", "HEAD", "EMPLOYEE"),
   attendanceController.checkIn
 );
 
 attendanceRouter.post(
   "/employees/:employeeId/check-out",
   authenticateToken,
-  authorize("HR_MANAGER", "HR_OFFICER", "HEAD", "employee"),
+  authorize("HRMANAGER", "HROFFICER", "HEAD", "EMPLOYEE"),
   attendanceController.checkOut
 );
 
 attendanceRouter.get(
   "/employees/:employeeId",
   authenticateToken,
-  authorize("HR_MANAGER", "HR_OFFICER", "HEAD", "employee"),
+  authorize("HRMANAGER", "HROFFICER", "HEAD", "EMPLOYEE"),
   attendanceController.getEmployeeAttendance
 );
 
 attendanceRouter.get(
   "/employees/:employeeId/summary",
   authenticateToken,
-  authorize("HR_MANAGER", "HR_OFFICER", "HEAD", "employee"),
+  authorize("HRMANAGER", "HROFFICER", "HEAD", "EMPLOYEE"),
   attendanceController.getEmployeeSummary
 );
 

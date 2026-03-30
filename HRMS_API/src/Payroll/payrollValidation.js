@@ -6,50 +6,50 @@ const dateSchema = z
   .regex(/^[0-9]{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[01])$/, "Date must be in YYYY-MM-DD format");
 
 const currencySchema = z.coerce
-  .number({ invalid_type_error: "Value must be a number" })
+  .number({ invalidTypeError: "Value must be a number" })
   .min(0, "Value cannot be negative");
 
 const payrollStatusEnum = z.enum(["Pending", "Paid", "Unpaid"]);
 
 const earningsSchema = z.object({
-  basic_salary: currencySchema,
-  house_rent_allowance: currencySchema.optional().default(0),
-  travel_allowance: currencySchema.optional().default(0),
-  medical_allowance: currencySchema.optional().default(0),
-  overtime_allowance: currencySchema.optional().default(0),
-  other_allowances: currencySchema.optional().default(0),
-});
+  basicSalary: currencySchema,
+  houseRentAllowance: currencySchema.optional().default(0),
+  travelAllowance: currencySchema.optional().default(0),
+  medicalAllowance: currencySchema.optional().default(0),
+  overtimeAllowance: currencySchema.optional().default(0),
+  otherAllowances: currencySchema.optional().default(0),
+}).strict();
 
 const deductionsSchema = z.object({
-  tax_deduction: currencySchema.optional().default(0),
-  provident_fund: currencySchema.optional().default(0),
-  leave_deduction: currencySchema.optional().default(0),
-  other_deductions: currencySchema.optional().default(0),
-});
+  taxDeduction: currencySchema.optional().default(0),
+  providentFund: currencySchema.optional().default(0),
+  leaveDeduction: currencySchema.optional().default(0),
+  otherDeductions: currencySchema.optional().default(0),
+}).strict();
 
 const basePayrollSchema = z
   .object({
-    employee_id: uuidSchema,
-    pay_period_start: dateSchema,
-    pay_period_end: dateSchema,
-    payment_date: dateSchema.optional().nullable(),
-    payment_status: payrollStatusEnum.optional().default("Pending"),
-    generated_by: uuidSchema,
+    employeeId: uuidSchema,
+    payPeriodStart: dateSchema,
+    payPeriodEnd: dateSchema,
+    paymentDate: dateSchema.optional().nullable(),
+    paymentStatus: payrollStatusEnum.optional().default("Pending"),
+    generatedBy: uuidSchema,
   })
   .merge(earningsSchema)
   .merge(deductionsSchema)
   .superRefine((data, ctx) => {
-    if (data.pay_period_end < data.pay_period_start) {
+    if (data.payPeriodEnd < data.payPeriodStart) {
       ctx.addIssue({
-        path: ["pay_period_end"],
+        path: ["payPeriodEnd"],
         code: z.ZodIssueCode.custom,
         message: "Pay period end cannot be before start date",
       });
     }
 
-    if (data.payment_date && data.payment_date < data.pay_period_end) {
+    if (data.paymentDate && data.paymentDate < data.payPeriodEnd) {
       ctx.addIssue({
-        path: ["payment_date"],
+        path: ["paymentDate"],
         code: z.ZodIssueCode.custom,
         message: "Payment date cannot be before the pay period ends",
       });
@@ -58,27 +58,27 @@ const basePayrollSchema = z
 
 const payrollUpdateSchema = z
   .object({
-    employee_id: uuidSchema.optional(),
-    pay_period_start: dateSchema.optional(),
-    pay_period_end: dateSchema.optional(),
-    payment_date: dateSchema.optional().nullable(),
-    payment_status: payrollStatusEnum.optional(),
-    generated_by: uuidSchema.optional(),
+    employeeId: uuidSchema.optional(),
+    payPeriodStart: dateSchema.optional(),
+    payPeriodEnd: dateSchema.optional(),
+    paymentDate: dateSchema.optional().nullable(),
+    paymentStatus: payrollStatusEnum.optional(),
+    generatedBy: uuidSchema.optional(),
   })
   .merge(earningsSchema.partial())
   .merge(deductionsSchema.partial())
   .superRefine((data, ctx) => {
-    if (data.pay_period_start && data.pay_period_end && data.pay_period_end < data.pay_period_start) {
+    if (data.payPeriodStart && data.payPeriodEnd && data.payPeriodEnd < data.payPeriodStart) {
       ctx.addIssue({
-        path: ["pay_period_end"],
+        path: ["payPeriodEnd"],
         code: z.ZodIssueCode.custom,
         message: "Pay period end cannot be before start date",
       });
     }
 
-    if (data.payment_date && data.pay_period_end && data.payment_date < data.pay_period_end) {
+    if (data.paymentDate && data.payPeriodEnd && data.paymentDate < data.payPeriodEnd) {
       ctx.addIssue({
-        path: ["payment_date"],
+        path: ["paymentDate"],
         code: z.ZodIssueCode.custom,
         message: "Payment date cannot be before the pay period ends",
       });
@@ -90,13 +90,13 @@ const payrollUpdateSchema = z
 
 const markPaidSchema = z
   .object({
-    payment_date: dateSchema.optional().nullable(),
-    payment_status: payrollStatusEnum.optional().default("Paid"),
+    paymentDate: dateSchema.optional().nullable(),
+    paymentStatus: payrollStatusEnum.optional().default("Paid"),
   })
   .superRefine((data, ctx) => {
-    if (data.payment_status && data.payment_status !== "Paid") {
+    if (data.paymentStatus && data.paymentStatus !== "Paid") {
       ctx.addIssue({
-        path: ["payment_status"],
+        path: ["paymentStatus"],
         code: z.ZodIssueCode.custom,
         message: "Payment status must be set to Paid when marking as paid",
       });
@@ -105,11 +105,11 @@ const markPaidSchema = z
 
 const payrollQuerySchema = z
   .object({
-    employee_id: uuidSchema.optional(),
-    payment_status: payrollStatusEnum.optional(),
-    start_date: dateSchema.optional(),
-    end_date: dateSchema.optional(),
-    include_pending: z.enum(["true", "false"]).transform((val) => val === "true").optional(),
+    employeeId: uuidSchema.optional(),
+    paymentStatus: payrollStatusEnum.optional(),
+    startDate: dateSchema.optional(),
+    endDate: dateSchema.optional(),
+    includePending: z.enum(["true", "false"]).transform((val) => val === "true").optional(),
     limit: z
       .string()
       .regex(/^\d+$/)
@@ -122,9 +122,9 @@ const payrollQuerySchema = z
       .optional(),
   })
   .superRefine((data, ctx) => {
-    if (data.start_date && data.end_date && data.end_date < data.start_date) {
+    if (data.startDate && data.endDate && data.endDate < data.startDate) {
       ctx.addIssue({
-        path: ["end_date"],
+        path: ["endDate"],
         code: z.ZodIssueCode.custom,
         message: "End date cannot be before start date",
       });
@@ -132,8 +132,8 @@ const payrollQuerySchema = z
   })
   .passthrough();
 
-const payrollIdSchema = z.object({ id: uuidSchema });
-const employeeParamSchema = z.object({ employeeId: uuidSchema });
+const payrollIdSchema = z.object({ id: uuidSchema }).strict();
+const employeeParamSchema = z.object({ employeeId: uuidSchema }).strict();
 
 export const payrollValidationSchema = {
   payroll: {

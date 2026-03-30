@@ -11,23 +11,23 @@ const collegeCustomController = {
       let query = `
         SELECT 
           BIN_TO_UUID(c.id) as id,
-          BIN_TO_UUID(c.company_id) as company_id,
-          c.college_name,
-          c.college_name_amharic,
-          c.college_description,
-          c.college_description_amharic,
-          comp.company_name,
-          c.created_at,
-          c.updated_at
+          BIN_TO_UUID(c.companyId) as companyId,
+          c.collegeName,
+          c.collegeNameAmharic,
+          c.collegeDescription,
+          c.collegeDescriptionAmharic,
+          comp.companyName,
+          c.createdAt,
+          c.updatedAt
         FROM college c
-        JOIN company comp ON c.company_id = comp.id
-        WHERE c.company_id = UUID_TO_BIN(?)
+        JOIN company comp ON c.companyId = comp.id
+        WHERE c.companyId = UUID_TO_BIN(?)
       `;
 
       let countQuery = `
         SELECT COUNT(*) as total 
         FROM college 
-        WHERE company_id = UUID_TO_BIN(?)
+        WHERE companyId = UUID_TO_BIN(?)
       `;
 
       const params = [companyId];
@@ -35,21 +35,21 @@ const collegeCustomController = {
 
       if (search && search.trim() !== "") {
         query += ` AND (
-          c.college_name LIKE ? OR 
-          c.college_name_amharic LIKE ? OR 
-          c.college_description LIKE ?
+          c.collegeName LIKE ? OR 
+          c.collegeNameAmharic LIKE ? OR 
+          c.collegeDescription LIKE ?
         )`;
         countQuery += ` AND (
-          college_name LIKE ? OR 
-          college_name_amharic LIKE ? OR 
-          college_description LIKE ?
+          collegeName LIKE ? OR 
+          collegeNameAmharic LIKE ? OR 
+          collegeDescription LIKE ?
         )`;
         const searchTerm = `%${search}%`;
         params.push(searchTerm, searchTerm, searchTerm);
         countParams.push(searchTerm, searchTerm, searchTerm);
       }
 
-      query += ` ORDER BY c.college_name ASC LIMIT ? OFFSET ?`;
+      query += ` ORDER BY c.collegeName ASC LIMIT ? OFFSET ?`;
       params.push(parseInt(limit), offset);
 
       const [colleges] = await pool.execute(query, params);
@@ -85,19 +85,19 @@ const collegeCustomController = {
       // Colleges per company
       const [collegesPerCompany] = await pool.execute(`
         SELECT 
-          comp.company_name,
-          COUNT(c.id) as college_count
+          comp.companyName,
+          COUNT(c.id) as collegeCount
         FROM company comp
-        LEFT JOIN college c ON comp.id = c.company_id
-        GROUP BY comp.id, comp.company_name
-        ORDER BY college_count DESC
+        LEFT JOIN college c ON comp.id = c.companyId
+        GROUP BY comp.id, comp.companyName
+        ORDER BY collegeCount DESC
       `);
 
       // Recent colleges
       const [recentColleges] = await pool.execute(`
         SELECT COUNT(*) as recent 
         FROM college 
-        WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+        WHERE createdAt >= DATE_SUB(NOW(), INTERVAL 30 DAY)
       `);
 
       res.json({
@@ -137,7 +137,7 @@ const collegeCustomController = {
         } catch (validationError) {
           return res.status(400).json({
             success: false,
-            error: `Validation failed for college: ${college.college_name}`,
+            error: `Validation failed for college: ${college.collegeName}`,
             details: validationError.errors,
           });
         }
@@ -146,24 +146,24 @@ const collegeCustomController = {
       const results = [];
       for (const college of colleges) {
         const {
-          company_id,
-          college_name,
-          college_name_amharic,
-          college_description,
-          college_description_amharic,
+          companyId,
+          collegeName,
+          collegeNameAmharic,
+          collegeDescription,
+          collegeDescriptionAmharic,
         } = college;
 
         const query = `
-          INSERT INTO college (company_id, college_name, college_name_amharic, college_description, college_description_amharic) 
+          INSERT INTO college (companyId, collegeName, collegeNameAmharic, collegeDescription, collegeDescriptionAmharic) 
           VALUES (UUID_TO_BIN(?), ?, ?, ?, ?)
         `;
 
         const [result] = await pool.execute(query, [
-          company_id,
-          college_name,
-          college_name_amharic || null,
-          college_description || null,
-          college_description_amharic || null,
+          companyId,
+          collegeName,
+          collegeNameAmharic || null,
+          collegeDescription || null,
+          collegeDescriptionAmharic || null,
         ]);
 
         // Get the created college
@@ -171,12 +171,12 @@ const collegeCustomController = {
           `
           SELECT 
             BIN_TO_UUID(id) as id,
-            BIN_TO_UUID(company_id) as company_id,
-            college_name,
-            college_name_amharic,
-            college_description,
-            college_description_amharic,
-            created_at
+            BIN_TO_UUID(companyId) as companyId,
+            collegeName,
+            collegeNameAmharic,
+            collegeDescription,
+            collegeDescriptionAmharic,
+            createdAt
           FROM college 
           WHERE id = ?
         `,
@@ -211,21 +211,21 @@ const collegeCustomController = {
       let sqlQuery = `
         SELECT 
           BIN_TO_UUID(c.id) as id,
-          BIN_TO_UUID(c.company_id) as company_id,
-          c.college_name,
-          c.college_name_amharic,
-          c.college_description,
-          comp.company_name,
-          c.created_at
+          BIN_TO_UUID(c.companyId) as companyId,
+          c.collegeName,
+          c.collegeNameAmharic,
+          c.collegeDescription,
+          comp.companyName,
+          c.createdAt
         FROM college c
-        JOIN company comp ON c.company_id = comp.id
+        JOIN company comp ON c.companyId = comp.id
         WHERE 1=1
       `;
 
       let countQuery = `
         SELECT COUNT(*) as total
         FROM college c
-        JOIN company comp ON c.company_id = comp.id
+        JOIN company comp ON c.companyId = comp.id
         WHERE 1=1
       `;
 
@@ -234,16 +234,16 @@ const collegeCustomController = {
 
       if (query && query.trim() !== "") {
         sqlQuery += ` AND (
-          c.college_name LIKE ? OR 
-          c.college_name_amharic LIKE ? OR 
-          c.college_description LIKE ? OR
-          comp.company_name LIKE ?
+          c.collegeName LIKE ? OR 
+          c.collegeNameAmharic LIKE ? OR 
+          c.collegeDescription LIKE ? OR
+          comp.companyName LIKE ?
         )`;
         countQuery += ` AND (
-          c.college_name LIKE ? OR 
-          c.college_name_amharic LIKE ? OR 
-          c.college_description LIKE ? OR
-          comp.company_name LIKE ?
+          c.collegeName LIKE ? OR 
+          c.collegeNameAmharic LIKE ? OR 
+          c.collegeDescription LIKE ? OR
+          comp.companyName LIKE ?
         )`;
         const searchTerm = `%${query}%`;
         params.push(searchTerm, searchTerm, searchTerm, searchTerm);
@@ -251,13 +251,13 @@ const collegeCustomController = {
       }
 
       if (companyId) {
-        sqlQuery += ` AND c.company_id = UUID_TO_BIN(?)`;
-        countQuery += ` AND c.company_id = UUID_TO_BIN(?)`;
+        sqlQuery += ` AND c.companyId = UUID_TO_BIN(?)`;
+        countQuery += ` AND c.companyId = UUID_TO_BIN(?)`;
         params.push(companyId);
         countParams.push(companyId);
       }
 
-      sqlQuery += ` ORDER BY c.college_name ASC LIMIT ? OFFSET ?`;
+      sqlQuery += ` ORDER BY c.collegeName ASC LIMIT ? OFFSET ?`;
       params.push(parseInt(limit), offset);
 
       const [colleges] = await pool.execute(sqlQuery, params);
@@ -298,10 +298,10 @@ const collegeCustomController = {
       let query = `
         SELECT 
           BIN_TO_UUID(id) as id,
-          college_name,
-          BIN_TO_UUID(company_id) as company_id
+          collegeName,
+          BIN_TO_UUID(companyId) as companyId
         FROM college 
-        WHERE college_name = ? AND company_id = UUID_TO_BIN(?)
+        WHERE collegeName = ? AND companyId = UUID_TO_BIN(?)
       `;
 
       const params = [collegeName, companyId];
@@ -343,19 +343,19 @@ const collegeCustomController = {
       const query = `
         SELECT 
           BIN_TO_UUID(c.id) as id,
-          BIN_TO_UUID(c.company_id) as company_id,
-          c.college_name,
-          c.college_name_amharic,
-          c.college_description,
-          c.college_description_amharic,
-          comp.company_name,
-          comp.company_name_amharic,
-          comp.company_email,
-          comp.company_phone,
-          c.created_at,
-          c.updated_at
+          BIN_TO_UUID(c.companyId) as companyId,
+          c.collegeName,
+          c.collegeNameAmharic,
+          c.collegeDescription,
+          c.collegeDescriptionAmharic,
+          comp.companyName,
+          comp.companyNameAmharic,
+          comp.companyEmail,
+          comp.companyPhone,
+          c.createdAt,
+          c.updatedAt
         FROM college c
-        JOIN company comp ON c.company_id = comp.id
+        JOIN company comp ON c.companyId = comp.id
         WHERE c.id = UUID_TO_BIN(?)
       `;
 

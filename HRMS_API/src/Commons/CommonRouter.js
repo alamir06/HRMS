@@ -14,7 +14,7 @@ export const createCrudRouter = (config) => {
     displayNameField = null, 
     entityLabel = "Record", 
     softDeleteEnabled = false,
-    softDeleteField = "deleted_at",
+    softDeleteField = "deletedAt",
     enableBulkOperations = false,
     authMiddleware = authenticateToken,
     createRoles,
@@ -205,7 +205,7 @@ export const createCrudRouter = (config) => {
     "/:id",
     [
       validateId,
-      // ...applyAuthorization(deleteRoles),
+      ...applyAuthorization(deleteRoles),
       ...middleware.delete,
     ],
     controller.delete

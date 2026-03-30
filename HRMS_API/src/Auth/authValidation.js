@@ -11,37 +11,37 @@ export const authValidation = {
   login: z.object({
     identifier: z.string().min(1, "Username or email is required"),
     password: z.string().min(1, "Password is required"),
-  }),
+  }).strict(),
   createUser: z.object({
-    employee_id: uuidSchema,
+    employeeId: uuidSchema,
     username: z
       .string()
       .min(4, "Username must be at least 4 characters")
       .regex(/^[a-zA-Z0-9._-]+$/, "Username may include letters, numbers, ., _ or -"),
-    system_role: z
+    systemRole: z
       .enum([
-        'HR_MANAGER',
+        'HRMANAGER',
         'DEAN',
-        'employee',
+        'EMPLOYEE',
         'HEAD',
-        'HR_OFFICER',
+        'HROFFICER',
         'RECRUITER',
-        'PAYROLL_OFFICER',
+        'PAYROLLOFFICER',
       ])
       .optional(),
-    temporary_password: passwordSchema.optional(),
-    send_email: z.boolean().optional().default(true),
-  }),
+    temporaryPassword: passwordSchema.optional(),
+    sendEmail: z.boolean().optional().default(true),
+  }).strict(),
   changePassword: z
     .object({
-      current_password: z.string().min(1, "Current password is required"),
-      new_password: passwordSchema,
-      confirm_password: z.string().min(1, "Confirm password is required"),
+      currentPassword: z.string().min(1, "Current password is required"),
+      newPassword: passwordSchema,
+      confirmPassword: z.string().min(1, "Confirm password is required"),
     })
     .superRefine((data, ctx) => {
-      if (data.new_password !== data.confirm_password) {
+      if (data.newPassword !== data.confirmPassword) {
         ctx.addIssue({
-          path: ["confirm_password"],
+          path: ["confirmPassword"],
           code: z.ZodIssueCode.custom,
           message: "Passwords do not match",
         });

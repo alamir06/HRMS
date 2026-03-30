@@ -1,14 +1,14 @@
 import { z } from "zod";
 
 const uuidSchema = z.string().uuid("Invalid UUID format");
-const notificationTypeEnum = z.enum(["info", "warning", "success", "error"]);
+const notificationTypeEnum = z.enum(["INFO", "WARNING", "SUCCESS", "ERROR"]);
 const relatedModuleEnum = z.enum([
   "attendance",
   "leave",
   "payroll",
   "recruitment",
-  "performance",
-  "general",
+  "PERFORMANCE",
+  "GENERAL",
 ]);
 
 const booleanString = z
@@ -29,64 +29,64 @@ const paginationShape = {
 };
 
 const notificationBase = z.object({
-  user_id: uuidSchema,
+  userId: uuidSchema,
   title: z.string().min(1, "Title is required"),
-  title_amharic: z.string().optional().nullable(),
+  titleAmharic: z.string().optional().nullable(),
   message: z.string().min(1, "Message is required"),
-  message_amharic: z.string().optional().nullable(),
-  notification_type: notificationTypeEnum.optional().default("info"),
-  related_module: relatedModuleEnum.optional().default("general"),
-  related_id: uuidSchema.optional().nullable(),
-  is_read: z.boolean().optional().default(false),
-});
+  messageAmharic: z.string().optional().nullable(),
+  notificationType: notificationTypeEnum.optional().default("INFO"),
+  relatedModule: relatedModuleEnum.optional().default("GENERAL"),
+  relatedId: uuidSchema.optional().nullable(),
+  isRead: z.boolean().optional().default(false),
+}).strict();
 
 const notificationUpdate = z
   .object({
     title: z.string().min(1).optional(),
-    title_amharic: z.string().nullable().optional(),
+    titleAmharic: z.string().nullable().optional(),
     message: z.string().min(1).optional(),
-    message_amharic: z.string().nullable().optional(),
-    notification_type: notificationTypeEnum.optional(),
-    related_module: relatedModuleEnum.optional(),
-    related_id: uuidSchema.optional().nullable(),
-    is_read: z.boolean().optional(),
+    messageAmharic: z.string().nullable().optional(),
+    notificationType: notificationTypeEnum.optional(),
+    relatedModule: relatedModuleEnum.optional(),
+    relatedId: uuidSchema.optional().nullable(),
+    isRead: z.boolean().optional(),
   })
   .refine((data) => Object.keys(data).length > 0, {
     message: "At least one field must be provided",
   });
 
 const notificationReadSchema = z.object({
-  is_read: z.boolean().optional().default(true),
-});
+  isRead: z.boolean().optional().default(true),
+}).strict();
 
 const notificationBulkReadSchema = z
   .object({
-    notification_ids: z.array(uuidSchema).optional(),
-    is_read: z.boolean().optional().default(true),
-    mark_all: z.boolean().optional().default(false),
+    notificationIds: z.array(uuidSchema).optional(),
+    isRead: z.boolean().optional().default(true),
+    markAll: z.boolean().optional().default(false),
   })
   .superRefine((data, ctx) => {
-    if (!data.mark_all && (!data.notification_ids || data.notification_ids.length === 0)) {
+    if (!data.markAll && (!data.notificationIds || data.notificationIds.length === 0)) {
       ctx.addIssue({
-        path: ["notification_ids"],
+        path: ["notificationIds"],
         code: z.ZodIssueCode.custom,
-        message: "Provide notification_ids or set mark_all to true",
+        message: "Provide notificationIds or set markAll to true",
       });
     }
   });
 
 const queryFilters = z
   .object({
-    user_id: uuidSchema.optional(),
-    is_read: booleanString.optional(),
-    notification_type: notificationTypeEnum.optional(),
-    related_module: relatedModuleEnum.optional(),
+    userId: uuidSchema.optional(),
+    isRead: booleanString.optional(),
+    notificationType: notificationTypeEnum.optional(),
+    relatedModule: relatedModuleEnum.optional(),
     ...paginationShape,
   })
   .passthrough();
 
-const userParams = z.object({ userId: uuidSchema });
-const notificationIdSchema = z.object({ id: uuidSchema });
+const userParams = z.object({ userId: uuidSchema }).strict();
+const notificationIdSchema = z.object({ id: uuidSchema }).strict();
 
 export const notificationValidationSchema = {
   notification: {

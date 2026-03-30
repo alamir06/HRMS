@@ -8,9 +8,9 @@ const assetRouter = express.Router();
 
 const assetCategoryRouter = createCrudRouter({
   routePath: "/",
-  tableName: "asset_category",
+  tableName: "assetCategory",
   validationSchema: assetValidationSchema.category,
-  displayNameField: "category_name",
+  displayNameField: "categoryName",
   entityLabel: "Asset Category",
   uuidEnabled: true,
 });
@@ -19,16 +19,16 @@ const assetCrudRouter = createCrudRouter({
   routePath: "/",
   tableName: "assets",
   validationSchema: assetValidationSchema.asset,
-  displayNameField: "asset_name",
+  displayNameField: "assetName",
   entityLabel: "Asset",
   uuidEnabled: true,
 });
 
 const assetAssignmentRouter = createCrudRouter({
   routePath: "/",
-  tableName: "asset_assignment",
+  tableName: "assetAssignment",
   validationSchema: assetValidationSchema.assignment,
-  displayNameField: "assigned_date",
+  displayNameField: "assignedDate",
   entityLabel: "Asset Assignment",
   uuidEnabled: true,
 });
@@ -40,35 +40,35 @@ assetRouter.use("/assignments", assetAssignmentRouter);
 assetRouter.post(
   "/assignments/assign",
   authenticateToken,
-  authorize("HR_MANAGER", "HR_OFFICER", "HEAD"),
+  authorize("HRMANAGER", "HROFFICER", "HEAD"),
   assetController.assignAsset
 );
 
 assetRouter.post(
   "/assignments/:id/return",
   authenticateToken,
-  authorize("HR_MANAGER", "HR_OFFICER", "HEAD"),
+  authorize("HRMANAGER", "HROFFICER", "HEAD"),
   assetController.returnAsset
 );
 
 assetRouter.get(
   "/items/available",
   authenticateToken,
-  authorize("HR_MANAGER", "HR_OFFICER", "HEAD", "employee"),
+  authorize("HRMANAGER", "HROFFICER", "HEAD", "EMPLOYEE"),
   assetController.listAvailableAssets
 );
 
 assetRouter.get(
   "/items/:id/summary",
   authenticateToken,
-  authorize("HR_MANAGER", "HR_OFFICER", "HEAD"),
+  authorize("HRMANAGER", "HROFFICER", "HEAD"),
   assetController.getAssetSummary
 );
 
 assetRouter.get(
   "/employees/:employeeId/assets",
   authenticateToken,
-  authorize("HR_MANAGER", "HR_OFFICER", "HEAD"),
+  authorize("HRMANAGER", "HROFFICER", "HEAD"),
   assetController.getEmployeeAssets
 );
 

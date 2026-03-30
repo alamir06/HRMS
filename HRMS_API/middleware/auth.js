@@ -15,18 +15,18 @@ export const authenticateToken = async (req, res, next) => {
       `SELECT 
          BIN_TO_UUID(u.id) AS id,
          u.username,
-         u.is_active,
-         u.must_change_password,
-         BIN_TO_UUID(u.employee_id) AS employee_id,
-         e.employee_role,
-         e.employment_status,
-         ep.first_name,
-         ep.middle_name,
-         ep.last_name
+         u.isActive,
+         u.mustChangePassword,
+         BIN_TO_UUID(u.employeeId) AS employeeId,
+         e.employeeRole,
+         e.employmentStatus,
+         ep.firstName,
+         ep.middleName,
+         ep.lastName
        FROM users u
-       JOIN employee e ON u.employee_id = e.id
-       LEFT JOIN employee_personal ep ON e.id = ep.employee_id
-       WHERE u.id = UUID_TO_BIN(?) AND u.is_active = TRUE
+       JOIN employee e ON u.employeeId = e.id
+       LEFT JOIN employeePersonal ep ON e.id = ep.employeeId
+       WHERE u.id = UUID_TO_BIN(?) AND u.isActive = TRUE
        LIMIT 1`,
       [decoded.userId]
     );
@@ -39,11 +39,11 @@ export const authenticateToken = async (req, res, next) => {
     req.user = {
       id: user.id,
       username: user.username,
-      role: user.employee_role,
-      employmentStatus: user.employment_status,
-      employeeId: user.employee_id,
-      mustChangePassword: Boolean(user.must_change_password),
-      name: [user.first_name, user.middle_name, user.last_name].filter(Boolean).join(" ") || user.username,
+      role: user.employeeRole,
+      employmentStatus: user.employmentStatus,
+      employeeId: user.employeeId,
+      mustChangePassword: Boolean(user.mustChangePassword),
+      name: [user.firstName, user.middleName, user.lastName].filter(Boolean).join(" ") || user.username,
     };
 
     next();

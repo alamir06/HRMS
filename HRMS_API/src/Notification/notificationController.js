@@ -5,21 +5,21 @@ const DEFAULT_LIMIT = 50;
 
 const mapNotificationRecord = (record) => ({
   id: record.id,
-  userId: record.user_id,
+  userId: record.userId,
   title: record.title,
-  titleAmharic: record.title_amharic,
+  titleAmharic: record.titleAmharic,
   message: record.message,
-  messageAmharic: record.message_amharic,
-  notificationType: record.notification_type,
-  relatedModule: record.related_module,
-  relatedId: record.related_id,
-  isRead: Boolean(record.is_read),
-  createdAt: record.created_at,
+  messageAmharic: record.messageAmharic,
+  notificationType: record.notificationType,
+  relatedModule: record.relatedModule,
+  relatedId: record.relatedId,
+  isRead: Boolean(record.isRead),
+  createdAt: record.createdAt,
   user: {
     username: record.username,
-    preferredLanguage: record.preferred_language,
-    employeeId: record.employee_id,
-    employeeName: record.employee_name,
+    preferredLanguage: record.preferredLanguage,
+    employeeId: record.employeeId,
+    employeeName: record.employeeName,
   },
 });
 
@@ -28,22 +28,22 @@ const buildFilterClause = ({ userId, isRead, notificationType, relatedModule }) 
   const params = [];
 
   if (userId) {
-    conditions.push("n.user_id = UUID_TO_BIN(?)");
+    conditions.push("n.userId = UUID_TO_BIN(?)");
     params.push(userId);
   }
 
   if (typeof isRead === "boolean") {
-    conditions.push("n.is_read = ?");
+    conditions.push("n.isRead = ?");
     params.push(isRead ? 1 : 0);
   }
 
   if (notificationType) {
-    conditions.push("n.notification_type = ?");
+    conditions.push("n.notificationType = ?");
     params.push(notificationType);
   }
 
   if (relatedModule) {
-    conditions.push("n.related_module = ?");
+    conditions.push("n.relatedModule = ?");
     params.push(relatedModule);
   }
 
@@ -56,25 +56,25 @@ const buildFilterClause = ({ userId, isRead, notificationType, relatedModule }) 
 const buildSelectQuery = (whereClause) => `
   SELECT
     BIN_TO_UUID(n.id) AS id,
-    BIN_TO_UUID(n.user_id) AS user_id,
+    BIN_TO_UUID(n.userId) AS userId,
     n.title,
-    n.title_amharic,
+    n.titleAmharic,
     n.message,
-    n.message_amharic,
-    n.notification_type,
-    n.related_module,
-    BIN_TO_UUID(n.related_id) AS related_id,
-    n.is_read,
-    n.created_at,
+    n.messageAmharic,
+    n.notificationType,
+    n.relatedModule,
+    BIN_TO_UUID(n.relatedId) AS relatedId,
+    n.isRead,
+    n.createdAt,
     u.username,
-    u.preferred_language,
-    BIN_TO_UUID(u.employee_id) AS employee_id,
-    CONCAT_WS(' ', ep.first_name, ep.middle_name, ep.last_name) AS employee_name
+    u.preferredLanguage,
+    BIN_TO_UUID(u.employeeId) AS employeeId,
+    CONCAT_WS(' ', ep.firstName, ep.middleName, ep.lastName) AS employeeName
   FROM notifications n
-  LEFT JOIN users u ON n.user_id = u.id
-  LEFT JOIN employee_personal ep ON u.employee_id = ep.employee_id
+  LEFT JOIN users u ON n.userId = u.id
+  LEFT JOIN employeePersonal ep ON u.employeeId = ep.employeeId
   ${whereClause}
-  ORDER BY n.created_at DESC
+  ORDER BY n.createdAt DESC
 `;
 
 export const createNotification = async (req, res, next) => {
@@ -82,15 +82,15 @@ export const createNotification = async (req, res, next) => {
   try {
     const id = uuidv4();
     const {
-      user_id,
+      userId,
       title,
-      title_amharic,
+      titleAmharic,
       message,
-      message_amharic,
-      notification_type = "info",
-      related_module = "general",
-      related_id,
-      is_read = false,
+      messageAmharic,
+      notificationType = "INFO",
+      relatedModule = "GENERAL",
+      relatedId,
+      isRead = false,
     } = req.body;
 
     await connection.beginTransaction();
@@ -98,15 +98,15 @@ export const createNotification = async (req, res, next) => {
     const insertQuery = `
       INSERT INTO notifications (
         id,
-        user_id,
+        userId,
         title,
-        title_amharic,
+        titleAmharic,
         message,
-        message_amharic,
-        notification_type,
-        related_module,
-        related_id,
-        is_read
+        messageAmharic,
+        notificationType,
+        relatedModule,
+        relatedId,
+        isRead
       ) VALUES (
         UUID_TO_BIN(?),
         UUID_TO_BIN(?),
@@ -116,27 +116,27 @@ export const createNotification = async (req, res, next) => {
         ?,
         ?,
         ?,
-        ${related_id ? "UUID_TO_BIN(?)" : "NULL"},
+        ${relatedId ? "UUID_TO_BIN(?)" : "NULL"},
         ?
       )
     `;
 
     const values = [
       id,
-      user_id,
+      userId,
       title,
-      title_amharic || null,
+      titleAmharic || null,
       message,
-      message_amharic || null,
-      notification_type,
-      related_module,
+      messageAmharic || null,
+      notificationType,
+      relatedModule,
     ];
 
-    if (related_id) {
-      values.push(related_id);
+    if (relatedId) {
+      values.push(relatedId);
     }
 
-    values.push(is_read ? 1 : 0);
+    values.push(isRead ? 1 : 0);
 
     await connection.execute(insertQuery, values);
     await connection.commit();
@@ -157,19 +157,19 @@ export const createNotification = async (req, res, next) => {
 export const listNotifications = async (req, res, next) => {
   try {
     const {
-      user_id,
-      is_read,
-      notification_type,
-      related_module,
+      userId,
+      isRead,
+      notificationType,
+      relatedModule,
       limit,
       offset,
     } = req.query;
 
     const { whereClause, params } = buildFilterClause({
-      userId: user_id,
-      isRead: typeof is_read === "boolean" ? is_read : undefined,
-      notificationType: notification_type,
-      relatedModule: related_module,
+      userId: userId,
+      isRead: typeof isRead === "boolean" ? isRead : undefined,
+      notificationType: notificationType,
+      relatedModule: relatedModule,
     });
 
     const limitValue = typeof limit === "number" ? limit : DEFAULT_LIMIT;
@@ -211,18 +211,18 @@ export const getUserNotifications = async (req, res, next) => {
   const { userId } = req.params;
   try {
     const {
-      is_read,
-      notification_type,
-      related_module,
+      isRead,
+      notificationType,
+      relatedModule,
       limit,
       offset,
     } = req.query;
 
     const { whereClause, params } = buildFilterClause({
       userId,
-      isRead: typeof is_read === "boolean" ? is_read : undefined,
-      notificationType: notification_type,
-      relatedModule: related_module,
+      isRead: typeof isRead === "boolean" ? isRead : undefined,
+      notificationType: notificationType,
+      relatedModule: relatedModule,
     });
 
     const limitValue = typeof limit === "number" ? limit : DEFAULT_LIMIT;
@@ -247,13 +247,13 @@ export const updateNotification = async (req, res, next) => {
 
   const allowedFields = [
     "title",
-    "title_amharic",
+    "titleAmharic",
     "message",
-    "message_amharic",
-    "notification_type",
-    "related_module",
-    "related_id",
-    "is_read",
+    "messageAmharic",
+    "notificationType",
+    "relatedModule",
+    "relatedId",
+    "isRead",
   ];
 
   const setClauses = [];
@@ -264,18 +264,18 @@ export const updateNotification = async (req, res, next) => {
       continue;
     }
 
-    if (key === "related_id") {
+    if (key === "relatedId") {
       if (value) {
-        setClauses.push("related_id = UUID_TO_BIN(?)");
+        setClauses.push("relatedId = UUID_TO_BIN(?)");
         values.push(value);
       } else {
-        setClauses.push("related_id = NULL");
+        setClauses.push("relatedId = NULL");
       }
       continue;
     }
 
-    if (key === "is_read") {
-      setClauses.push("is_read = ?");
+    if (key === "isRead") {
+      setClauses.push("isRead = ?");
       values.push(value ? 1 : 0);
       continue;
     }
@@ -306,12 +306,12 @@ export const updateNotification = async (req, res, next) => {
 
 export const markNotificationRead = async (req, res, next) => {
   const { id } = req.params;
-  const { is_read = true } = req.body;
+  const { isRead = true } = req.body;
 
   try {
     const [result] = await pool.execute(
-      "UPDATE notifications SET is_read = ? WHERE id = UUID_TO_BIN(?)",
-      [is_read ? 1 : 0, id]
+      "UPDATE notifications SET isRead = ? WHERE id = UUID_TO_BIN(?)",
+      [isRead ? 1 : 0, id]
     );
 
     if (result.affectedRows === 0) {
@@ -326,16 +326,16 @@ export const markNotificationRead = async (req, res, next) => {
 
 export const markUserNotificationsRead = async (req, res, next) => {
   const { userId } = req.params;
-  const { notification_ids = [], is_read = true, mark_all = false } = req.body;
+  const { notificationIds = [], isRead = true, markAll = false } = req.body;
 
   try {
-    const values = [is_read ? 1 : 0, userId];
-    let query = "UPDATE notifications SET is_read = ? WHERE user_id = UUID_TO_BIN(?)";
+    const values = [isRead ? 1 : 0, userId];
+    let query = "UPDATE notifications SET isRead = ? WHERE userId = UUID_TO_BIN(?)";
 
-    if (!mark_all) {
-      const placeholders = notification_ids.map(() => "UUID_TO_BIN(?)").join(", ");
+    if (!markAll) {
+      const placeholders = notificationIds.map(() => "UUID_TO_BIN(?)").join(", ");
       query += ` AND id IN (${placeholders})`;
-      values.push(...notification_ids);
+      values.push(...notificationIds);
     }
 
     const [result] = await pool.execute(query, values);

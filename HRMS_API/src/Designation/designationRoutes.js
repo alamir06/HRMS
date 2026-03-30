@@ -9,11 +9,11 @@ import designationCustomController from "./designationController.js";
 const assignManagerForDesignation = async (connection, designationId) => {
   const [rows] = await connection.query(
     `SELECT des.title,
-            BIN_TO_UUID(des.employee_id) AS employee_id,
-            BIN_TO_UUID(des.department_id) AS department_id,
-            d.department_type
+            BIN_TO_UUID(des.employeeId) AS employeeId,
+            BIN_TO_UUID(des.departmentId) AS departmentId,
+            d.departmentType
        FROM designations des
-       LEFT JOIN department d ON des.department_id = d.id
+       LEFT JOIN department d ON des.departmentId = d.id
       WHERE des.id = UUID_TO_BIN(?)
       LIMIT 1`,
     [designationId]
@@ -21,14 +21,14 @@ const assignManagerForDesignation = async (connection, designationId) => {
 
   if (!rows.length) return;
 
-  const { title, employee_id: employeeId, department_id: deptId, department_type: deptType } = rows[0];
+  const { title, employeeId: employeeId, departmentId: deptId, departmentType: deptType } = rows[0];
   if (!employeeId || !deptId) return;
 
   const t = (title || "").toLowerCase();
-  const isAcademic = deptType === "academic";
-  const isHead = t.includes("head");
+  const isAcademic = deptType === "ACADEMIC";
+  const isHead = t.includes("HEAD");
   const isManager = t.includes("manager");
-  const isDea = t.includes("dea") || t.includes("dean");
+  const isDea = t.includes("dea") || t.includes("DEAN");
 
   if (isDea) return;
 
@@ -36,7 +36,7 @@ const assignManagerForDesignation = async (connection, designationId) => {
 
   if (shouldAssign) {
     await connection.query(
-      `UPDATE department SET manager_id = UUID_TO_BIN(?) WHERE id = UUID_TO_BIN(?)`,
+      `UPDATE department SET managerId = UUID_TO_BIN(?) WHERE id = UUID_TO_BIN(?)`,
       [employeeId, deptId]
     );
   }
@@ -47,7 +47,7 @@ const designationRouter = express.Router();
 designationRouter.post(
   "/",
   authenticateToken,
-  authorize("HR_MANAGER"),
+  authorize("HRMANAGER"),
   async (req, res) => {
     try {
       const payload = designationValidationSchema.create.parse(req.body);
@@ -58,38 +58,38 @@ designationRouter.post(
         await connection.beginTransaction();
 
         const {
-          employee_id,
-          department_id,
-          college_id,
+          employeeId,
+          departmentId,
+          collegeId,
           title,
-          title_amharic,
-          job_description,
-          job_description_amharic,
-          grade_level,
-          min_salary,
-          max_salary,
-          status = "active",
+          titleAmharic,
+          jobDescription,
+          jobDescriptionAmharic,
+          gradeLevel,
+          minSalary,
+          maxSalary,
+          status = "ACTIVE",
         } = payload;
 
         await connection.query(
           `INSERT INTO designations (
-            id, employee_id, department_id, college_id, title, title_amharic,
-            job_description, job_description_amharic, grade_level, min_salary, max_salary, status
+            id, employeeId, departmentId, collegeId, title, titleAmharic,
+            jobDescription, jobDescriptionAmharic, gradeLevel, minSalary, maxSalary, status
           ) VALUES (
             UUID_TO_BIN(?), UUID_TO_BIN(?), UUID_TO_BIN(?), UUID_TO_BIN(?), ?, ?, ?, ?, ?, ?, ?, ?
           )`,
           [
             id,
-            employee_id,
-            department_id || null,
-            college_id || null,
+            employeeId,
+            departmentId || null,
+            collegeId || null,
             title,
-            title_amharic || null,
-            job_description || null,
-            job_description_amharic || null,
-            grade_level || null,
-            min_salary ?? null,
-            max_salary ?? null,
+            titleAmharic || null,
+            jobDescription || null,
+            jobDescriptionAmharic || null,
+            gradeLevel || null,
+            minSalary ?? null,
+            maxSalary ?? null,
             status,
           ]
         );
@@ -116,7 +116,7 @@ designationRouter.post(
 designationRouter.put(
   "/:id",
   authenticateToken,
-  authorize("HR_MANAGER"),
+  authorize("HRMANAGER"),
   async (req, res) => {
     const { id } = req.params;
     try {
@@ -144,7 +144,7 @@ designationRouter.put(
           throw new Error("No valid fields to update");
         }
 
-        const updateQuery = `UPDATE designations SET ${fields.join(", ")}, updated_at = NOW() WHERE id = UUID_TO_BIN(?)`;
+        const updateQuery = `UPDATE designations SET ${fields.join(", ")}, updatedAt = NOW() WHERE id = UUID_TO_BIN(?)`;
         values.push(id);
 
         const [result] = await connection.query(updateQuery, values);
@@ -177,11 +177,11 @@ const designationCrudRouter = createCrudRouter({
   tableName: "designations",
   validationSchema: designationValidationSchema,
   uuidEnabled: true,
-  uuidFields: ["id", "employee_id", "department_id", "college_id"],
-  createRoles: ["HR_MANAGER"],
+  uuidFields: ["id", "employeeId", "departmentId", "collegeId"],
+  createRoles: ["HRMANAGER"],
   readRoles: null,
-  updateRoles: ["HR_MANAGER"],
-  deleteRoles: ["HR_MANAGER"],
+  updateRoles: ["HRMANAGER"],
+  deleteRoles: ["HRMANAGER"],
 });
 
 designationRouter.use("/", designationCrudRouter);
@@ -190,7 +190,7 @@ designationRouter.use("/", designationCrudRouter);
 designationRouter.get(
   "/department/:departmentId",
   authenticateToken,
-  authorize('HR_MANAGER'),
+  authorize('HRMANAGER'),
   designationCustomController.getDesignationsByDepartment
 );
 
@@ -198,7 +198,7 @@ designationRouter.get(
 designationRouter.get(
   "/stats/dashboard",
     authenticateToken,
-    authorize('HR_MANAGER'),
+    authorize('HRMANAGER'),
   designationCustomController.getDesignationStats
 );
 
@@ -206,7 +206,7 @@ designationRouter.get(
 designationRouter.get(
   "/search/global",
   authenticateToken,
-  authorize('HR_MANAGER'),
+  authorize('HRMANAGER'),
   designationCustomController.searchDesignations
 );
 
@@ -214,7 +214,7 @@ designationRouter.get(
 designationRouter.post(
   "/bulk/update-status",
   authenticateToken,
-  authorize('HR_MANAGER'),
+  authorize('HRMANAGER'),
   designationCustomController.bulkUpdateStatus
 );
 

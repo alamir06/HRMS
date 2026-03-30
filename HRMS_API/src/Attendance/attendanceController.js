@@ -28,24 +28,28 @@ const getCurrentDateTime = () => {
 export const attendanceController = {
   checkIn: async (req, res) => {
     const { employeeId } = req.params;
-    const { date, time, status = "Present", late_minutes, notes, notes_amharic } = req.body;
+    const { date, time, status = "Present", lateMinutes, notes, notesAmharic, shiftId } = req.body;
 
     const { date: defaultDate, time: defaultTime } = getCurrentDateTime();
     const attendanceDate = date || defaultDate;
     const checkInTime = normalizeTime(time || defaultTime);
 
-    const lateMinutes = normalizeMinutes(late_minutes);
+    const lateMinutesParsed = normalizeMinutes(lateMinutes);
     const connection = await pool.getConnection();
 
     try {
       await connection.beginTransaction();
 
+      if (!shiftId) {
+        return res.status(400).json({ success: false, error: "shiftId is required for Check-In" });
+      }
+
       const [existing] = await connection.query(
-        "SELECT id, check_in FROM attendance WHERE employee_id = UUID_TO_BIN(?) AND date = ? FOR UPDATE",
-        [employeeId, attendanceDate]
+        "SELECT id, checkIn FROM attendance WHERE employeeId = UUID_TO_BIN(?) AND Date = ? AND shiftId = UUID_TO_BIN(?) FOR UPDATE",
+        [employeeId, attendanceDate, shiftId]
       );
 
-      if (existing.length > 0 && existing[0].check_in) {
+      if (existing.length > 0 && existing[0].checkIn) {
         await connection.rollback();
         return res.status(409).json({
           success: false,
@@ -56,43 +60,46 @@ export const attendanceController = {
       if (existing.length === 0) {
         await connection.query(
           `INSERT INTO attendance (
-            employee_id,
-            date,
-            check_in,
+            employeeId,
+            Date,
+            checkIn,
             status,
-            late_minutes,
-            overtime_minutes,
+            lateMinutes,
+            overtimeMinutes,
             notes,
-            notes_amharic
-          ) VALUES (UUID_TO_BIN(?), ?, ?, ?, ?, 0, ?, ?)`,
+            notesAmharic,
+            shiftId
+          ) VALUES (UUID_TO_BIN(?), ?, ?, ?, ?, 0, ?, ?, UUID_TO_BIN(?))`,
           [
             employeeId,
             attendanceDate,
             checkInTime,
             status,
-            lateMinutes,
+            lateMinutesParsed,
             notes || null,
-            notes_amharic || null,
+            notesAmharic || null,
+            shiftId
           ]
         );
       } else {
         await connection.query(
           `UPDATE attendance
-             SET check_in = ?,
+             SET checkIn = ?,
                  status = ?,
-                     late_minutes = ?,
+                 lateMinutes = ?,
                  notes = COALESCE(?, notes),
-                 notes_amharic = COALESCE(?, notes_amharic),
-                 updated_at = CURRENT_TIMESTAMP
-           WHERE employee_id = UUID_TO_BIN(?) AND date = ?`,
+                 notesAmharic = COALESCE(?, notesAmharic),
+                 updatedAt = CURRENT_TIMESTAMP
+           WHERE employeeId = UUID_TO_BIN(?) AND Date = ? AND shiftId = UUID_TO_BIN(?)`,
           [
             checkInTime,
             status,
-                lateMinutes,
+            lateMinutesParsed,
             notes || null,
-            notes_amharic || null,
+            notesAmharic || null,
             employeeId,
             attendanceDate,
+            shiftId
           ]
         );
       }
@@ -103,11 +110,12 @@ export const attendanceController = {
         success: true,
         message: "Check-in recorded",
         data: {
-          employee_id: employeeId,
+          employeeId: employeeId,
           date: attendanceDate,
-          check_in: checkInTime,
+          checkIn: checkInTime,
           status,
-          late_minutes: lateMinutes,
+          lateMinutes: lateMinutesParsed,
+          shiftId: shiftId,
         },
       });
     } catch (error) {
@@ -124,21 +132,25 @@ export const attendanceController = {
 
   checkOut: async (req, res) => {
     const { employeeId } = req.params;
-    const { date, time, overtime_minutes, notes, notes_amharic } = req.body;
+    const { date, time, overtimeMinutes, notes, notesAmharic, shiftId } = req.body;
 
     const { date: defaultDate, time: defaultTime } = getCurrentDateTime();
     const attendanceDate = date || defaultDate;
     const checkOutTime = normalizeTime(time || defaultTime);
 
-    const overtimeMinutes = normalizeMinutes(overtime_minutes);
+    const overtimeMinutesParsed = normalizeMinutes(overtimeMinutes);
     const connection = await pool.getConnection();
 
     try {
       await connection.beginTransaction();
 
+      if (!shiftId) {
+        return res.status(400).json({ success: false, error: "shiftId is required for Check-Out" });
+      }
+
       const [existing] = await connection.query(
-        "SELECT id, check_in, check_out FROM attendance WHERE employee_id = UUID_TO_BIN(?) AND date = ? FOR UPDATE",
-        [employeeId, attendanceDate]
+        "SELECT id, checkIn, checkOut FROM attendance WHERE employeeId = UUID_TO_BIN(?) AND Date = ? AND shiftId = UUID_TO_BIN(?) FOR UPDATE",
+        [employeeId, attendanceDate, shiftId]
       );
 
       if (existing.length === 0) {
@@ -149,7 +161,7 @@ export const attendanceController = {
         });
       }
 
-      if (existing[0].check_out) {
+      if (existing[0].checkOut) {
         await connection.rollback();
         return res.status(409).json({
           success: false,
@@ -159,19 +171,20 @@ export const attendanceController = {
 
       await connection.query(
         `UPDATE attendance
-           SET check_out = ?,
-              overtime_minutes = ?,
+           SET checkOut = ?,
+              overtimeMinutes = ?,
                notes = COALESCE(?, notes),
-               notes_amharic = COALESCE(?, notes_amharic),
-               updated_at = CURRENT_TIMESTAMP
-         WHERE employee_id = UUID_TO_BIN(?) AND date = ?`,
+               notesAmharic = COALESCE(?, notesAmharic),
+               updatedAt = CURRENT_TIMESTAMP
+         WHERE employeeId = UUID_TO_BIN(?) AND Date = ? AND shiftId = UUID_TO_BIN(?)`,
         [
           checkOutTime,
-            overtimeMinutes,
+          overtimeMinutesParsed,
           notes || null,
-          notes_amharic || null,
+          notesAmharic || null,
           employeeId,
           attendanceDate,
+          shiftId
         ]
       );
 
@@ -181,10 +194,11 @@ export const attendanceController = {
         success: true,
         message: "Check-out recorded",
         data: {
-          employee_id: employeeId,
+          employeeId: employeeId,
           date: attendanceDate,
-          check_out: checkOutTime,
-          overtime_minutes: overtimeMinutes,
+          checkOut: checkOutTime,
+          overtimeMinutes: overtimeMinutesParsed,
+          shiftId,
         },
       });
     } catch (error) {
@@ -203,8 +217,8 @@ export const attendanceController = {
     try {
       const { employeeId } = req.params;
       const {
-        start_date,
-        end_date,
+        startDate,
+        endDate,
         status,
         page = 1,
         limit = 20,
@@ -214,17 +228,17 @@ export const attendanceController = {
       const limitInt = Math.min(parseInt(limit, 10) || 20, 100);
       const offset = (pageInt - 1) * limitInt;
 
-      const conditions = ["employee_id = UUID_TO_BIN(?)"];
+      const conditions = ["employeeId = UUID_TO_BIN(?)"];
       const params = [employeeId];
 
-      if (start_date) {
+      if (startDate) {
         conditions.push("date >= ?");
-        params.push(start_date);
+        params.push(startDate);
       }
 
-      if (end_date) {
+      if (endDate) {
         conditions.push("date <= ?");
-        params.push(end_date);
+        params.push(endDate);
       }
 
       if (status) {
@@ -238,13 +252,13 @@ export const attendanceController = {
         `SELECT 
             BIN_TO_UUID(id) as id,
             DATE_FORMAT(date, '%Y-%m-%d') as date,
-            TIME_FORMAT(check_in, '%H:%i:%s') as check_in,
-            TIME_FORMAT(check_out, '%H:%i:%s') as check_out,
+            TIME_FORMAT(checkIn, '%H:%i:%s') as checkIn,
+            TIME_FORMAT(checkOut, '%H:%i:%s') as checkOut,
             status,
-            late_minutes,
-            overtime_minutes,
+            lateMinutes,
+            overtimeMinutes,
             notes,
-            notes_amharic
+            notesAmharic
          FROM attendance
          ${whereClause}
          ORDER BY date DESC
@@ -279,19 +293,19 @@ export const attendanceController = {
   getEmployeeSummary: async (req, res) => {
     try {
       const { employeeId } = req.params;
-      const { start_date, end_date } = req.query;
+      const { startDate, endDate } = req.query;
 
-      const conditions = ["employee_id = UUID_TO_BIN(?)"];
+      const conditions = ["employeeId = UUID_TO_BIN(?)"];
       const params = [employeeId];
 
-      if (start_date) {
+      if (startDate) {
         conditions.push("date >= ?");
-        params.push(start_date);
+        params.push(startDate);
       }
 
-      if (end_date) {
+      if (endDate) {
         conditions.push("date <= ?");
-        params.push(end_date);
+        params.push(endDate);
       }
 
       const whereClause = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
@@ -306,8 +320,8 @@ export const attendanceController = {
 
       const [totals] = await pool.query(
         `SELECT 
-            COALESCE(SUM(late_minutes), 0) as total_late_minutes,
-            COALESCE(SUM(overtime_minutes), 0) as total_overtime_minutes
+            COALESCE(SUM(lateMinutes), 0) as totalLateMinutes,
+            COALESCE(SUM(overtimeMinutes), 0) as totalOvertimeMinutes
          FROM attendance
          ${whereClause}`,
         params

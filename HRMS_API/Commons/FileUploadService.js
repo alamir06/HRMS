@@ -1,17 +1,25 @@
 import multer from "multer";
 import path from "path";
+import { v2 as cloudinary } from "cloudinary";
+import { CloudinaryStorage } from "multer-storage-cloudinary";
 import { v4 as uuidv4 } from "uuid";
-import fs from "fs";
+import dotenv from "dotenv";
+
+dotenv.config();
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 export class FileUploadService {
   constructor() {
-    this.uploadDir = "uploads/";
-
     // Image configurations
     this.imageConfig = {
       allowedMimeTypes: ["image/jpeg", "image/png", "image/gif", "image/webp"],
       maxFileSize: 5 * 1024 * 1024, // 5MB
-      subdirectory: "images/",
+      folder: "hrms/images",
     };
 
     // Document configurations
@@ -26,40 +34,20 @@ export class FileUploadService {
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       ],
       maxFileSize: 10 * 1024 * 1024, // 10MB
-      subdirectory: "documents/",
+      folder: "hrms/documents",
     };
-
-    // Create upload directories if they don't exist
-    this.createUploadDirectories();
-  }
-
-  createUploadDirectories() {
-    const directories = [
-      this.uploadDir,
-      path.join(this.uploadDir, this.imageConfig.subdirectory),
-      path.join(this.uploadDir, this.documentConfig.subdirectory),
-    ];
-
-    directories.forEach((dir) => {
-      if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
-      }
-    });
   }
 
   // Configure multer for specific file type
   getMulterConfig(config, fileType = "image") {
-    const storage = multer.diskStorage({
-      destination: (req, file, cb) => {
-        const subdir =
-          fileType === "document"
-            ? this.documentConfig.subdirectory
-            : this.imageConfig.subdirectory;
-        cb(null, path.join(this.uploadDir, subdir));
-      },
-      filename: (req, file, cb) => {
-        const uniqueName = `${uuidv4()}${path.extname(file.originalname)}`;
-        cb(null, uniqueName);
+    const storage = new CloudinaryStorage({
+      cloudinary: cloudinary,
+      params: {
+        folder: config.folder,
+        resource_type: "auto",
+        public_id: (req, file) => {
+          return `${uuidv4()}`;
+        },
       },
     });
 
@@ -114,32 +102,39 @@ export class FileUploadService {
   }
 
   // Generate file URL
-  generateFileUrl(filename, fileType = "image") {
-    const subdir =
-      fileType === "document"
-        ? this.documentConfig.subdirectory
-        : this.imageConfig.subdirectory;
-    return `/uploads/${subdir}${filename}`;
+  generateFileUrl(file) {
+    if (!file) return null;
+    return file.path;
+  }
+
+  // Extract public ID from Cloudinary URL
+  extractPublicId(url) {
+    if (!url) return null;
+    try {
+      const parts = url.split('/');
+      const filenameWithExt = parts.pop();
+      const folderPart = parts.pop(); 
+      const baseFolder = parts.pop(); 
+      const filename = filenameWithExt.split('.')[0];
+      return `${baseFolder}/${folderPart}/${filename}`;
+    } catch {
+      return null;
+    }
   }
 
   // Delete file from storage
-  deleteFile(filename, fileType = "image") {
+  deleteFile(publicIdOrUrl, fileType = "image") {
     return new Promise((resolve, reject) => {
-      const subdir =
-        fileType === "document"
-          ? this.documentConfig.subdirectory
-          : this.imageConfig.subdirectory;
-      const filePath = path.join(this.uploadDir, subdir, filename);
-
-      fs.unlink(filePath, (err) => {
+      let publicId = publicIdOrUrl;
+      if (publicIdOrUrl && publicIdOrUrl.startsWith('http')) {
+        publicId = this.extractPublicId(publicIdOrUrl) || publicIdOrUrl;
+      }
+      
+      cloudinary.uploader.destroy(publicId, (err, result) => {
         if (err) {
-          if (err.code === "ENOENT") {
-            resolve(true); // File doesn't exist, consider it deleted
-          } else {
-            reject(err);
-          }
+          reject(err);
         } else {
-          resolve(true);
+          resolve(result);
         }
       });
     });
@@ -173,47 +168,14 @@ export class FileUploadService {
 
   // Get file info
   getFileInfo(file, fileType = "image") {
-    const config =
-      fileType === "document" ? this.documentConfig : this.imageConfig;
-
     return {
       originalName: file.originalname,
-      fileName: file.filename,
-      filePath: this.generateFileUrl(file.filename, fileType),
+      fileName: file.filename, // This is the Cloudinary public_id and it includes the folder
+      filePath: file.path,     // This is the Cloudinary secure URL
       fileSize: file.size,
       mimeType: file.mimetype,
       extension: path.extname(file.originalname).toLowerCase(),
     };
-  }
-
-  // Check if file exists
-  fileExists(filename, fileType = "image") {
-    const subdir =
-      fileType === "document"
-        ? this.documentConfig.subdirectory
-        : this.imageConfig.subdirectory;
-    const filePath = path.join(this.uploadDir, subdir, filename);
-
-    return fs.existsSync(filePath);
-  }
-
-  // Get file statistics
-  getFileStats(filename, fileType = "image") {
-    return new Promise((resolve, reject) => {
-      const subdir =
-        fileType === "document"
-          ? this.documentConfig.subdirectory
-          : this.imageConfig.subdirectory;
-      const filePath = path.join(this.uploadDir, subdir, filename);
-
-      fs.stat(filePath, (err, stats) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(stats);
-        }
-      });
-    });
   }
 }
 

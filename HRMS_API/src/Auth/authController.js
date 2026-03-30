@@ -21,16 +21,16 @@ export const login = async (req, res, next) => {
   try {
     const user = await findUserByIdentifier(identifier);
 
-    if (!user || !user.is_active) {
+    if (!user || !user.isActive) {
       return res.status(401).json({ success: false, error: "Invalid credentials" });
     }
 
-    const passwordMatches = await bcrypt.compare(password, user.password_hash);
+    const passwordMatches = await bcrypt.compare(password, user.passwordHash);
     if (!passwordMatches) {
       return res.status(401).json({ success: false, error: "Invalid credentials" });
     }
 
-    const token = signToken({ userId: user.id, employeeId: user.employee_id, role: user.system_role || user.employee_role });
+    const token = signToken({ userId: user.id, employeeId: user.employeeId, role: user.systemRole || user.employeeRole });
     await recordSuccessfulLogin(user.id);
 
     res.json({
@@ -39,12 +39,12 @@ export const login = async (req, res, next) => {
         token,
         user: {
           id: user.id,
-          employeeId: user.employee_id,
+          employeeId: user.employeeId,
           username: user.username,
-          role: user.system_role || user.employee_role,
-          employmentStatus: user.employment_status,
-          mustChangePassword: Boolean(user.must_change_password),
-          name: [user.first_name, user.middle_name, user.last_name].filter(Boolean).join(" ") || user.username,
+          role: user.systemRole || user.employeeRole,
+          employmentStatus: user.employmentStatus,
+          mustChangePassword: Boolean(user.mustChangePassword),
+          name: [user.firstName, user.middleName, user.lastName].filter(Boolean).join(" ") || user.username,
         },
       },
     });
@@ -54,27 +54,27 @@ export const login = async (req, res, next) => {
 };
 
 export const createSystemUser = async (req, res, next) => {
-  const { employee_id, username, temporary_password, send_email, system_role } = req.body;
+  const { employeeId, username, temporaryPassword, sendEmail, systemRole } = req.body;
 
   try {
-    const roleToAssign = system_role || 'employee';
+    const roleToAssign = systemRole || 'EMPLOYEE';
 
     const result = await createUserAccount({
-      employeeId: employee_id,
+      employeeId: employeeId,
       username,
       systemRole: roleToAssign,
     });
 
-    const password = temporary_password || result.temporaryPassword;
+    const password = temporaryPassword || result.temporaryPassword;
 
-    if (temporary_password) {
-      await changeUserPassword({ userId: result.userId, newPassword: temporary_password, mustChange: true });
+    if (temporaryPassword) {
+      await changeUserPassword({ userId: result.userId, newPassword: temporaryPassword, mustChange: true });
     }
 
-    const contact = await getEmployeeContact(employee_id);
+    const contact = await getEmployeeContact(employeeId);
     let emailStatus = null;
 
-    if (send_email !== false && contact?.email) {
+    if (sendEmail !== false && contact?.email) {
       const subject = "Your HRMS Account Credentials";
       
       // HTML email template with styling
@@ -273,8 +273,8 @@ export const createSystemUser = async (req, res, next) => {
                 
                 <div class="credential-item">
                     <span class="label">Account Role:</span>
-                    <span class="value">${result.systemRole || 'employee'}</span>
-                    <span class="role-badge">${(result.systemRole || 'employee').toUpperCase()}</span>
+                    <span class="value">${result.systemRole || 'EMPLOYEE'}</span>
+                    <span class="role-badge">${(result.systemRole || 'EMPLOYEE').toUpperCase()}</span>
                 </div>
             </div>
             
@@ -315,7 +315,7 @@ export const createSystemUser = async (req, res, next) => {
         `An account was created for you on the HRMS platform.\n\n` +
         `Username: ${username}\n` +
         `Temporary Password: ${password}\n` +
-        `Role: ${result.systemRole || 'employee'}\n\n` +
+        `Role: ${result.systemRole || 'EMPLOYEE'}\n\n` +
         `Please log in and change your password immediately.\n\n` +
         `This is an automated message from the HR Management System.`;
 
@@ -350,7 +350,7 @@ export const createSystemUser = async (req, res, next) => {
 };
 
 export const changePassword = async (req, res, next) => {
-  const { current_password, new_password } = req.body;
+  const { currentPassword, newPassword } = req.body;
   const userId = req.user.id;
 
   try {
@@ -359,12 +359,12 @@ export const changePassword = async (req, res, next) => {
       return res.status(404).json({ success: false, error: "User not found" });
     }
 
-    const matches = await bcrypt.compare(current_password, userRecord.password_hash);
+    const matches = await bcrypt.compare(currentPassword, userRecord.passwordHash);
     if (!matches) {
       return res.status(400).json({ success: false, error: "Current password is incorrect" });
     }
 
-    await changeUserPassword({ userId, newPassword: new_password, mustChange: false });
+    await changeUserPassword({ userId, newPassword: newPassword, mustChange: false });
 
     res.json({ success: true, message: "Password updated" });
   } catch (error) {

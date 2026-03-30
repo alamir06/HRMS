@@ -9,61 +9,61 @@ const dateSchema = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format");
 const documentSchema = z.object({
-  document_type: z.enum([
-    "id_document",
-    "education",
-    "certification",
-    "contract",
-    "other",
+  documentType: z.enum([
+    "IDDOCUMENT",
+    "EDUCATION",
+    "CERTIFICATION",
+    "CONTRACT",
+    "OTHER",
   ]),
-  document_name: z.string().min(1, "Document name is required"),
-  document_name_amharic: z.string().optional().nullable(),
-  file_name: z.string().min(1, "File name is required"),
-  file_path: z.string().min(1, "File path is required"),
-  file_size: z.number().positive().optional().nullable(),
-  mime_type: z.string().optional().nullable(),
-  issue_date: dateSchema.optional().nullable(),
-  expiry_date: dateSchema.optional().nullable(),
-  issuing_authority: z.string().optional().nullable(),
+  documentName: z.string().min(1, "Document name is required"),
+  documentNameAmharic: z.string().optional().nullable(),
+  fileName: z.string().min(1, "File name is required"),
+  filePath: z.string().min(1, "File path is required"),
+  fileSize: z.number().positive().optional().nullable(),
+  mimeType: z.string().optional().nullable(),
+  issueDate: dateSchema.optional().nullable(),
+  expiryDate: dateSchema.optional().nullable(),
+  issuingAuthority: z.string().optional().nullable(),
   description: z.string().optional().nullable(),
-  description_amharic: z.string().optional().nullable(),
-});
+  descriptionAmharic: z.string().optional().nullable(),
+}).strict();
 
 // Education schema
 const educationSchema = z.object({
-  institution_name: z.string().min(1, "Institution name is required"),
-  institution_name_amharic: z.string().optional().nullable(),
+  institutionName: z.string().min(1, "Institution name is required"),
+  institutionNameAmharic: z.string().optional().nullable(),
   qualification: z.string().min(1, "Qualification is required"),
-  qualification_amharic: z.string().optional().nullable(),
-  field_of_study: z.string().optional().nullable(),
-  field_of_study_amharic: z.string().optional().nullable(),
-  start_date: dateSchema,
-  end_date: dateSchema.optional().nullable(),
-  graduation_date: dateSchema.optional().nullable(),
+  qualificationAmharic: z.string().optional().nullable(),
+  fieldOfStudy: z.string().optional().nullable(),
+  fieldOfStudyAmharic: z.string().optional().nullable(),
+  startDate: dateSchema,
+  endDate: dateSchema.optional().nullable(),
+  graduationDate: dateSchema.optional().nullable(),
   grade: z.string().optional().nullable(),
   description: z.string().optional().nullable(),
-  description_amharic: z.string().optional().nullable(),
-  document_id: z.string().uuid("Invalid document ID").optional().nullable(),
-});
+  descriptionAmharic: z.string().optional().nullable(),
+  documentId: z.string().uuid("Invalid document ID").optional().nullable(),
+}).strict();
 // Base employee schema
 const employeeBaseSchema = z.object({
-  company_id: z.string().uuid("Invalid company ID format"),
-  employee_type: z.string().optional(),
-  department_id: z.string().uuid("Invalid department ID format").optional().nullable(),
-  manager_id: z
+  companyId: z.string().uuid("Invalid company ID format"),
+  employeeType: z.string().optional(),
+  departmentId: z.string().uuid("Invalid department ID format").optional().nullable(),
+  managerId: z
     .string()
     .uuid("Invalid manager ID format")
     .nullable()
     .optional(),
-  hire_date: z
+  hireDate: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Hire date must be in YYYY-MM-DD format"),
-  employment_type: z.string().min(1, "Employment type is required"),
-  employment_status: z
+  employmentType: z.string().min(1, "Employment type is required"),
+  employmentStatus: z
     .string()
     .min(1, "Employment status is required")
-    .default("active"),
-  termination_date: z
+    .default("ACTIVE"),
+  terminationDate: z
     .string()
     .regex(
       /^\d{4}-\d{2}-\d{2}$/,
@@ -72,14 +72,14 @@ const employeeBaseSchema = z.object({
     .nullable()
     .optional(),
   personal: z.object({
-    first_name: z.string().min(1, "First name is required"),
-    first_name_amharic: z.string().optional().nullable(),
-    middle_name: z.string().optional().nullable(),
-    middle_name_amharic: z.string().optional().nullable(),
-    last_name: z.string().min(1, "Last name is required"),
-    last_name_amharic: z.string().optional().nullable(),
+    firstName: z.string().min(1, "First name is required"),
+    firstNameAmharic: z.string().optional().nullable(),
+    middleName: z.string().optional().nullable(),
+    middleNameAmharic: z.string().optional().nullable(),
+    lastName: z.string().min(1, "Last name is required"),
+    lastNameAmharic: z.string().optional().nullable(),
     gender: z.string().optional().nullable(),
-    date_of_birth: z
+    dateOfBirth: z
       .string()
       .regex(
         /^\d{4}-\d{2}-\d{2}$/,
@@ -87,64 +87,64 @@ const employeeBaseSchema = z.object({
       )
       .optional()
       .nullable(),
-    personal_email: z
+    personalEmail: z
       .string()
       .email("Invalid personal email format")
       .optional()
       .nullable(),
-    personal_phone: z.string().optional().nullable(),
-    emergency_contact_name: z.string().optional().nullable(),
-    emergency_contact_name_amharic: z.string().optional().nullable(),
-    emergency_contact_phone: z.string().optional().nullable(),
-    profile_picture: z.string().optional().nullable(),
-  }),
+    personalPhone: z.string().optional().nullable(),
+    emergencyContactName: z.string().optional().nullable(),
+    emergencyContactNameAmharic: z.string().optional().nullable(),
+    emergencyContactPhone: z.string().optional().nullable(),
+    profilePicture: z.string().optional().nullable(),
+  }).strict(),
   employment: z
     .object({
-      official_email: z
+      officialEmail: z
         .string()
         .email("Invalid official email format")
         .optional()
         .nullable(),
-      official_phone: z.string().optional().nullable(),
+      officialPhone: z.string().optional().nullable(),
       salary: z
         .number()
         .min(0, "Salary must be a positive number")
         .optional()
         .nullable(),
       qualification: z.string().optional().nullable(),
-      qualification_amharic: z.string().optional().nullable(),
+      qualificationAmharic: z.string().optional().nullable(),
     })
     .optional()
     .nullable(),
   academic: z
     .object({
-      college_id: z
+      collegeId: z
         .string()
         .uuid("Invalid college ID format")
         .optional()
         .nullable(),
-      academic_rank: z.string().optional().nullable(),
-      academic_rank_amharic: z.string().optional().nullable(),
-      academic_status: z.string().optional().nullable().default("active"),
-      field_of_specialization: z.string().optional().nullable(),
-      field_of_specialization_amharic: z.string().optional().nullable(),
+      academicRank: z.string().optional().nullable(),
+      academicRankAmharic: z.string().optional().nullable(),
+      academicStatus: z.string().optional().nullable().default("ACTIVE"),
+      fieldOfSpecialization: z.string().optional().nullable(),
+      fieldOfSpecializationAmharic: z.string().optional().nullable(),
     })
     .optional()
     .nullable(),
   hr: z
     .object({
-      hr_specialization: z
+      hrSpecialization: z
         .enum([
           "recruitment",
           "payroll",
           "training",
-          "employee_relations",
+          "employeeRelations",
           "compliance",
           "generalist",
         ])
         .optional()
         .nullable(),
-      hr_level: z
+      hrLevel: z
         .enum(["officer", "supervisor", "manager", "director"])
         .optional()
         .nullable(),
@@ -154,27 +154,27 @@ const employeeBaseSchema = z.object({
     .nullable(),
   outsource: z
     .object({
-      outsourcing_company_id: z
+      outsourcingCompanyId: z
         .string()
         .uuid("Invalid outsourcing company ID format")
         .optional()
         .nullable(),
-      contract_start_date: dateSchema.optional().nullable(),
-      contract_end_date: dateSchema.optional().nullable(),
-      service_type: z.enum([
-        "security",
-        "cleaning",
-        "it",
-        "catering",
-        "maintenance",
-        "other",
+      contractStartDate: dateSchema.optional().nullable(),
+      contractEndDate: dateSchema.optional().nullable(),
+      serviceType: z.enum([
+        "SECURITY",
+        "CLEANING",
+        "IT",
+        "CATERING",
+        "MAINTENANCE",
+        "OTHER",
       ]),
     })
     .optional()
     .nullable(),
   documents: z.array(documentSchema).optional().nullable(),
   education: z.array(educationSchema).optional().nullable(),
-});
+}).strict();
 
 export const employeeValidationSchema = {
   create: employeeBaseSchema,
@@ -183,7 +183,7 @@ export const employeeValidationSchema = {
   
   id: z.object({
     id: z.string().uuid("Invalid employee ID format"),
-  }),
+  }).strict(),
 };
 
 

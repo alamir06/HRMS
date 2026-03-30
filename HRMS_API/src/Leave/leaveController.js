@@ -8,16 +8,16 @@ const dateSchema = z
 const uuidSchema = z.string().uuid("Invalid UUID format");
 
 const leaveApplicationSchema = z.object({
-  employee_id: uuidSchema,
-  leave_type_id: uuidSchema,
-  start_date: dateSchema,
-  end_date: dateSchema,
+  employeeId: uuidSchema,
+  leaveTypeId: uuidSchema,
+  startDate: dateSchema,
+  endDate: dateSchema,
   reason: z.string().optional().nullable(),
-  reason_amharic: z.string().optional().nullable(),
+  reasonAmharic: z.string().optional().nullable(),
 });
 
 const approvalSchema = z.object({
-  approver_id: uuidSchema,
+  approverId: uuidSchema,
   comments: z.string().optional().nullable(),
 });
 
@@ -43,13 +43,13 @@ const calculateInclusiveDays = (start, end) => {
 };
 
 const mapBalanceRow = (row) => ({
-  leave_type_id: row.leave_type_id,
-  leave_name: row.leave_name,
+  leaveTypeId: row.leaveTypeId,
+  leaveName: row.leaveName,
   year: row.year,
-  total_allocated_days: Number(row.total_allocated_days),
-  used_days: Number(row.used_days || 0),
-  remaining_days: Number(row.remaining_days || 0),
-  carry_forward_days: Number(row.carry_forward_days || 0),
+  totalAllocatedDays: Number(row.totalAllocatedDays),
+  usedDays: Number(row.usedDays || 0),
+  remainingDays: Number(row.remainingDays || 0),
+  carryForwardDays: Number(row.carryForwardDays || 0),
 });
 
 export const leaveController = {
@@ -67,11 +67,11 @@ export const leaveController = {
       });
     }
 
-    const { employee_id, leave_type_id, start_date, end_date, reason, reason_amharic } = validation.data;
+    const { employeeId, leaveTypeId, startDate, endDate, reason, reasonAmharic } = validation.data;
 
     let totalDays;
     try {
-      totalDays = calculateInclusiveDays(start_date, end_date);
+      totalDays = calculateInclusiveDays(startDate, endDate);
     } catch (error) {
       return res.status(400).json({
         success: false,
@@ -85,21 +85,21 @@ export const leaveController = {
     try {
       await connection.beginTransaction();
 
-      const year = parseInt(start_date.substring(0, 4), 10);
+      const year = parseInt(startDate.substring(0, 4), 10);
 
       const [balanceRows] = await connection.query(
         `SELECT 
            BIN_TO_UUID(id) as id,
-           total_allocated_days,
-           used_days,
-           remaining_days,
-           carry_forward_days
-         FROM leave_balance
-         WHERE employee_id = UUID_TO_BIN(?)
-           AND leave_type_id = UUID_TO_BIN(?)
+           totalAllocatedDays,
+           usedDays,
+           remainingDays,
+           carryForwardDays
+         FROM leaveBalance
+         WHERE employeeId = UUID_TO_BIN(?)
+           AND leaveTypeId = UUID_TO_BIN(?)
            AND year = ?
          FOR UPDATE`,
-        [employee_id, leave_type_id, year]
+        [employeeId, leaveTypeId, year]
       );
 
       if (balanceRows.length === 0) {
@@ -111,11 +111,11 @@ export const leaveController = {
       }
 
       const balance = balanceRows[0];
-      const used = Number(balance.used_days || 0);
+      const used = Number(balance.usedDays || 0);
       const remaining = Number(
-        balance.remaining_days !== null && balance.remaining_days !== undefined
-          ? balance.remaining_days
-          : Number(balance.total_allocated_days || 0) + Number(balance.carry_forward_days || 0) - used
+        balance.remainingDays !== null && balance.remainingDays !== undefined
+          ? balance.remainingDays
+          : Number(balance.totalAllocatedDays || 0) + Number(balance.carryForwardDays || 0) - used
       );
 
       if (totalDays > remaining) {
@@ -124,19 +124,19 @@ export const leaveController = {
           success: false,
           error: "Insufficient leave balance",
           details: {
-            requested_days: totalDays,
-            available_days: remaining,
+            requestedDays: totalDays,
+            availableDays: remaining,
           },
         });
       }
 
       const [overlapRows] = await connection.query(
         `SELECT COUNT(*) as count
-           FROM leave_request
-          WHERE employee_id = UUID_TO_BIN(?)
-            AND status IN ('pending', 'approved')
-            AND NOT (end_date < ? OR start_date > ?)`,
-        [employee_id, start_date, end_date]
+           FROM leaveRequest
+          WHERE employeeId = UUID_TO_BIN(?)
+            AND status IN ('PENDING', 'APPROVED')
+            AND NOT (endDate < ? OR startDate > ?)`,
+        [employeeId, startDate, endDate]
       );
 
       if (overlapRows[0].count > 0) {
@@ -148,15 +148,15 @@ export const leaveController = {
       }
 
       await connection.query(
-        `INSERT INTO leave_request (
+        `INSERT INTO leaveRequest (
            id,
-           employee_id,
-           leave_type_id,
-           start_date,
-           end_date,
-           total_days,
+           employeeId,
+           leaveTypeId,
+           startDate,
+           endDate,
+           totalDays,
            reason,
-           reason_amharic,
+           reasonAmharic,
            status
          ) VALUES (
            UUID_TO_BIN(?),
@@ -167,17 +167,17 @@ export const leaveController = {
            ?,
            ?,
            ?,
-           'pending'
+           'PENDING'
          )`,
         [
           requestId,
-          employee_id,
-          leave_type_id,
-          start_date,
-          end_date,
+          employeeId,
+          leaveTypeId,
+          startDate,
+          endDate,
           totalDays,
           reason || null,
-          reason_amharic || null,
+          reasonAmharic || null,
         ]
       );
 
@@ -188,12 +188,12 @@ export const leaveController = {
         message: "Leave request submitted",
         data: {
           id: requestId,
-          employee_id,
-          leave_type_id,
-          start_date,
-          end_date,
-          total_days: totalDays,
-          status: "pending",
+          employeeId,
+          leaveTypeId,
+          startDate,
+          endDate,
+          totalDays: totalDays,
+          status: "PENDING",
         },
       });
     } catch (error) {
@@ -223,7 +223,7 @@ export const leaveController = {
       });
     }
 
-    const { approver_id, comments } = validation.data;
+    const { approverId, comments } = validation.data;
     const connection = await pool.getConnection();
 
     try {
@@ -231,13 +231,13 @@ export const leaveController = {
 
       const [requestRows] = await connection.query(
         `SELECT 
-           BIN_TO_UUID(employee_id) as employee_id,
-           BIN_TO_UUID(leave_type_id) as leave_type_id,
-           start_date,
-           end_date,
-           total_days,
+           BIN_TO_UUID(employeeId) as employeeId,
+           BIN_TO_UUID(leaveTypeId) as leaveTypeId,
+           startDate,
+           endDate,
+           totalDays,
            status
-         FROM leave_request
+         FROM leaveRequest
          WHERE id = UUID_TO_BIN(?)
          FOR UPDATE`,
         [id]
@@ -253,7 +253,7 @@ export const leaveController = {
 
       const request = requestRows[0];
 
-      if (request.status === "approved") {
+      if (request.status === "APPROVED") {
         await connection.rollback();
         return res.status(409).json({
           success: false,
@@ -261,7 +261,7 @@ export const leaveController = {
         });
       }
 
-      if (request.status === "rejected") {
+      if (request.status === "REJECTED") {
         await connection.rollback();
         return res.status(409).json({
           success: false,
@@ -269,22 +269,22 @@ export const leaveController = {
         });
       }
 
-      const totalDays = Number(request.total_days) || calculateInclusiveDays(request.start_date, request.end_date);
-      const year = parseInt(request.start_date.substring(0, 4), 10);
+      const totalDays = Number(request.totalDays) || calculateInclusiveDays(request.startDate, request.endDate);
+      const year = parseInt(request.startDate.substring(0, 4), 10);
 
       const [balanceRows] = await connection.query(
         `SELECT 
            BIN_TO_UUID(id) as id,
-           total_allocated_days,
-           used_days,
-           remaining_days,
-           carry_forward_days
-         FROM leave_balance
-        WHERE employee_id = UUID_TO_BIN(?)
-          AND leave_type_id = UUID_TO_BIN(?)
+           totalAllocatedDays,
+           usedDays,
+           remainingDays,
+           carryForwardDays
+         FROM leaveBalance
+        WHERE employeeId = UUID_TO_BIN(?)
+          AND leaveTypeId = UUID_TO_BIN(?)
           AND year = ?
         FOR UPDATE`,
-        [request.employee_id, request.leave_type_id, year]
+        [request.employeeId, request.leaveTypeId, year]
       );
 
       if (balanceRows.length === 0) {
@@ -296,11 +296,11 @@ export const leaveController = {
       }
 
       const balance = balanceRows[0];
-      const used = Number(balance.used_days || 0);
+      const used = Number(balance.usedDays || 0);
       const remaining = Number(
-        balance.remaining_days !== null && balance.remaining_days !== undefined
-          ? balance.remaining_days
-          : Number(balance.total_allocated_days || 0) + Number(balance.carry_forward_days || 0) - used
+        balance.remainingDays !== null && balance.remainingDays !== undefined
+          ? balance.remainingDays
+          : Number(balance.totalAllocatedDays || 0) + Number(balance.carryForwardDays || 0) - used
       );
 
       if (totalDays > remaining) {
@@ -315,24 +315,24 @@ export const leaveController = {
       const newRemaining = remaining - totalDays;
 
       await connection.query(
-        `UPDATE leave_balance
-            SET used_days = ?,
-                remaining_days = ?,
-                updated_at = CURRENT_TIMESTAMP
+        `UPDATE leaveBalance
+            SET usedDays = ?,
+                remainingDays = ?,
+                updatedAt = CURRENT_TIMESTAMP
           WHERE id = UUID_TO_BIN(?)`,
         [newUsed, newRemaining, balance.id]
       );
 
       await connection.query(
-        `UPDATE leave_request
-            SET status = 'approved',
-                approved_by = UUID_TO_BIN(?),
-                approved_at = CURRENT_TIMESTAMP,
-                total_days = ?,
+        `UPDATE leaveRequest
+            SET status = 'APPROVED',
+                approvedBy = UUID_TO_BIN(?),
+                approvedAt = CURRENT_TIMESTAMP,
+                totalDays = ?,
                 comments = ?,
-                updated_at = CURRENT_TIMESTAMP
+                updatedAt = CURRENT_TIMESTAMP
           WHERE id = UUID_TO_BIN(?)`,
-        [approver_id, totalDays, comments || null, id]
+        [approverId, totalDays, comments || null, id]
       );
 
       await connection.commit();
@@ -342,9 +342,9 @@ export const leaveController = {
         message: "Leave request approved",
         data: {
           id,
-          total_days: totalDays,
-          used_days: newUsed,
-          remaining_days: newRemaining,
+          totalDays: totalDays,
+          usedDays: newUsed,
+          remainingDays: newRemaining,
         },
       });
     } catch (error) {
@@ -374,19 +374,19 @@ export const leaveController = {
       });
     }
 
-    const { approver_id, comments } = validation.data;
+    const { approverId, comments } = validation.data;
 
     try {
       const [result] = await pool.query(
-        `UPDATE leave_request
-            SET status = 'rejected',
-                approved_by = UUID_TO_BIN(?),
-                approved_at = CURRENT_TIMESTAMP,
+        `UPDATE leaveRequest
+            SET status = 'REJECTED',
+                approvedBy = UUID_TO_BIN(?),
+                approvedAt = CURRENT_TIMESTAMP,
                 comments = ?,
-                updated_at = CURRENT_TIMESTAMP
+                updatedAt = CURRENT_TIMESTAMP
           WHERE id = UUID_TO_BIN(?)
-            AND status = 'pending'`,
-        [approver_id, comments || null, id]
+            AND status = 'PENDING'`,
+        [approverId, comments || null, id]
       );
 
       if (result.affectedRows === 0) {
@@ -416,25 +416,25 @@ export const leaveController = {
 
       const [balances] = await pool.query(
         `SELECT 
-           BIN_TO_UUID(lb.leave_type_id) as leave_type_id,
-           lt.leave_name,
+           BIN_TO_UUID(lb.leaveTypeId) as leaveTypeId,
+           lt.leaveName,
            lb.year,
-           lb.total_allocated_days,
-           lb.used_days,
-           lb.remaining_days,
-           lb.carry_forward_days
-         FROM leave_balance lb
-         JOIN leave_types lt ON lb.leave_type_id = lt.id
-        WHERE lb.employee_id = UUID_TO_BIN(?)
+           lb.totalAllocatedDays,
+           lb.usedDays,
+           lb.remainingDays,
+           lb.carryForwardDays
+         FROM leaveBalance lb
+         JOIN leaveTypes lt ON lb.leaveTypeId = lt.id
+        WHERE lb.employeeId = UUID_TO_BIN(?)
           AND lb.year = ?`,
         [employeeId, year]
       );
 
       const [requests] = await pool.query(
         `SELECT status, COUNT(*) as count
-           FROM leave_request
-          WHERE employee_id = UUID_TO_BIN(?)
-            AND YEAR(start_date) = ?
+           FROM leaveRequest
+          WHERE employeeId = UUID_TO_BIN(?)
+            AND YEAR(startDate) = ?
           GROUP BY status`,
         [employeeId, year]
       );
@@ -469,7 +469,7 @@ export const leaveController = {
       const limitInt = Math.min(parseInt(limit, 10) || 50, 100);
       const offset = (pageInt - 1) * limitInt;
 
-      const conditions = ["lr.employee_id = UUID_TO_BIN(?)"];
+      const conditions = ["lr.employeeId = UUID_TO_BIN(?)"];
       const params = [employeeId];
 
       if (status) {
@@ -482,27 +482,27 @@ export const leaveController = {
       const [records] = await pool.query(
         `SELECT 
            BIN_TO_UUID(lr.id) as id,
-           BIN_TO_UUID(lr.leave_type_id) as leave_type_id,
-           lt.leave_name,
-           lr.start_date,
-           lr.end_date,
-           lr.total_days,
+           BIN_TO_UUID(lr.leaveTypeId) as leaveTypeId,
+           lt.leaveName,
+           lr.startDate,
+           lr.endDate,
+           lr.totalDays,
            lr.status,
            lr.reason,
            lr.comments,
-           lr.created_at,
-           lr.updated_at
-         FROM leave_request lr
-         JOIN leave_types lt ON lr.leave_type_id = lt.id
+           lr.createdAt,
+           lr.updatedAt
+         FROM leaveRequest lr
+         JOIN leaveTypes lt ON lr.leaveTypeId = lt.id
          ${whereClause}
-         ORDER BY lr.start_date DESC
+         ORDER BY lr.startDate DESC
          LIMIT ? OFFSET ?`,
         [...params, limitInt, offset]
       );
 
       const [countResult] = await pool.query(
         `SELECT COUNT(*) as total
-           FROM leave_request lr
+           FROM leaveRequest lr
          ${whereClause}`,
         params
       );

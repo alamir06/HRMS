@@ -4,7 +4,7 @@ import { fileUploadService } from "../FileUploadService.js";
 
 export class DocumentService {
   constructor() {
-    this.tableName = "employee_documents";
+    this.tableName = "employeeDocuments";
   }
 
   // Upload document with enhanced validation
@@ -20,10 +20,10 @@ export class DocumentService {
       const fileInfo = fileUploadService.getFileInfo(file, 'document');
 
       // Check for duplicate document types if needed
-      if (documentData.document_type === 'id_document') {
+      if (documentData.documentType === 'IDDOCUMENT') {
         const [existingIdDocs] = await connection.query(
           `SELECT id FROM ${this.tableName} 
-           WHERE employee_id = UUID_TO_BIN(?) AND document_type = 'id_document'`,
+           WHERE employeeId = UUID_TO_BIN(?) AND documentType = 'IDDOCUMENT'`,
           [employeeId]
         );
 
@@ -35,26 +35,26 @@ export class DocumentService {
       // Insert document record
       const query = `
         INSERT INTO ${this.tableName} (
-          employee_id, document_type, document_name, document_name_amharic,
-          file_name, file_path, file_size, mime_type, issue_date, expiry_date,
-          issuing_authority, description, description_amharic
+          employeeId, documentType, documentName, documentNameAmharic,
+          fileName, filePath, fileSize, mimeType, issueDate, expiryDate,
+          issuingAuthority, description, descriptionAmharic
         ) VALUES (UUID_TO_BIN(?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
 
       const [result] = await connection.query(query, [
         employeeId,
-        documentData.document_type,
-        documentData.document_name,
-        documentData.document_name_amharic || null,
+        documentData.documentType,
+        documentData.documentName,
+        documentData.documentNameAmharic || null,
         fileInfo.originalName,
         fileInfo.filePath,
         fileInfo.fileSize,
         fileInfo.mimeType,
-        documentData.issue_date || null,
-        documentData.expiry_date || null,
-        documentData.issuing_authority || null,
+        documentData.issueDate || null,
+        documentData.expiryDate || null,
+        documentData.issuingAuthority || null,
         documentData.description || null,
-        documentData.description_amharic || null
+        documentData.descriptionAmharic || null
       ]);
 
       await connection.commit();
@@ -63,11 +63,11 @@ export class DocumentService {
       const [documents] = await connection.query(
         `SELECT 
           BIN_TO_UUID(id) as id,
-          document_type,
-          document_name,
-          file_path,
-          is_verified,
-          created_at
+          documentType,
+          documentName,
+          filePath,
+          isVerified,
+          createdAt
          FROM ${this.tableName} WHERE id = ?`,
         [result.insertId]
       );
@@ -108,32 +108,32 @@ export class DocumentService {
 
         const query = `
           INSERT INTO ${this.tableName} (
-            employee_id, document_type, document_name, document_name_amharic,
-            file_name, file_path, file_size, mime_type, issue_date, expiry_date,
-            issuing_authority, description, description_amharic
+            employeeId, documentType, documentName, documentNameAmharic,
+            fileName, filePath, fileSize, mimeType, issueDate, expiryDate,
+            issuingAuthority, description, descriptionAmharic
           ) VALUES (UUID_TO_BIN(?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
 
         const [result] = await connection.query(query, [
           employeeId,
-          documentData.document_type,
-          documentData.document_name,
-          documentData.document_name_amharic || null,
+          documentData.documentType,
+          documentData.documentName,
+          documentData.documentNameAmharic || null,
           fileInfo.originalName,
           fileInfo.filePath,
           fileInfo.fileSize,
           fileInfo.mimeType,
-          documentData.issue_date || null,
-          documentData.expiry_date || null,
-          documentData.issuing_authority || null,
+          documentData.issueDate || null,
+          documentData.expiryDate || null,
+          documentData.issuingAuthority || null,
           documentData.description || null,
-          documentData.description_amharic || null
+          documentData.descriptionAmharic || null
         ]);
 
         results.push({
-          document_id: result.insertId,
-          file_path: fileInfo.filePath,
-          document_name: documentData.document_name
+          documentId: result.insertId,
+          filePath: fileInfo.filePath,
+          documentName: documentData.documentName
         });
       }
 
@@ -160,10 +160,10 @@ export class DocumentService {
   async getEmployeeDocuments(employeeId, options = {}) {
     try {
       const {
-        document_type = null,
+        documentType = null,
         page = 1,
         limit = 10,
-        verified_only = false
+        verifiedOnly = false
       } = options;
 
       const offset = (page - 1) * limit;
@@ -171,47 +171,47 @@ export class DocumentService {
       let query = `
         SELECT 
           BIN_TO_UUID(id) as id,
-          BIN_TO_UUID(employee_id) as employee_id,
-          document_type,
-          document_name,
-          document_name_amharic,
-          file_name,
-          file_path,
-          file_size,
-          mime_type,
-          issue_date,
-          expiry_date,
-          issuing_authority,
+          BIN_TO_UUID(employeeId) as employeeId,
+          documentType,
+          documentName,
+          documentNameAmharic,
+          fileName,
+          filePath,
+          fileSize,
+          mimeType,
+          issueDate,
+          expiryDate,
+          issuingAuthority,
           description,
-          description_amharic,
-          is_verified,
-          BIN_TO_UUID(verified_by) as verified_by,
-          verified_at,
-          created_at,
-          updated_at
+          descriptionAmharic,
+          isVerified,
+          BIN_TO_UUID(verifiedBy) as verifiedBy,
+          verifiedAt,
+          createdAt,
+          updatedAt
         FROM ${this.tableName} 
-        WHERE employee_id = UUID_TO_BIN(?)
+        WHERE employeeId = UUID_TO_BIN(?)
       `;
 
-      let countQuery = `SELECT COUNT(*) as total FROM ${this.tableName} WHERE employee_id = UUID_TO_BIN(?)`;
+      let countQuery = `SELECT COUNT(*) as total FROM ${this.tableName} WHERE employeeId = UUID_TO_BIN(?)`;
       const params = [employeeId];
       const countParams = [employeeId];
 
       // Add filters
-      if (document_type) {
-        query += ` AND document_type = ?`;
-        countQuery += ` AND document_type = ?`;
-        params.push(document_type);
-        countParams.push(document_type);
+      if (documentType) {
+        query += ` AND documentType = ?`;
+        countQuery += ` AND documentType = ?`;
+        params.push(documentType);
+        countParams.push(documentType);
       }
 
-      if (verified_only) {
-        query += ` AND is_verified = TRUE`;
-        countQuery += ` AND is_verified = TRUE`;
+      if (verifiedOnly) {
+        query += ` AND isVerified = TRUE`;
+        countQuery += ` AND isVerified = TRUE`;
       }
 
       // Add sorting and pagination
-      query += ` ORDER BY created_at DESC LIMIT ? OFFSET ?`;
+      query += ` ORDER BY createdAt DESC LIMIT ? OFFSET ?`;
       params.push(parseInt(limit), offset);
 
       const [documents] = await pool.query(query, params);
@@ -239,8 +239,8 @@ export class DocumentService {
       await connection.beginTransaction();
 
       const allowedFields = [
-        'document_name', 'document_name_amharic', 'issue_date', 
-        'expiry_date', 'issuing_authority', 'description', 'description_amharic'
+        'documentName', 'documentNameAmharic', 'issueDate', 
+        'expiryDate', 'issuingAuthority', 'description', 'descriptionAmharic'
       ];
 
       const updateFields = [];
@@ -259,7 +259,7 @@ export class DocumentService {
 
       const query = `
         UPDATE ${this.tableName} 
-        SET ${updateFields.join(', ')}, updated_at = NOW()
+        SET ${updateFields.join(', ')}, updatedAt = NOW()
         WHERE id = UUID_TO_BIN(?)
       `;
 
@@ -275,7 +275,7 @@ export class DocumentService {
 
       // Get updated document
       const [documents] = await connection.query(
-        `SELECT BIN_TO_UUID(id) as id, document_name, document_type FROM ${this.tableName} WHERE id = UUID_TO_BIN(?)`,
+        `SELECT BIN_TO_UUID(id) as id, documentName, documentType FROM ${this.tableName} WHERE id = UUID_TO_BIN(?)`,
         [documentId]
       );
 
@@ -300,7 +300,7 @@ export class DocumentService {
 
       // Get document info first
       const [documents] = await connection.query(
-        `SELECT file_path, file_name FROM ${this.tableName} WHERE id = UUID_TO_BIN(?)`,
+        `SELECT filePath, fileName FROM ${this.tableName} WHERE id = UUID_TO_BIN(?)`,
         [documentId]
       );
 
@@ -321,8 +321,8 @@ export class DocumentService {
       }
 
       // Delete physical file
-      if (document.file_name) {
-        await fileUploadService.deleteFile(document.file_name, 'document');
+      if (document.filePath) {
+        await fileUploadService.deleteFile(document.filePath, 'document');
       }
 
       await connection.commit();
@@ -343,7 +343,7 @@ export class DocumentService {
     try {
       const query = `
         UPDATE ${this.tableName} 
-        SET is_verified = TRUE, verified_by = UUID_TO_BIN(?), verified_at = NOW() 
+        SET isVerified = TRUE, verifiedBy = UUID_TO_BIN(?), verifiedAt = NOW() 
         WHERE id = UUID_TO_BIN(?)
       `;
 
@@ -367,22 +367,22 @@ export class DocumentService {
       const query = `
         SELECT 
           BIN_TO_UUID(d.id) as id,
-          BIN_TO_UUID(d.employee_id) as employee_id,
-          d.document_name,
-          d.document_type,
-          d.expiry_date,
-          d.file_path,
-          BIN_TO_UUID(e.id) as employee_uuid,
-          ep.first_name,
-          ep.last_name,
-          e.employee_code
+          BIN_TO_UUID(d.employeeId) as employeeId,
+          d.documentName,
+          d.documentType,
+          d.expiryDate,
+          d.filePath,
+          BIN_TO_UUID(e.id) as employeeUuid,
+          ep.firstName,
+          ep.lastName,
+          e.employeeCode
         FROM ${this.tableName} d
-        LEFT JOIN employee e ON d.employee_id = e.id
-        LEFT JOIN employee_personal ep ON e.id = ep.employee_id
-        WHERE d.expiry_date IS NOT NULL 
-          AND d.expiry_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL ? DAY)
-          AND d.is_verified = TRUE
-        ORDER BY d.expiry_date ASC
+        LEFT JOIN employee e ON d.employeeId = e.id
+        LEFT JOIN employeePersonal ep ON e.id = ep.employeeId
+        WHERE d.expiryDate IS NOT NULL 
+          AND d.expiryDate BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL ? DAY)
+          AND d.isVerified = TRUE
+        ORDER BY d.expiryDate ASC
       `;
 
       const [documents] = await pool.query(query, [daysThreshold]);

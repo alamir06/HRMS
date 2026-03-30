@@ -4,34 +4,34 @@ const departmentCustomController = {
     try {
       const { departmentId } = req.params;
       const query = `
-        WITH RECURSIVE parent_hierarchy AS (
+        WITH RECURSIVE parentHierarchy AS (
           SELECT 
             BIN_TO_UUID(d.id) as id,
-            BIN_TO_UUID(d.parent_department_id) as parent_department_id,
-            d.department_name,
-            d.department_name_amharic,
-            d.department_type,
-            d.department_status,
-            d.department_level,
-            d.created_at,
-            d.updated_at
+            BIN_TO_UUID(d.parentDepartmentId) as parentDepartmentId,
+            d.departmentName,
+            d.departmentNameAmharic,
+            d.departmentType,
+            d.departmentStatus,
+            d.departmentLevel,
+            d.createdAt,
+            d.updatedAt
           FROM department d
           WHERE d.id = UUID_TO_BIN(?)
           UNION ALL
           SELECT 
             BIN_TO_UUID(parent.id) as id,
-            BIN_TO_UUID(parent.parent_department_id) as parent_department_id,
-            parent.department_name,
-            parent.department_name_amharic,
-            parent.department_type,
-            parent.department_status,
-            parent.department_level,
-            parent.created_at,
-            parent.updated_at
+            BIN_TO_UUID(parent.parentDepartmentId) as parentDepartmentId,
+            parent.departmentName,
+            parent.departmentNameAmharic,
+            parent.departmentType,
+            parent.departmentStatus,
+            parent.departmentLevel,
+            parent.createdAt,
+            parent.updatedAt
           FROM department parent
-          INNER JOIN parent_hierarchy ph ON parent.id = ph.parent_department_id
+          INNER JOIN parentHierarchy ph ON parent.id = ph.parentDepartmentId
         )
-        SELECT * FROM parent_hierarchy;
+        SELECT * FROM parentHierarchy;
       `;
       const [rows] = await pool.execute(query, [departmentId]);
       res.json({
@@ -58,69 +58,69 @@ const departmentCustomController = {
       let query = `
         SELECT 
           BIN_TO_UUID(d.id) as id,
-          BIN_TO_UUID(d.company_id) as company_id,
-          BIN_TO_UUID(d.college_id) as college_id,
-          BIN_TO_UUID(d.manager_id) as manager_id,
-          d.department_name,
-          d.department_name_amharic,
-          d.department_description,
-          d.department_status,
-          c.college_name,
-          comp.company_name,
-          mp.first_name as manager_first_name,
-          mp.last_name as manager_last_name,
-          ee.official_email as manager_email,
-          d.created_at,
-          d.updated_at
+          BIN_TO_UUID(d.companyId) as companyId,
+          BIN_TO_UUID(d.collegeId) as collegeId,
+          BIN_TO_UUID(d.managerId) as managerId,
+          d.departmentName,
+          d.departmentNameAmharic,
+          d.departmentDescription,
+          d.departmentStatus,
+          c.collegeName,
+          comp.companyName,
+          mp.firstName as managerFirstName,
+          mp.lastName as managerLastName,
+          ee.officialEmail as managerEmail,
+          d.createdAt,
+          d.updatedAt
         FROM department d
-        LEFT JOIN college c ON d.college_id = c.id
-        LEFT JOIN company comp ON d.company_id = comp.id
-        LEFT JOIN employee e ON d.manager_id = e.id
-        LEFT JOIN employee_personal mp ON d.manager_id = mp.employee_id
-        LEFT JOIN employee_employment ee ON d.manager_id = ee.employee_id
-        WHERE d.company_id = UUID_TO_BIN(?)
+        LEFT JOIN college c ON d.collegeId = c.id
+        LEFT JOIN company comp ON d.companyId = comp.id
+        LEFT JOIN employee e ON d.managerId = e.id
+        LEFT JOIN employeePersonal mp ON d.managerId = mp.employeeId
+        LEFT JOIN employeeEmployment ee ON d.managerId = ee.employeeId
+        WHERE d.companyId = UUID_TO_BIN(?)
       `;
 
       let countQuery = `
         SELECT COUNT(*) as total 
         FROM department 
-        WHERE company_id = UUID_TO_BIN(?)
+        WHERE companyId = UUID_TO_BIN(?)
       `;
 
       const params = [companyId];
       const countParams = [companyId];
 
       if (collegeId) {
-        query += ` AND d.college_id = UUID_TO_BIN(?)`;
-        countQuery += ` AND college_id = UUID_TO_BIN(?)`;
+        query += ` AND d.collegeId = UUID_TO_BIN(?)`;
+        countQuery += ` AND collegeId = UUID_TO_BIN(?)`;
         params.push(collegeId);
         countParams.push(collegeId);
       }
 
-      if (status && ["active", "inactive"].includes(status)) {
-        query += ` AND d.department_status = ?`;
-        countQuery += ` AND department_status = ?`;
+      if (status && ["ACTIVE", "INACTIVE"].includes(status)) {
+        query += ` AND d.departmentStatus = ?`;
+        countQuery += ` AND departmentStatus = ?`;
         params.push(status);
         countParams.push(status);
       }
 
       if (search && search.trim() !== "") {
         query += ` AND (
-          d.department_name LIKE ? OR 
-          d.department_name_amharic LIKE ? OR 
-          d.department_description LIKE ?
+          d.departmentName LIKE ? OR 
+          d.departmentNameAmharic LIKE ? OR 
+          d.departmentDescription LIKE ?
         )`;
         countQuery += ` AND (
-          department_name LIKE ? OR 
-          department_name_amharic LIKE ? OR 
-          department_description LIKE ?
+          departmentName LIKE ? OR 
+          departmentNameAmharic LIKE ? OR 
+          departmentDescription LIKE ?
         )`;
         const searchTerm = `%${search}%`;
         params.push(searchTerm, searchTerm, searchTerm);
         countParams.push(searchTerm, searchTerm, searchTerm);
       }
 
-      query += ` ORDER BY d.department_name ASC LIMIT ? OFFSET ?`;
+      query += ` ORDER BY d.departmentName ASC LIMIT ? OFFSET ?`;
       params.push(parseInt(limit), offset);
 
       const [departments] = await pool.execute(query, params);
@@ -156,41 +156,41 @@ const departmentCustomController = {
       const query = `
         SELECT 
           BIN_TO_UUID(d.id) as id,
-          BIN_TO_UUID(d.company_id) as company_id,
-          BIN_TO_UUID(d.college_id) as college_id,
-          BIN_TO_UUID(d.manager_id) as manager_id,
-          d.department_name,
-          d.department_name_amharic,
-          d.department_description,
-          d.department_status,
-          c.college_name,
-          mp.first_name as manager_first_name,
-          mp.last_name as manager_last_name,
-          ee.official_email as manager_email,
-          d.created_at,
-          d.updated_at
+          BIN_TO_UUID(d.companyId) as companyId,
+          BIN_TO_UUID(d.collegeId) as collegeId,
+          BIN_TO_UUID(d.managerId) as managerId,
+          d.departmentName,
+          d.departmentNameAmharic,
+          d.departmentDescription,
+          d.departmentStatus,
+          c.collegeName,
+          mp.firstName as managerFirstName,
+          mp.lastName as managerLastName,
+          ee.officialEmail as managerEmail,
+          d.createdAt,
+          d.updatedAt
         FROM department d
-        LEFT JOIN college c ON d.college_id = c.id
-        LEFT JOIN employee e ON d.manager_id = e.id
-        LEFT JOIN employee_personal mp ON d.manager_id = mp.employee_id
-        LEFT JOIN employee_employment ee ON d.manager_id = ee.employee_id
-        WHERE d.college_id = UUID_TO_BIN(?)
+        LEFT JOIN college c ON d.collegeId = c.id
+        LEFT JOIN employee e ON d.managerId = e.id
+        LEFT JOIN employeePersonal mp ON d.managerId = mp.employeeId
+        LEFT JOIN employeeEmployment ee ON d.managerId = ee.employeeId
+        WHERE d.collegeId = UUID_TO_BIN(?)
         ${
-          status && ["active", "inactive"].includes(status)
-            ? "AND d.department_status = ?"
+          status && ["ACTIVE", "INACTIVE"].includes(status)
+            ? "AND d.departmentStatus = ?"
             : ""
         }
-        ORDER BY d.department_name ASC 
+        ORDER BY d.departmentName ASC 
         LIMIT ? OFFSET ?
       `;
 
       const countQuery = `
         SELECT COUNT(*) as total 
         FROM department 
-        WHERE college_id = UUID_TO_BIN(?)
+        WHERE collegeId = UUID_TO_BIN(?)
         ${
-          status && ["active", "inactive"].includes(status)
-            ? "AND department_status = ?"
+          status && ["ACTIVE", "INACTIVE"].includes(status)
+            ? "AND departmentStatus = ?"
             : ""
         }
       `;
@@ -234,32 +234,32 @@ const departmentCustomController = {
         "SELECT COUNT(*) as total FROM department"
       );
       const [activeDepartments] = await pool.execute(
-        'SELECT COUNT(*) as active FROM department WHERE department_status = "active"'
+        'SELECT COUNT(*) as active FROM department WHERE departmentStatus = "ACTIVE"'
       );
 
       // Departments per company
       const [departmentsPerCompany] = await pool.execute(`
         SELECT 
-          comp.company_name,
-          COUNT(d.id) as department_count
+          comp.companyName,
+          COUNT(d.id) as departmentCount
         FROM company comp
-        LEFT JOIN department d ON comp.id = d.company_id
-        GROUP BY comp.id, comp.company_name
-        ORDER BY department_count DESC
+        LEFT JOIN department d ON comp.id = d.companyId
+        GROUP BY comp.id, comp.companyName
+        ORDER BY departmentCount DESC
       `);
 
       // Departments per college
       const [departmentsPerCollege] = await pool.execute(`
         SELECT 
-          c.college_name,
-          comp.company_name,
-          COUNT(d.id) as department_count
+          c.collegeName,
+          comp.companyName,
+          COUNT(d.id) as departmentCount
         FROM college c
-        LEFT JOIN department d ON c.id = d.college_id
-        LEFT JOIN company comp ON c.company_id = comp.id
+        LEFT JOIN department d ON c.id = d.collegeId
+        LEFT JOIN company comp ON c.companyId = comp.id
         WHERE d.id IS NOT NULL
-        GROUP BY c.id, c.college_name, comp.company_name
-        ORDER BY department_count DESC
+        GROUP BY c.id, c.collegeName, comp.companyName
+        ORDER BY departmentCount DESC
       `);
 
       res.json({
@@ -286,9 +286,9 @@ const departmentCustomController = {
   updateDepartmentManager: async (req, res) => {
     try {
       const { id } = req.params;
-      const { manager_id } = req.body;
+      const { managerId } = req.body;
 
-      if (!manager_id) {
+      if (!managerId) {
         return res.status(400).json({
           success: false,
           error: "Manager ID is required",
@@ -297,11 +297,11 @@ const departmentCustomController = {
 
       const query = `
         UPDATE department 
-        SET manager_id = UUID_TO_BIN(?), updated_at = CURRENT_TIMESTAMP 
+        SET managerId = UUID_TO_BIN(?), updatedAt = CURRENT_TIMESTAMP 
         WHERE id = UUID_TO_BIN(?)
       `;
 
-      const [result] = await pool.execute(query, [manager_id, id]);
+      const [result] = await pool.execute(query, [managerId, id]);
 
       if (result.affectedRows === 0) {
         return res.status(404).json({
@@ -315,13 +315,13 @@ const departmentCustomController = {
         `
         SELECT 
           BIN_TO_UUID(id) as id,
-          BIN_TO_UUID(company_id) as company_id,
-          BIN_TO_UUID(college_id) as college_id,
-          BIN_TO_UUID(manager_id) as manager_id,
-          department_name,
-          department_status,
-          created_at,
-          updated_at
+          BIN_TO_UUID(companyId) as companyId,
+          BIN_TO_UUID(collegeId) as collegeId,
+          BIN_TO_UUID(managerId) as managerId,
+          departmentName,
+          departmentStatus,
+          createdAt,
+          updatedAt
         FROM department 
         WHERE id = UUID_TO_BIN(?)
       `,
@@ -358,15 +358,15 @@ const departmentCustomController = {
         });
       }
 
-      if (!["active", "inactive"].includes(status)) {
+      if (!["ACTIVE", "INACTIVE"].includes(status)) {
         return res.status(400).json({
           success: false,
-          error: 'Status must be either "active" or "inactive"',
+          error: 'Status must be either "ACTIVE" or "INACTIVE"',
         });
       }
 
       const placeholders = departmentIds.map(() => "UUID_TO_BIN(?)").join(", ");
-      const query = `UPDATE department SET department_status = ? WHERE id IN (${placeholders})`;
+      const query = `UPDATE department SET departmentStatus = ? WHERE id IN (${placeholders})`;
       const params = [status, ...departmentIds];
 
       const [result] = await pool.execute(query, params);
@@ -397,42 +397,42 @@ const departmentCustomController = {
       let query = `
         SELECT 
           BIN_TO_UUID(d.id) as id,
-          BIN_TO_UUID(d.company_id) as company_id,
-          BIN_TO_UUID(d.college_id) as college_id,
-          BIN_TO_UUID(d.manager_id) as manager_id,
-          d.department_name,
-          d.department_name_amharic,
-          d.department_description,
-          d.department_description_amharic,
-          d.department_status,
-          d.created_at,
-          d.updated_at
+          BIN_TO_UUID(d.companyId) as companyId,
+          BIN_TO_UUID(d.collegeId) as collegeId,
+          BIN_TO_UUID(d.managerId) as managerId,
+          d.departmentName,
+          d.departmentNameAmharic,
+          d.departmentDescription,
+          d.departmentDescriptionAmharic,
+          d.departmentStatus,
+          d.createdAt,
+          d.updatedAt
       `;
       // Add related fields based on include parameter
       if (includeArray.includes("company")) {
         query += `,
-          comp.company_name,
-          comp.company_name_amharic,
-          comp.company_email,
-          comp.company_phone,
-          comp.company_address
+          comp.companyName,
+          comp.companyNameAmharic,
+          comp.companyEmail,
+          comp.companyPhone,
+          comp.companyAddress
         `;
       }
 
       if (includeArray.includes("college")) {
         query += `,
-          c.college_name,
-          c.college_name_amharic,
-          c.college_description
+          c.collegeName,
+          c.collegeNameAmharic,
+          c.collegeDescription
         `;
       }
 
       // if (includeArray.includes("manager")) {
       //   query += `,
-      //     e.first_name as manager_first_name,
-      //     e.last_name as manager_last_name,
-      //     e.email as manager_email,
-      //     e.phone as manager_phone
+      //     e.firstName as managerFirstName,
+      //     e.lastName as managerLastName,
+      //     e.email as managerEmail,
+      //     e.phone as managerPhone
       //   `;
       // }
 
@@ -442,15 +442,15 @@ const departmentCustomController = {
 
       // Add joins based on include parameter
       if (includeArray.includes("company")) {
-        query += ` LEFT JOIN company comp ON d.company_id = comp.id`;
+        query += ` LEFT JOIN company comp ON d.companyId = comp.id`;
       }
 
       if (includeArray.includes("college")) {
-        query += ` LEFT JOIN college c ON d.college_id = c.id`;
+        query += ` LEFT JOIN college c ON d.collegeId = c.id`;
       }
 
       // if (includeArray.includes("manager")) {
-      //   // query += ` LEFT JOIN employee e ON d.manager_id = e.id`;
+      //   // query += ` LEFT JOIN employee e ON d.managerId = e.id`;
       // }
 
       query += ` WHERE d.id = UUID_TO_BIN(?)`;
@@ -485,8 +485,8 @@ const departmentCustomController = {
         page = 1,
         limit = 10,
         include = "company,college",
-        company_id,
-        college_id,
+        companyId,
+        collegeId,
         status,
       } = req.query;
 
@@ -528,13 +528,13 @@ const departmentCustomController = {
       let query = `
       SELECT 
         BIN_TO_UUID(d.id) as id,
-        BIN_TO_UUID(d.company_id) as company_id,
-        BIN_TO_UUID(d.college_id) as college_id,
-        BIN_TO_UUID(d.manager_id) as manager_id,
-        d.department_name,
-        d.department_name_amharic,
-        d.department_status,
-        d.created_at
+        BIN_TO_UUID(d.companyId) as companyId,
+        BIN_TO_UUID(d.collegeId) as collegeId,
+        BIN_TO_UUID(d.managerId) as managerId,
+        d.departmentName,
+        d.departmentNameAmharic,
+        d.departmentStatus,
+        d.createdAt
     `;
 
       let countQuery = `SELECT COUNT(*) as total FROM department d`;
@@ -544,20 +544,20 @@ const departmentCustomController = {
       // Add WHERE conditions for filters
       const whereConditions = [];
 
-      if (company_id) {
-        whereConditions.push("d.company_id = UUID_TO_BIN(?)");
-        params.push(company_id);
-        countParams.push(company_id);
+      if (companyId) {
+        whereConditions.push("d.companyId = UUID_TO_BIN(?)");
+        params.push(companyId);
+        countParams.push(companyId);
       }
 
-      if (college_id) {
-        whereConditions.push("d.college_id = UUID_TO_BIN(?)");
-        params.push(college_id);
-        countParams.push(college_id);
+      if (collegeId) {
+        whereConditions.push("d.collegeId = UUID_TO_BIN(?)");
+        params.push(collegeId);
+        countParams.push(collegeId);
       }
 
-      if (status && ["active", "inactive"].includes(status)) {
-        whereConditions.push("d.department_status = ?");
+      if (status && ["ACTIVE", "INACTIVE"].includes(status)) {
+        whereConditions.push("d.departmentStatus = ?");
         params.push(status);
         countParams.push(status);
       }
@@ -565,48 +565,48 @@ const departmentCustomController = {
       // Add related fields based on include parameter
       if (includeArray.includes("company")) {
         query += `,
-        comp.company_name,
-        comp.company_name_amharic
+        comp.companyName,
+        comp.companyNameAmharic
       `;
-        countQuery += ` LEFT JOIN company comp ON d.company_id = comp.id`;
+        countQuery += ` LEFT JOIN company comp ON d.companyId = comp.id`;
       }
 
       if (includeArray.includes("college")) {
         query += `,
-        c.college_name,
-        c.college_name_amharic
+        c.collegeName,
+        c.collegeNameAmharic
       `;
         if (!includeArray.includes("company")) {
-          countQuery += ` LEFT JOIN college c ON d.college_id = c.id`;
+          countQuery += ` LEFT JOIN college c ON d.collegeId = c.id`;
         }
       }
 
       if (includeArray.includes("manager")) {
         query += `,
-        mp.first_name as manager_first_name,
-        mp.last_name as manager_last_name,
-        ee.official_email as manager_email
+        mp.firstName as managerFirstName,
+        mp.lastName as managerLastName,
+        ee.officialEmail as managerEmail
       `;
-        countQuery += ` LEFT JOIN employee e ON d.manager_id = e.id`;
-        countQuery += ` LEFT JOIN employee_personal mp ON d.manager_id = mp.employee_id`;
-        countQuery += ` LEFT JOIN employee_employment ee ON d.manager_id = ee.employee_id`;
+        countQuery += ` LEFT JOIN employee e ON d.managerId = e.id`;
+        countQuery += ` LEFT JOIN employeePersonal mp ON d.managerId = mp.employeeId`;
+        countQuery += ` LEFT JOIN employeeEmployment ee ON d.managerId = ee.employeeId`;
       }
 
       query += ` FROM department d`;
 
       // Add joins for main query
       if (includeArray.includes("company")) {
-        query += ` LEFT JOIN company comp ON d.company_id = comp.id`;
+        query += ` LEFT JOIN company comp ON d.companyId = comp.id`;
       }
 
       if (includeArray.includes("college")) {
-        query += ` LEFT JOIN college c ON d.college_id = c.id`;
+        query += ` LEFT JOIN college c ON d.collegeId = c.id`;
       }
 
       if (includeArray.includes("manager")) {
-        query += ` LEFT JOIN employee e ON d.manager_id = e.id`;
-        query += ` LEFT JOIN employee_personal mp ON d.manager_id = mp.employee_id`;
-        query += ` LEFT JOIN employee_employment ee ON d.manager_id = ee.employee_id`;
+        query += ` LEFT JOIN employee e ON d.managerId = e.id`;
+        query += ` LEFT JOIN employeePersonal mp ON d.managerId = mp.employeeId`;
+        query += ` LEFT JOIN employeeEmployment ee ON d.managerId = ee.employeeId`;
       }
 
       // Add WHERE clause if conditions exist
@@ -616,7 +616,7 @@ const departmentCustomController = {
         countQuery += whereClause;
       }
 
-      query += ` ORDER BY d.department_name ASC LIMIT ? OFFSET ?`;
+      query += ` ORDER BY d.departmentName ASC LIMIT ? OFFSET ?`;
 
       // Convert to numbers explicitly and ensure they're valid
       const finalLimit = Number(limitInt);
@@ -664,32 +664,32 @@ const departmentCustomController = {
       let query = `
         SELECT 
           BIN_TO_UUID(d.id) as id,
-          BIN_TO_UUID(d.company_id) as company_id,
-          BIN_TO_UUID(d.college_id) as college_id,
-          BIN_TO_UUID(d.parent_department_id) as parent_department_id,
-          d.department_name,
-          d.department_name_amharic,
-          d.department_status,
-          d.department_level,
-          d.created_at,
-          d.updated_at
+          BIN_TO_UUID(d.companyId) as companyId,
+          BIN_TO_UUID(d.collegeId) as collegeId,
+          BIN_TO_UUID(d.parentDepartmentId) as parentDepartmentId,
+          d.departmentName,
+          d.departmentNameAmharic,
+          d.departmentStatus,
+          d.departmentLevel,
+          d.createdAt,
+          d.updatedAt
         FROM department d
-        WHERE d.parent_department_id = UUID_TO_BIN(?)
+        WHERE d.parentDepartmentId = UUID_TO_BIN(?)
       `;
       let countQuery = `
         SELECT COUNT(*) as total 
         FROM department 
-        WHERE parent_department_id = UUID_TO_BIN(?)
+        WHERE parentDepartmentId = UUID_TO_BIN(?)
       `;
       const params = [parentId];
       const countParams = [parentId];
-      if (status && ["active", "inactive"].includes(status)) {
-        query += ` AND d.department_status = ?`;
-        countQuery += ` AND department_status = ?`;
+      if (status && ["ACTIVE", "INACTIVE"].includes(status)) {
+        query += ` AND d.departmentStatus = ?`;
+        countQuery += ` AND departmentStatus = ?`;
         params.push(status);
         countParams.push(status);
       }
-      query += ` ORDER BY d.department_name ASC LIMIT ? OFFSET ?`;
+      query += ` ORDER BY d.departmentName ASC LIMIT ? OFFSET ?`;
       params.push(parseInt(limit), offset);
       const [departments] = await pool.query(query, params);
       const [countResult] = await pool.query(countQuery, countParams);

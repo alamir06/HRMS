@@ -21,7 +21,7 @@ create = async (req, res) => {
         : "";
     res.status(201).json({
       success: true,
-      message: `${this.entityLabel} ${displayName} created successfully`,
+      message: `${this.entityLabel} of ${displayName} created successfully`,
       data: result,
     });
   } catch (error) {
@@ -62,7 +62,7 @@ bulkCreate = async (req, res) => {
           ? req.query.searchFields.split(",")
           : [],
         filters: { ...req.query },
-        sortBy: req.query.sortBy || "created_at",
+        sortBy: req.query.sortBy || "createdAt",
         sortOrder: req.query.sortOrder || "DESC",
         include: include
           ? include.split(",").filter((item) => item.trim() !== "")
@@ -246,12 +246,13 @@ bulkCreate = async (req, res) => {
   }
 
 handleError(res, error, defaultMessage) {
-  if (error instanceof ZodError) {
+  if (error instanceof ZodError || error.name === 'ZodError') {
+    const issues = error.errors || error.issues || [];
     return res.status(400).json({
       success: false,
       message: "Validation failed",
-      errors: error.errors.map(err => ({
-        field: err.path.join("."),
+      errors: issues.map(err => ({
+        field: err.path ? err.path.join(".") : "unknown",
         message: err.message,
       })),
     });
@@ -276,6 +277,8 @@ handleError(res, error, defaultMessage) {
   return res.status(500).json({
     success: false,
     message: defaultMessage,
+    error: error.message,
+    sqlMessage: error.sqlMessage,
   });
 }
 }

@@ -12,7 +12,7 @@ const parseNumeric = (value) => {
 
 export const assetController = {
   assignAsset: async (req, res) => {
-    const { asset_id, employee_id, assigned_date, expected_return_date, assignment_reason, assignment_reason_amharic, condition_assigned, condition_assigned_amharic, assigned_by } = req.body;
+    const { assetId, employeeId, assignedDate, expectedReturnDate, assignmentReason, assignmentReasonAmharic, conditionAssigned, conditionAssignedAmharic, assignedBy } = req.body;
 
     const assignmentId = uuidv4();
     const connection = await pool.getConnection();
@@ -22,7 +22,7 @@ export const assetController = {
 
       const [assetRows] = await connection.query(
         "SELECT status FROM assets WHERE id = UUID_TO_BIN(?) FOR UPDATE",
-        [asset_id]
+        [assetId]
       );
 
       if (assetRows.length === 0) {
@@ -34,7 +34,7 @@ export const assetController = {
       }
 
       const assetStatus = assetRows[0].status;
-      if (assetStatus !== "available") {
+      if (assetStatus !== "AVAILABLE") {
         await connection.rollback();
         return res.status(409).json({
           success: false,
@@ -43,18 +43,18 @@ export const assetController = {
       }
 
       await connection.query(
-        `INSERT INTO asset_assignment (
+        `INSERT INTO assetAssignment (
            id,
-           asset_id,
-           employee_id,
-           assigned_date,
-           expected_return_date,
-           assignment_reason,
-           assignment_reason_amharic,
-           condition_assigned,
-           condition_assigned_amharic,
+           assetId,
+           employeeId,
+           assignedDate,
+           expectedReturnDate,
+           assignmentReason,
+           assignmentReasonAmharic,
+           conditionAssigned,
+           conditionAssignedAmharic,
            status,
-           assigned_by
+           assignedBy
          ) VALUES (
            UUID_TO_BIN(?),
            UUID_TO_BIN(?),
@@ -65,29 +65,29 @@ export const assetController = {
            ?,
            ?,
            ?,
-           'assigned',
+           'ASSIGNED',
            UUID_TO_BIN(?)
          )`,
         [
           assignmentId,
-          asset_id,
-          employee_id,
-          assigned_date,
-          expected_return_date || null,
-          assignment_reason || null,
-          assignment_reason_amharic || null,
-          condition_assigned || null,
-          condition_assigned_amharic || null,
-          assigned_by,
+          assetId,
+          employeeId,
+          assignedDate,
+          expectedReturnDate || null,
+          assignmentReason || null,
+          assignmentReasonAmharic || null,
+          conditionAssigned || null,
+          conditionAssignedAmharic || null,
+          assignedBy,
         ]
       );
 
       await connection.query(
         `UPDATE assets
-            SET status = 'assigned',
-                updated_at = CURRENT_TIMESTAMP
+            SET status = 'ASSIGNED',
+                updatedAt = CURRENT_TIMESTAMP
           WHERE id = UUID_TO_BIN(?)`,
-        [asset_id]
+        [assetId]
       );
 
       await connection.commit();
@@ -97,10 +97,10 @@ export const assetController = {
         message: "Asset assigned",
         data: {
           id: assignmentId,
-          asset_id,
-          employee_id,
-          assigned_date,
-          expected_return_date: expected_return_date || null,
+          assetId,
+          employeeId,
+          assignedDate,
+          expectedReturnDate: expectedReturnDate || null,
         },
       });
     } catch (error) {
@@ -117,7 +117,7 @@ export const assetController = {
 
   returnAsset: async (req, res) => {
     const { id } = req.params;
-    const { actual_return_date, condition_returned, condition_returned_amharic, status = "returned" } = req.body;
+    const { actualReturnDate, conditionReturned, conditionReturnedAmharic, status = "RETURNED" } = req.body;
 
     const connection = await pool.getConnection();
 
@@ -126,9 +126,9 @@ export const assetController = {
 
       const [assignmentRows] = await connection.query(
         `SELECT 
-           BIN_TO_UUID(asset_id) as asset_id,
+           BIN_TO_UUID(assetId) as assetId,
            status
-         FROM asset_assignment
+         FROM assetAssignment
          WHERE id = UUID_TO_BIN(?)
          FOR UPDATE`,
         [id]
@@ -143,7 +143,7 @@ export const assetController = {
       }
 
       const assignment = assignmentRows[0];
-      if (assignment.status !== "assigned") {
+      if (assignment.status !== "ASSIGNED") {
         await connection.rollback();
         return res.status(409).json({
           success: false,
@@ -152,17 +152,17 @@ export const assetController = {
       }
 
       await connection.query(
-        `UPDATE asset_assignment
-            SET actual_return_date = ?,
-                condition_returned = ?,
-                condition_returned_amharic = ?,
+        `UPDATE assetAssignment
+            SET actualReturnDate = ?,
+                conditionReturned = ?,
+                conditionReturnedAmharic = ?,
                 status = ?,
-                updated_at = CURRENT_TIMESTAMP
+                updatedAt = CURRENT_TIMESTAMP
           WHERE id = UUID_TO_BIN(?)`,
         [
-          actual_return_date || new Date().toISOString().slice(0, 10),
-          condition_returned || null,
-          condition_returned_amharic || null,
+          actualReturnDate || new Date().toISOString().slice(0, 10),
+          conditionReturned || null,
+          conditionReturnedAmharic || null,
           status,
           id,
         ]
@@ -170,10 +170,10 @@ export const assetController = {
 
       await connection.query(
         `UPDATE assets
-            SET status = 'available',
-                updated_at = CURRENT_TIMESTAMP
+            SET status = 'AVAILABLE',
+                updatedAt = CURRENT_TIMESTAMP
           WHERE id = UUID_TO_BIN(?)`,
-        [assignment.asset_id]
+        [assignment.assetId]
       );
 
       await connection.commit();
@@ -201,15 +201,15 @@ export const assetController = {
       const [assetRows] = await pool.query(
         `SELECT 
            BIN_TO_UUID(a.id) as id,
-           a.asset_name,
+           a.assetName,
            a.status,
-           c.category_name,
-           a.serial_number,
-           a.purchase_date,
-           a.purchase_cost,
-           a.current_value
+           c.categoryName,
+           a.serialNumber,
+           a.purchaseDate,
+           a.purchaseCost,
+           a.currentValue
          FROM assets a
-         LEFT JOIN asset_category c ON a.asset_category_id = c.id
+         LEFT JOIN assetCategory c ON a.assetCategoryId = c.id
          WHERE a.id = UUID_TO_BIN(?)`,
         [id]
       );
@@ -223,25 +223,25 @@ export const assetController = {
 
       const [assignmentStats] = await pool.query(
         `SELECT 
-           SUM(status = 'assigned') as active_assignments,
-           SUM(status = 'returned') as returned_count,
-           SUM(status = 'overdue') as overdue_count
-         FROM asset_assignment
-         WHERE asset_id = UUID_TO_BIN(?)`,
+           SUM(status = 'ASSIGNED') as activeAssignments,
+           SUM(status = 'RETURNED') as returnedCount,
+           SUM(status = 'OVERDUE') as overdueCount
+         FROM assetAssignment
+         WHERE assetId = UUID_TO_BIN(?)`,
         [id]
       );
 
       const [history] = await pool.query(
         `SELECT 
            BIN_TO_UUID(id) as id,
-           BIN_TO_UUID(employee_id) as employee_id,
-           assigned_date,
-           expected_return_date,
-           actual_return_date,
+           BIN_TO_UUID(employeeId) as employeeId,
+           assignedDate,
+           expectedReturnDate,
+           actualReturnDate,
            status
-         FROM asset_assignment
-         WHERE asset_id = UUID_TO_BIN(?)
-         ORDER BY assigned_date DESC
+         FROM assetAssignment
+         WHERE assetId = UUID_TO_BIN(?)
+         ORDER BY assignedDate DESC
          LIMIT 20`,
         [id]
       );
@@ -251,9 +251,9 @@ export const assetController = {
         data: {
           asset: assetRows[0],
           stats: {
-            active_assignments: Number(assignmentStats[0].active_assignments || 0),
-            returned_count: Number(assignmentStats[0].returned_count || 0),
-            overdue_count: Number(assignmentStats[0].overdue_count || 0),
+            activeAssignments: Number(assignmentStats[0].activeAssignments || 0),
+            returnedCount: Number(assignmentStats[0].returnedCount || 0),
+            overdueCount: Number(assignmentStats[0].overdueCount || 0),
           },
           history,
         },
@@ -269,27 +269,27 @@ export const assetController = {
 
   listAvailableAssets: async (req, res) => {
     try {
-      const { category_id } = req.query;
+      const { categoryId } = req.query;
       const params = [];
-      let whereClause = "WHERE a.status = 'available'";
+      let whereClause = "WHERE a.status = 'AVAILABLE'";
 
-      if (category_id) {
-        whereClause += " AND a.asset_category_id = UUID_TO_BIN(?)";
-        params.push(category_id);
+      if (categoryId) {
+        whereClause += " AND a.assetCategoryId = UUID_TO_BIN(?)";
+        params.push(categoryId);
       }
 
       const [assets] = await pool.query(
         `SELECT 
            BIN_TO_UUID(a.id) as id,
-           a.asset_name,
-           a.serial_number,
-           c.category_name,
+           a.assetName,
+           a.serialNumber,
+           c.categoryName,
            a.location,
-           a.current_value
+           a.currentValue
          FROM assets a
-         LEFT JOIN asset_category c ON a.asset_category_id = c.id
+         LEFT JOIN assetCategory c ON a.assetCategoryId = c.id
          ${whereClause}
-         ORDER BY a.asset_name`,
+         ORDER BY a.assetName`,
         params
       );
 
@@ -311,7 +311,7 @@ export const assetController = {
       const { employeeId } = req.params;
       const { status } = req.query;
 
-      const conditions = ["aa.employee_id = UUID_TO_BIN(?)"];
+      const conditions = ["aa.employeeId = UUID_TO_BIN(?)"];
       const params = [employeeId];
 
       if (status) {
@@ -323,18 +323,18 @@ export const assetController = {
 
       const [records] = await pool.query(
         `SELECT 
-           BIN_TO_UUID(aa.id) as assignment_id,
-           BIN_TO_UUID(aa.asset_id) as asset_id,
-           a.asset_name,
-           a.serial_number,
-           aa.assigned_date,
-           aa.expected_return_date,
-           aa.actual_return_date,
+           BIN_TO_UUID(aa.id) as assignmentId,
+           BIN_TO_UUID(aa.assetId) as assetId,
+           a.assetName,
+           a.serialNumber,
+           aa.assignedDate,
+           aa.expectedReturnDate,
+           aa.actualReturnDate,
            aa.status
-         FROM asset_assignment aa
-         JOIN assets a ON aa.asset_id = a.id
+         FROM assetAssignment aa
+         JOIN assets a ON aa.assetId = a.id
          ${whereClause}
-         ORDER BY aa.assigned_date DESC`,
+         ORDER BY aa.assignedDate DESC`,
         params
       );
 

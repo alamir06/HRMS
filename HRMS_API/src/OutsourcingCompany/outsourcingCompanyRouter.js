@@ -7,16 +7,16 @@ const outsourcingCompanyRouter = express.Router();
 
 const outsourcingCrudRouter = createCrudRouter({
   routePath: "/",
-  tableName: "outsourcing_companies",
+  tableName: "outsourcingCompanies",
   validationSchema: outsourcingCompanyValidationSchema,
-  displayNameField: "company_name",
+  displayNameField: "companyName",
   entityLabel: "Outsourcing Company",
   uuidEnabled: true,
-  uuidFields: ["id", "company_id"],
-  createRoles: ["HR_MANAGER"],
-  readRoles: ["HR_MANAGER"],
-  updateRoles: ["HR_MANAGER"],
-  deleteRoles: ["HR_MANAGER"],
+  uuidFields: ["id", "companyId"],
+  createRoles: ["HRMANAGER"],
+  readRoles: ["HRMANAGER"],
+  updateRoles: ["HRMANAGER"],
+  deleteRoles: ["HRMANAGER"],
   middleware: {
     create: [ensureDefaultCompanyIdInBody()],
     read: [],

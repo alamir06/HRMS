@@ -5,127 +5,127 @@ const dateSchema = z
   .string()
   .regex(/^[0-9]{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[01])$/, "Date must be in YYYY-MM-DD format");
 
-const recruitmentStatusEnum = z.enum(["draft", "open", "closed", "cancelled"]);
+const recruitmentStatusEnum = z.enum(["DRAFT", "OPEN", "CLOSED", "CANCELLED"]);
 const applicantStatusEnum = z.enum([
-  "applied",
-  "screening",
-  "interview",
-  "offered",
-  "rejected",
-  "hired",
+  "APPLIED",
+  "SCREENING",
+  "INTERVIEW",
+  "OFFERED",
+  "REJECTED",
+  "HIRED",
 ]);
-const interviewStatusEnum = z.enum(["scheduled", "completed", "cancelled", "no_show"]);
+const interviewStatusEnum = z.enum(["SCHEDULED", "COMPLETED", "CANCELLED", "noShow"]);
 
 const recruitmentBase = z.object({
-  job_title: z.string().min(1, "Job title is required"),
-  job_title_amharic: z.string().optional().nullable(),
-  department_id: uuidSchema,
-  designation_id: uuidSchema,
-  job_description: z.string().optional().nullable(),
-  job_description_amharic: z.string().optional().nullable(),
+  jobTitle: z.string().min(1, "Job title is required"),
+  jobTitleAmharic: z.string().optional().nullable(),
+  departmentId: uuidSchema,
+  designationId: uuidSchema,
+  jobDescription: z.string().optional().nullable(),
+  jobDescriptionAmharic: z.string().optional().nullable(),
   requirements: z.string().optional().nullable(),
-  requirements_amharic: z.string().optional().nullable(),
+  requirementsAmharic: z.string().optional().nullable(),
   vacancies: z
-    .number({ invalid_type_error: "Vacancies must be a number" })
+    .number({ invalidTypeError: "Vacancies must be a number" })
     .min(1, "Vacancies must be at least 1"),
-  experience_required: z.string().optional().nullable(),
-  salary_range: z.string().optional().nullable(),
+  experienceRequired: z.string().optional().nullable(),
+  salaryRange: z.string().optional().nullable(),
   status: recruitmentStatusEnum.optional(),
-  posted_date: dateSchema.optional().nullable(),
-  closing_date: dateSchema.optional().nullable(),
-  created_by: uuidSchema,
-});
+  postedDate: dateSchema.optional().nullable(),
+  closingDate: dateSchema.optional().nullable(),
+  createdBy: uuidSchema,
+}).strict();
 
 const applicantBase = z.object({
-  recruitment_id: uuidSchema,
-  first_name: z.string().min(1, "First name is required"),
-  first_name_amharic: z.string().optional().nullable(),
-  last_name: z.string().min(1, "Last name is required"),
-  last_name_amharic: z.string().optional().nullable(),
+  recruitmentId: uuidSchema,
+  firstName: z.string().min(1, "First name is required"),
+  firstNameAmharic: z.string().optional().nullable(),
+  lastName: z.string().min(1, "Last name is required"),
+  lastNameAmharic: z.string().optional().nullable(),
   email: z.string().email("Invalid email format"),
   phone: z.string().optional().nullable(),
-  resume_url: z.string().url("Invalid resume URL").optional().nullable(),
-  cover_letter: z.string().optional().nullable(),
-  cover_letter_amharic: z.string().optional().nullable(),
-  current_company: z.string().optional().nullable(),
-  current_position: z.string().optional().nullable(),
-  total_experience: z
-    .number({ invalid_type_error: "Experience must be a number" })
+  resumeUrl: z.string().url("Invalid resume URL").optional().nullable(),
+  coverLetter: z.string().optional().nullable(),
+  coverLetterAmharic: z.string().optional().nullable(),
+  currentCompany: z.string().optional().nullable(),
+  currentPosition: z.string().optional().nullable(),
+  totalExperience: z
+    .number({ invalidTypeError: "Experience must be a number" })
     .min(0, "Experience cannot be negative")
     .optional()
     .nullable(),
-  current_salary: z
-    .number({ invalid_type_error: "Current salary must be a number" })
+  currentSalary: z
+    .number({ invalidTypeError: "Current salary must be a number" })
     .min(0, "Salary cannot be negative")
     .optional()
     .nullable(),
-  expected_salary: z
-    .number({ invalid_type_error: "Expected salary must be a number" })
+  expectedSalary: z
+    .number({ invalidTypeError: "Expected salary must be a number" })
     .min(0, "Salary cannot be negative")
     .optional()
     .nullable(),
-  notice_period: z
-    .number({ invalid_type_error: "Notice period must be a number" })
+  noticePeriod: z
+    .number({ invalidTypeError: "Notice period must be a number" })
     .min(0, "Notice period cannot be negative")
     .optional()
     .nullable(),
   status: applicantStatusEnum.optional(),
-});
+}).strict();
 
-const applicantStatusSchema = z.object({ status: applicantStatusEnum });
+const applicantStatusSchema = z.object({ status: applicantStatusEnum }).strict();
 
 const interviewBase = z.object({
-  applicant_id: uuidSchema,
-  interview_date: dateSchema,
-  interview_time: z
+  applicantId: uuidSchema,
+  interviewDate: dateSchema,
+  interviewTime: z
     .string()
     .regex(/^([01][0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/, "Time must be in HH:MM or HH:MM:SS format"),
-  interview_type: z.enum(["phone", "video", "in_person"]),
+  interviewType: z.enum(["PHONE", "VIDEO", "INPERSON"]),
   interviewers: z
-    .array(z.object({ name: z.string(), email: z.string().email().optional() }))
+    .array(z.object({ name: z.string(), email: z.string().email().optional() }).strict())
     .optional()
     .nullable(),
   location: z.string().optional().nullable(),
-  location_amharic: z.string().optional().nullable(),
+  locationAmharic: z.string().optional().nullable(),
   status: interviewStatusEnum.optional(),
   feedback: z.string().optional().nullable(),
-  feedback_amharic: z.string().optional().nullable(),
+  feedbackAmharic: z.string().optional().nullable(),
   rating: z
-    .number({ invalid_type_error: "Rating must be a number" })
+    .number({ invalidTypeError: "Rating must be a number" })
     .min(1, "Rating must be between 1 and 5")
     .max(5, "Rating must be between 1 and 5")
     .optional()
     .nullable(),
-});
+}).strict();
 
 const interviewFeedbackSchema = z.object({
   status: interviewStatusEnum.optional(),
   feedback: z.string().optional().nullable(),
-  feedback_amharic: z.string().optional().nullable(),
+  feedbackAmharic: z.string().optional().nullable(),
   rating: z
-    .number({ invalid_type_error: "Rating must be a number" })
+    .number({ invalidTypeError: "Rating must be a number" })
     .min(1, "Rating must be between 1 and 5")
     .max(5, "Rating must be between 1 and 5")
     .optional()
     .nullable(),
-});
+}).strict();
 
 export const recruitmentValidationSchema = {
   recruitment: {
     create: recruitmentBase,
     update: recruitmentBase.partial(),
-    id: z.object({ id: uuidSchema }),
+    id: z.object({ id: uuidSchema }).strict(),
   },
   applicant: {
     create: applicantBase,
     update: applicantBase.partial(),
-    id: z.object({ id: uuidSchema }),
+    id: z.object({ id: uuidSchema }).strict(),
     statusUpdate: applicantStatusSchema,
   },
   interview: {
     create: interviewBase,
     update: interviewBase.partial(),
-    id: z.object({ id: uuidSchema }),
+    id: z.object({ id: uuidSchema }).strict(),
     feedback: interviewFeedbackSchema,
   },
 };

@@ -33,5 +33,4 @@ appRouter.use("/payroll", payrollRouter);
 appRouter.use("/auth", authRouter);
 appRouter.use("/outsourcing-companies", outsourcingCompanyRouter);
 
-
 export default appRouter;

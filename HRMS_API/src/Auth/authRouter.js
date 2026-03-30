@@ -10,7 +10,7 @@ router.post("/login", validate(authValidation.login), login);
 router.post(
   "/users",
   authenticateToken,
-  authorize("HR_MANAGER"),
+  authorize("HRMANAGER"),
   validate(authValidation.createUser),
   createSystemUser
 );

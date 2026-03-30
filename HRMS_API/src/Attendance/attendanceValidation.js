@@ -9,33 +9,33 @@ const timeSchema = z
   .regex(/^([01][0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/, "Time must be in HH:MM or HH:MM:SS format");
 
 const baseSchema = z.object({
-  employee_id: uuidSchema,
+  employeeId: uuidSchema,
   date: dateSchema,
-  check_in: timeSchema.optional().nullable(),
-  check_out: timeSchema.optional().nullable(),
+  checkIn: timeSchema.optional().nullable(),
+  checkOut: timeSchema.optional().nullable(),
   status: z
-    .enum(["Present", "Late", "Absent", "half_day", "holiday", "weekend"])
+    .enum(["Present", "Late", "Absent", "HALFDAY", "HOLIDAY", "WEEKEND"])
     .optional(),
-  late_minutes: z
-    .number({ invalid_type_error: "Late minutes must be a number" })
+  lateMinutes: z
+    .number({ invalidTypeError: "Late minutes must be a number" })
     .min(0, "Late minutes cannot be negative")
     .optional()
     .nullable(),
-  overtime_minutes: z
-    .number({ invalid_type_error: "Overtime minutes must be a number" })
+  overtimeMinutes: z
+    .number({ invalidTypeError: "Overtime minutes must be a number" })
     .min(0, "Overtime minutes cannot be negative")
     .optional()
     .nullable(),
   notes: z.string().optional().nullable(),
-  notes_amharic: z.string().optional().nullable(),
-});
+  notesAmharic: z.string().optional().nullable(),
+}).strict();
 
 export const attendanceValidationSchema = {
   create: baseSchema,
   update: baseSchema.partial(),
   id: z.object({
     id: uuidSchema,
-  }),
+  }).strict(),
 };
 
 export const validateAttendance = (schema) => {

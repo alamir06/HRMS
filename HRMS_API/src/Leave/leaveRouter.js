@@ -9,50 +9,50 @@ const leaveRouter = express.Router();
 leaveRouter.post(
   "/requests/apply",
   authenticateToken,
-  authorize("HR_MANAGER", "HR_OFFICER", "HEAD", "employee"),
+  authorize("HRMANAGER", "HROFFICER", "HEAD", "EMPLOYEE"),
   leaveController.applyForLeave
 );
 
 leaveRouter.post(
   "/requests/:id/approve",
   authenticateToken,
-  authorize("HR_MANAGER", "HR_OFFICER"),
+  authorize("HRMANAGER", "HROFFICER"),
   leaveController.approveLeave
 );
 
 leaveRouter.post(
   "/requests/:id/reject",
   authenticateToken,
-  authorize("HR_MANAGER", "HR_OFFICER"),
+  authorize("HRMANAGER", "HROFFICER"),
   leaveController.rejectLeave
 );
 
 leaveRouter.get(
   "/employees/:employeeId/summary",
   authenticateToken,
-  authorize("HR_MANAGER", "HR_OFFICER", "HEAD", "employee"),
+  authorize("HRMANAGER", "HROFFICER", "HEAD", "EMPLOYEE"),
   leaveController.getEmployeeLeaveSummary
 );
 
 leaveRouter.get(
   "/employees/:employeeId/history",
   authenticateToken,
-  authorize("HR_MANAGER", "HR_OFFICER", "HEAD", "employee"),
+  authorize("HRMANAGER", "HROFFICER", "HEAD", "EMPLOYEE"),
   leaveController.getEmployeeLeaveHistory
 );
 
 const leaveTypeRouter = createCrudRouter({
   routePath: "/",
-  tableName: "leave_types",
+  tableName: "leaveTypes",
   validationSchema: leaveValidationSchema.type,
-  displayNameField: "leave_name",
+  displayNameField: "leaveName",
   entityLabel: "Leave Type",
   uuidEnabled: true,
 });
 
 const leaveBalanceRouter = createCrudRouter({
   routePath: "/",
-  tableName: "leave_balance",
+  tableName: "leaveBalance",
   validationSchema: leaveValidationSchema.balance,
   displayNameField: "year",
   entityLabel: "Leave Balance",
@@ -61,9 +61,9 @@ const leaveBalanceRouter = createCrudRouter({
 
 const leaveRequestCrudRouter = createCrudRouter({
   routePath: "/",
-  tableName: "leave_request",
+  tableName: "leaveRequest",
   validationSchema: leaveValidationSchema.request,
-  displayNameField: "start_date",
+  displayNameField: "startDate",
   entityLabel: "Leave Request",
   uuidEnabled: true,
 });

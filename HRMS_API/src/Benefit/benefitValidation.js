@@ -3,46 +3,46 @@ import { z } from "zod";
 const uuidSchema = z.string().uuid("Invalid UUID format");
 
 const moneySchema = z
-  .number({ invalid_type_error: "Value must be a number" })
+  .number({ invalidTypeError: "Value must be a number" })
   .min(0, "Value cannot be negative");
 
 const benefitBase = z.object({
-  benefit_name: z.string().min(1, "Benefit name is required"),
-  benefit_name_amharic: z.string().optional().nullable(),
+  benefitName: z.string().min(1, "Benefit name is required"),
+  benefitNameAmharic: z.string().optional().nullable(),
   description: z.string().optional().nullable(),
-  description_amharic: z.string().optional().nullable(),
-  benefit_type: z.enum(["health", "retirement", "insurance", "wellness", "other"]),
-  cost_to_company: moneySchema.optional().nullable(),
-  is_active: z.boolean().optional(),
-});
+  descriptionAmharic: z.string().optional().nullable(),
+  benefitType: z.enum(["HEALTH", "RETIREMENT", "INSURANCE", "WELLNESS", "OTHER"]),
+  costToCompany: moneySchema.optional().nullable(),
+  isActive: z.boolean().optional(),
+}).strict();
 
 const enrollmentBase = z.object({
-  employee_id: uuidSchema,
-  benefit_id: uuidSchema,
-  enrollment_date: z
+  employeeId: uuidSchema,
+  benefitId: uuidSchema,
+  enrollmentDate: z
     .string()
     .regex(/^[0-9]{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[01])$/, "Date must be in YYYY-MM-DD format"),
-  coverage_amount: moneySchema.optional().nullable(),
-  employee_contribution: moneySchema.optional().nullable(),
-  company_contribution: moneySchema.optional().nullable(),
-  status: z.enum(["active", "cancelled", "suspended"]).optional(),
-  end_date: z
+  coverageAmount: moneySchema.optional().nullable(),
+  employeeContribution: moneySchema.optional().nullable(),
+  companyContribution: moneySchema.optional().nullable(),
+  status: z.enum(["ACTIVE", "CANCELLED", "SUSPENDED"]).optional(),
+  endDate: z
     .string()
     .regex(/^[0-9]{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[01])$/, "Date must be in YYYY-MM-DD format")
     .optional()
     .nullable(),
-});
+}).strict();
 
 export const benefitValidationSchema = {
   benefit: {
     create: benefitBase,
     update: benefitBase.partial(),
-    id: z.object({ id: uuidSchema }),
+    id: z.object({ id: uuidSchema }).strict(),
   },
   enrollment: {
     create: enrollmentBase,
     update: enrollmentBase.partial(),
-    id: z.object({ id: uuidSchema }),
+    id: z.object({ id: uuidSchema }).strict(),
   },
 };
 

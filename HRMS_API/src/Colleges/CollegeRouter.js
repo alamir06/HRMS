@@ -11,13 +11,13 @@ const collegeCrudRouter = createCrudRouter({
   tableName: "college",
   validationSchema: collegeValidationSchema,
   uuidEnabled: true,
-  displayNameField: "college_name",
+  displayNameField: "collegeName",
   entityLabel: "college",
-  uuidFields: ["id", "company_id"],
-  createRoles: ["HR_MANAGER"],
+  uuidFields: ["id", "companyId"],
+  createRoles: ["HRMANAGER"],
   readRoles: null,
-  updateRoles: ["HR_MANAGER"],
-  deleteRoles: ["HR_MANAGER"],
+  updateRoles: ["HRMANAGER"],
+  deleteRoles: ["HRMANAGER"],
   middleware: {
     create: [ensureDefaultCompanyIdInBody()],
     read: [],
@@ -33,42 +33,42 @@ collegeRouter.use('/', collegeCrudRouter);
 
 collegeRouter.get('/company/:companyId',
   authenticateToken,
-  authorize('admin', 'super_admin', 'hr_manager', 'user'),
+  authorize('admin', 'superAdmin', 'HRMANAGER', 'user'),
   collegeCustomController.getCollegesByCompany
 );
 
 // Statistics
 collegeRouter.get('/stats/dashboard',
   authenticateToken,
-  authorize('admin', 'super_admin', 'hr_manager'),
+  authorize('admin', 'superAdmin', 'HRMANAGER'),
   collegeCustomController.getCollegeStats
 );
 
 // Bulk operations
 collegeRouter.post('/bulk/create',
   authenticateToken,
-  authorize('admin', 'super_admin'),
+  authorize('admin', 'superAdmin'),
   collegeCustomController.bulkCreateColleges
 );
 
 // Search operations
 collegeRouter.get('/search/global',
   authenticateToken,
-  authorize('admin', 'super_admin', 'hr_manager', 'user'),
+  authorize('admin', 'superAdmin', 'HRMANAGER', 'user'),
   collegeCustomController.searchColleges
 );
 
 // Validation
 collegeRouter.get('/validate/name',
   authenticateToken,
-  authorize('admin', 'super_admin', 'hr_manager'),
+  authorize('admin', 'superAdmin', 'HRMANAGER'),
   collegeCustomController.validateCollegeName
 );
 
 // Get college with company details
 collegeRouter.get('/:id/with-company',
   // authenticateToken,
-  // authorize('admin', 'super_admin', 'hr_manager', 'user'),
+  // authorize('admin', 'superAdmin', 'HRMANAGER', 'user'),
   collegeCustomController.getCollegeWithCompany
 );
 
