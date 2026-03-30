@@ -51,7 +51,7 @@ employeeRouter.put(
 employeeRouter.post(
   "/:id/profile-picture",
   authenticateToken,
-  authorize("HRMANAGER", "HROFFICER"),
+  authorize("HRMANAGER", "HROFFICER","EMPLOYEE"),
   validateEmployee(employeeIdSchema),
   fileUploadService.uploadSingleImage("profilePicture"),
   employeeController.uploadProfilePicture

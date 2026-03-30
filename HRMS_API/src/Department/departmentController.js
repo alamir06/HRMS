@@ -6,8 +6,8 @@ const departmentCustomController = {
       const query = `
         WITH RECURSIVE parentHierarchy AS (
           SELECT 
-            BIN_TO_UUID(d.id) as id,
-            BIN_TO_UUID(d.parentDepartmentId) as parentDepartmentId,
+            d.id,
+            d.parentDepartmentId,
             d.departmentName,
             d.departmentNameAmharic,
             d.departmentType,
@@ -19,8 +19,8 @@ const departmentCustomController = {
           WHERE d.id = UUID_TO_BIN(?)
           UNION ALL
           SELECT 
-            BIN_TO_UUID(parent.id) as id,
-            BIN_TO_UUID(parent.parentDepartmentId) as parentDepartmentId,
+            parent.id,
+            parent.parentDepartmentId,
             parent.departmentName,
             parent.departmentNameAmharic,
             parent.departmentType,
@@ -31,9 +31,28 @@ const departmentCustomController = {
           FROM department parent
           INNER JOIN parentHierarchy ph ON parent.id = ph.parentDepartmentId
         )
-        SELECT * FROM parentHierarchy;
+        SELECT 
+            BIN_TO_UUID(id) as id,
+            BIN_TO_UUID(parentDepartmentId) as parentDepartmentId,
+            departmentName,
+            departmentNameAmharic,
+            departmentType,
+            departmentStatus,
+            departmentLevel,
+            createdAt,
+            updatedAt
+        FROM parentHierarchy;
       `;
       const [rows] = await pool.execute(query, [departmentId]);
+
+      if (rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: "Department not found",
+          message: `Department with ID ${departmentId} does not exist.`
+        });
+      }
+
       res.json({
         success: true,
         data: rows,
@@ -58,6 +77,7 @@ const departmentCustomController = {
       let query = `
         SELECT 
           BIN_TO_UUID(d.id) as id,
+          BIN_TO_UUID(d.parentDepartmentId) as parentDepartmentId,
           BIN_TO_UUID(d.companyId) as companyId,
           BIN_TO_UUID(d.collegeId) as collegeId,
           BIN_TO_UUID(d.managerId) as managerId,
@@ -149,13 +169,14 @@ const departmentCustomController = {
   getDepartmentsByCollege: async (req, res) => {
     try {
       const { collegeId } = req.params;
-      const { page = 1, limit = 10, status } = req.query;
+      const { page = 1, limit = 10, status, search } = req.query;
 
       const offset = (page - 1) * limit;
 
-      const query = `
+      let query = `
         SELECT 
           BIN_TO_UUID(d.id) as id,
+          BIN_TO_UUID(d.parentDepartmentId) as parentDepartmentId,
           BIN_TO_UUID(d.companyId) as companyId,
           BIN_TO_UUID(d.collegeId) as collegeId,
           BIN_TO_UUID(d.managerId) as managerId,
@@ -175,33 +196,33 @@ const departmentCustomController = {
         LEFT JOIN employeePersonal mp ON d.managerId = mp.employeeId
         LEFT JOIN employeeEmployment ee ON d.managerId = ee.employeeId
         WHERE d.collegeId = UUID_TO_BIN(?)
-        ${
-          status && ["ACTIVE", "INACTIVE"].includes(status)
-            ? "AND d.departmentStatus = ?"
-            : ""
-        }
-        ORDER BY d.departmentName ASC 
-        LIMIT ? OFFSET ?
       `;
 
-      const countQuery = `
+      let countQuery = `
         SELECT COUNT(*) as total 
         FROM department 
         WHERE collegeId = UUID_TO_BIN(?)
-        ${
-          status && ["ACTIVE", "INACTIVE"].includes(status)
-            ? "AND departmentStatus = ?"
-            : ""
-        }
       `;
 
       const params = [collegeId];
       const countParams = [collegeId];
 
-      if (status) {
+      if (status && ["ACTIVE", "INACTIVE"].includes(status)) {
+        query += " AND d.departmentStatus = ?";
+        countQuery += " AND departmentStatus = ?";
         params.push(status);
         countParams.push(status);
       }
+
+      if (search && search.trim() !== "") {
+        query += ` AND (d.departmentName LIKE ? OR d.departmentNameAmharic LIKE ? OR d.departmentDescription LIKE ?)`;
+        countQuery += ` AND (departmentName LIKE ? OR departmentNameAmharic LIKE ? OR departmentDescription LIKE ?)`;
+        const searchTerm = `%${search}%`;
+        params.push(searchTerm, searchTerm, searchTerm);
+        countParams.push(searchTerm, searchTerm, searchTerm);
+      }
+
+      query += " ORDER BY d.departmentName ASC LIMIT ? OFFSET ?";
 
       params.push(parseInt(limit), offset);
 
@@ -397,6 +418,7 @@ const departmentCustomController = {
       let query = `
         SELECT 
           BIN_TO_UUID(d.id) as id,
+          BIN_TO_UUID(d.parentDepartmentId) as parentDepartmentId,
           BIN_TO_UUID(d.companyId) as companyId,
           BIN_TO_UUID(d.collegeId) as collegeId,
           BIN_TO_UUID(d.managerId) as managerId,
@@ -488,6 +510,7 @@ const departmentCustomController = {
         companyId,
         collegeId,
         status,
+        search
       } = req.query;
 
       // Convert to numbers and validate
@@ -528,6 +551,7 @@ const departmentCustomController = {
       let query = `
       SELECT 
         BIN_TO_UUID(d.id) as id,
+        BIN_TO_UUID(d.parentDepartmentId) as parentDepartmentId,
         BIN_TO_UUID(d.companyId) as companyId,
         BIN_TO_UUID(d.collegeId) as collegeId,
         BIN_TO_UUID(d.managerId) as managerId,
@@ -609,6 +633,13 @@ const departmentCustomController = {
         query += ` LEFT JOIN employeeEmployment ee ON d.managerId = ee.employeeId`;
       }
 
+      if (search && search.trim() !== "") {
+        whereConditions.push("(d.departmentName LIKE ? OR d.departmentNameAmharic LIKE ? OR d.departmentDescription LIKE ?)");
+        const searchTerm = `%${search}%`;
+        params.push(searchTerm, searchTerm, searchTerm);
+        countParams.push(searchTerm, searchTerm, searchTerm);
+      }
+
       // Add WHERE clause if conditions exist
       if (whereConditions.length > 0) {
         const whereClause = ` WHERE ${whereConditions.join(" AND ")}`;
@@ -658,7 +689,7 @@ const departmentCustomController = {
   getDepartmentsByParent: async (req, res) => {
     try {
       const { parentId } = req.params;
-      const { page = 1, limit = 10, status } = req.query;
+      const { page = 1, limit = 10, status, search } = req.query;
       const offset = (page - 1) * limit;
 
       let query = `
@@ -688,6 +719,13 @@ const departmentCustomController = {
         countQuery += ` AND departmentStatus = ?`;
         params.push(status);
         countParams.push(status);
+      }
+      if (search && search.trim() !== "") {
+        query += ` AND (d.departmentName LIKE ? OR d.departmentNameAmharic LIKE ? OR d.departmentDescription LIKE ?)`;
+        countQuery += ` AND (departmentName LIKE ? OR departmentNameAmharic LIKE ? OR departmentDescription LIKE ?)`;
+        const searchTerm = `%${search}%`;
+        params.push(searchTerm, searchTerm, searchTerm);
+        countParams.push(searchTerm, searchTerm, searchTerm);
       }
       query += ` ORDER BY d.departmentName ASC LIMIT ? OFFSET ?`;
       params.push(parseInt(limit), offset);

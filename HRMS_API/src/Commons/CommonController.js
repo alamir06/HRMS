@@ -60,6 +60,8 @@ bulkCreate = async (req, res) => {
         search: req.query.search,
         searchFields: req.query.searchFields
           ? req.query.searchFields.split(",")
+          : this.displayNameField
+          ? [this.displayNameField, `${this.displayNameField}Amharic`]
           : [],
         filters: { ...req.query },
         sortBy: req.query.sortBy || "createdAt",

@@ -87,9 +87,12 @@ export class TableSchemaService {
           "collegeId",
           "departmentName",
           "departmentNameAmharic",
+          "parentDepartmentId",
           "departmentDescription",
           "departmentDescriptionAmharic",
+          "departmentType",
           "managerId",
+          "departmentLevel",
           "departmentStatus",
           "createdAt",
           "updatedAt",
@@ -760,13 +763,15 @@ export class TableSchemaService {
 
   // Get all column names for a table
   getAllColumnNames(tableName) {
-    const schema = this.tableSchemas[tableName];
+    const tableKey = tableName ? tableName.toLowerCase() : "";
+    const schema = this.tableSchemas[tableKey] || this.tableSchemas[tableName];
     return schema ? schema.columns : ["*"];
   }
 
   // Get UUID fields for a table
   getUuidFields(tableName) {
-    const schema = this.tableSchemas[tableName];
+    const tableKey = tableName ? tableName.toLowerCase() : "";
+    const schema = this.tableSchemas[tableKey] || this.tableSchemas[tableName];
     return schema ? schema.uuidFields : ["id"];
   }
 
@@ -778,13 +783,15 @@ export class TableSchemaService {
 
   // Get valid relations for a table
   getValidRelations(tableName) {
-    const schema = this.tableSchemas[tableName];
+    const tableKey = tableName ? tableName.toLowerCase() : "";
+    const schema = this.tableSchemas[tableKey] || this.tableSchemas[tableName];
     return schema && schema.relations ? Object.keys(schema.relations) : [];
   }
 
   // Add related fields to SELECT query
   addRelatedFields(tableName, selectFields, include) {
-    const schema = this.tableSchemas[tableName];
+    const tableKey = tableName ? tableName.toLowerCase() : "";
+    const schema = this.tableSchemas[tableKey] || this.tableSchemas[tableName];
     if (!schema || !schema.relations || include.length === 0) {
       return selectFields;
     }
@@ -807,7 +814,8 @@ export class TableSchemaService {
 
   // Build JOIN clauses for query
   buildJoins(tableName, include) {
-    const schema = this.tableSchemas[tableName];
+    const tableKey = tableName ? tableName.toLowerCase() : "";
+    const schema = this.tableSchemas[tableKey] || this.tableSchemas[tableName];
     if (!schema || !schema.relations || include.length === 0) {
       return "";
     }
@@ -840,7 +848,8 @@ export class TableSchemaService {
 
   // Get table configuration
   getTableConfig(tableName) {
-    return this.tableSchemas[tableName] || null;
+    const tableKey = tableName ? tableName.toLowerCase() : "";
+    return this.tableSchemas[tableKey] || this.tableSchemas[tableName] || null;
   }
 
   // Add new table schema dynamically

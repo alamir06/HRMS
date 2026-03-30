@@ -1,0 +1,31 @@
+.dashboard-layout-container {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background-color: var(--bg-primary);
+}
+
+.dashboard-main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  position: relative;
+  background-color: var(--bg-primary); /* Soft light gray canvas */
+}
+
+.dashboard-main-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.dashboard-main-content::-webkit-scrollbar-thumb {
+  background-color: var(--border-color);
+  border-radius: 4px;
+}
+
+.dashboard-outlet-wrapper {
+  padding: 2rem;
+  flex: 1;
+  /* Let this blank zone wait for specific content */
+}

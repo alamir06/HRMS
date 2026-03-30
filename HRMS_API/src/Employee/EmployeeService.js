@@ -51,18 +51,34 @@ export class EmployeeService extends CrudService {
     if (employeeData.employeeCode) {
       delete employeeData.employeeCode;
     }
-    if (employeeData.employeeType === "ACADEMIC" && academic) {
+    if (employeeData.departmentId) {
       try {
         const [deptRows] = await connection.query(
-          `SELECT BIN_TO_UUID(collegeId) as collegeId FROM department WHERE id = UUID_TO_BIN(?) AND departmentType = 'ACADEMIC'`,
+          `SELECT BIN_TO_UUID(collegeId) as collegeId, departmentType FROM department WHERE id = UUID_TO_BIN(?)`,
           [employeeData.departmentId]
         );
+        
         if (!deptRows.length) {
-          throw new Error("Invalid departmentId: not found or not academic");
+          throw new Error("Invalid departmentId: department not found");
         }
-        const deptCollegeId = deptRows[0].collegeId;
-        if (!deptCollegeId || deptCollegeId !== academic.collegeId) {
-          throw new Error("The selected department does not belong to the provided collegeId");
+
+        const { departmentType, collegeId: deptCollegeId } = deptRows[0];
+
+        if (employeeData.employeeType === "ACADEMIC") {
+          if (departmentType !== "ACADEMIC") {
+            throw new Error("Invalid departmentId: ACADEMIC employees must belong to an ACADEMIC department");
+          }
+          
+          if (academic) {
+            if (!deptCollegeId || deptCollegeId !== academic.collegeId) {
+              throw new Error("The selected ACADEMIC department does not belong to the provided collegeId");
+            }
+          }
+        } else {
+          // If the employee is ADMINISTRATIVE, HROFFICER, OUTSOURCE, etc., they belong to an ADMINISTRATIVE department
+          if (departmentType !== "ADMINISTRATIVE") {
+            throw new Error(`Invalid departmentId: ${employeeData.employeeType} employees must belong to an ADMINISTRATIVE department`);
+          }
         }
       } catch (error) {
         connection.release();
@@ -160,8 +176,7 @@ export class EmployeeService extends CrudService {
           academic.fieldOfSpecializationAmharic || null,
         ]);
       }
-      // Removed HR-specific logic
-      if (employeeData.employeeType === "outsource" && outsource) {
+      if (employeeData.employeeType === "OUTSOURCE" && outsource) {
         const outsourceQuery = `
           INSERT INTO employeeOutsource (
             employeeId, outsourcingCompanyId, contractStartDate, contractEndDate, serviceType
@@ -385,6 +400,38 @@ export class EmployeeService extends CrudService {
       await connection.beginTransaction();
     const { personal, employment, academic, outsource, ...employeeData } =
         fullData;
+
+      // Validate department logic if departmentId or employeeType are being updated
+      if (employeeData.departmentId || employeeData.employeeType) {
+        const [currentEmployee] = await connection.query(
+          "SELECT BIN_TO_UUID(departmentId) as departmentId, employeeType FROM employee WHERE id = UUID_TO_BIN(?)",
+          [employeeId]
+        );
+        
+        const targetType = employeeData.employeeType || currentEmployee[0].employeeType;
+        const targetDeptId = employeeData.departmentId || currentEmployee[0].departmentId;
+
+        if (targetDeptId) {
+          const [deptRows] = await connection.query(
+            `SELECT BIN_TO_UUID(collegeId) as collegeId, departmentType FROM department WHERE id = UUID_TO_BIN(?)`,
+            [targetDeptId]
+          );
+          
+          if (!deptRows.length) throw new Error("Invalid departmentId: department not found");
+          
+          const { departmentType, collegeId: deptCollegeId } = deptRows[0];
+
+          if (targetType === "ACADEMIC") {
+            if (departmentType !== "ACADEMIC") throw new Error("Invalid departmentId: ACADEMIC employees must belong to an ACADEMIC department");
+            if (academic && (!deptCollegeId || deptCollegeId !== academic.collegeId)) {
+              throw new Error("The selected ACADEMIC department does not belong to the provided collegeId");
+            }
+          } else {
+            if (departmentType !== "ADMINISTRATIVE") throw new Error(`Invalid departmentId: ${targetType} employees must belong to an ADMINISTRATIVE department`);
+          }
+        }
+      }
+
       // Group one 1. Update employee table (basic info)
       if (Object.keys(employeeData).length > 0) {
         const employeeFields = [];
@@ -526,7 +573,7 @@ export class EmployeeService extends CrudService {
       if (
         outsource &&
         Object.keys(outsource).length > 0 &&
-        currentType === "outsource"
+        currentType === "OUTSOURCE"
       ) {
         const [existing] = await connection.query(
           "SELECT * FROM employeeOutsource WHERE employeeId = UUID_TO_BIN(?)",
@@ -579,6 +626,7 @@ export class EmployeeService extends CrudService {
       page = 1,
       limit = 10,
       search = "",
+      employeeName = "",
       companyId,
       departmentId,
       employeeType,
@@ -629,18 +677,37 @@ export class EmployeeService extends CrudService {
       query += ` LEFT JOIN department d ON e.departmentId = d.id`;
       countQuery += ` LEFT JOIN department d ON e.departmentId = d.id`;
     }
-    const whereConditions = [];
+    const whereConditions = [
+      "(e.employeeRole != 'HRMANAGER' OR e.employeeRole IS NULL)"
+    ];
 
     if (search) {
       whereConditions.push(`(
         e.employeeCode LIKE ? OR 
         ep.firstName LIKE ? OR 
+        ep.firstNameAmharic LIKE ? OR 
         ep.lastName LIKE ? OR
+        ep.lastNameAmharic LIKE ? OR
         ep.personalEmail LIKE ?
       )`);
       const searchTerm = `%${search}%`;
-      params.push(searchTerm, searchTerm, searchTerm, searchTerm);
-      countParams.push(searchTerm, searchTerm, searchTerm, searchTerm);
+      params.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
+      countParams.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
+    }
+
+    if (employeeName) {
+      whereConditions.push(`(
+        ep.firstName LIKE ? OR 
+        ep.firstNameAmharic LIKE ? OR 
+        ep.middleName LIKE ? OR
+        ep.middleNameAmharic LIKE ? OR
+        ep.lastName LIKE ? OR
+        ep.lastNameAmharic LIKE ? OR
+        CONCAT(ep.firstName, ' ', ep.lastName) LIKE ?
+      )`);
+      const nameTerm = `%${employeeName}%`;
+      params.push(nameTerm, nameTerm, nameTerm, nameTerm, nameTerm, nameTerm, nameTerm);
+      countParams.push(nameTerm, nameTerm, nameTerm, nameTerm, nameTerm, nameTerm, nameTerm);
     }
     if (companyId) {
       whereConditions.push(`e.companyId = UUID_TO_BIN(?)`);
@@ -713,9 +780,11 @@ export class EmployeeService extends CrudService {
           ep.profilePicture
         FROM employee e
         LEFT JOIN employeePersonal ep ON e.id = ep.employeeId
-        WHERE e.employeeCategory = ?
+        WHERE e.employeeCategory = ? 
+        AND (e.employeeRole != 'HRMANAGER' OR e.employeeRole IS NULL)
       `;
 
+      // If search is passed down from a new signature over time, logic would go here.
       const [rows] = await pool.query(query, [category]);
       return rows;
     } catch (error) {
@@ -725,7 +794,7 @@ export class EmployeeService extends CrudService {
 
   // Update employee category
   async updateEmployeeCategory(employeeId, newCategory) {
-    const validCategories = ["HROFFICER", "ACADEMIC", "outsource"];
+    const validCategories = ["HROFFICER", "ACADEMIC", "OUTSOURCE"];
 
     if (!validCategories.includes(newCategory)) {
       throw new Error(

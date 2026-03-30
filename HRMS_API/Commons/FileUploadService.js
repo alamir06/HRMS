@@ -38,16 +38,26 @@ export class FileUploadService {
     };
   }
 
-  // Configure multer for specific file type
   getMulterConfig(config, fileType = "image") {
     const storage = new CloudinaryStorage({
       cloudinary: cloudinary,
-      params: {
-        folder: config.folder,
-        resource_type: "auto",
-        public_id: (req, file) => {
-          return `${uuidv4()}`;
-        },
+      params: async (req, file) => {
+        // ALWAYS use auto so Cloudinary can process PDFs as documents natively.
+        // The 401 errors are Cloudinary account security settings blocking raw files!
+        const resourceType = "auto";
+        
+        // Extract original extension
+        const originalNameParts = file.originalname.split('.');
+        const ext = originalNameParts.length > 1 ? `.${originalNameParts.pop()}` : '';
+        
+        // Force the extension onto the public_id so Cloudinary URLs include it
+        const publicId = `${uuidv4()}${ext}`;
+
+        return {
+          folder: config.folder,
+          resource_type: resourceType,
+          public_id: publicId,
+        };
       },
     });
 
@@ -107,16 +117,27 @@ export class FileUploadService {
     return file.path;
   }
 
-  // Extract public ID from Cloudinary URL
-  extractPublicId(url) {
+  // Extract public ID and resource type from Cloudinary URL
+  extractCloudinaryInfo(url) {
     if (!url) return null;
     try {
       const parts = url.split('/');
       const filenameWithExt = parts.pop();
       const folderPart = parts.pop(); 
       const baseFolder = parts.pop(); 
-      const filename = filenameWithExt.split('.')[0];
-      return `${baseFolder}/${folderPart}/${filename}`;
+      
+      // Look for resource type in the URL (usually before /upload/)
+      const isRaw = url.includes('/raw/upload/');
+      const resourceType = isRaw ? 'raw' : 'image';
+      
+      // For raw files, Cloudinary public_id INCLUDES the extension.
+      // For images, it typically does not.
+      const filename = isRaw ? filenameWithExt : filenameWithExt.split('.')[0];
+      
+      return {
+        publicId: `${baseFolder}/${folderPart}/${filename}`,
+        resourceType
+      };
     } catch {
       return null;
     }
@@ -126,11 +147,17 @@ export class FileUploadService {
   deleteFile(publicIdOrUrl, fileType = "image") {
     return new Promise((resolve, reject) => {
       let publicId = publicIdOrUrl;
+      let resourceType = fileType === "document" ? "raw" : "image"; // Fallback default
+
       if (publicIdOrUrl && publicIdOrUrl.startsWith('http')) {
-        publicId = this.extractPublicId(publicIdOrUrl) || publicIdOrUrl;
+        const info = this.extractCloudinaryInfo(publicIdOrUrl);
+        if (info) {
+          publicId = info.publicId;
+          resourceType = info.resourceType;
+        }
       }
       
-      cloudinary.uploader.destroy(publicId, (err, result) => {
+      cloudinary.uploader.destroy(publicId, { resource_type: resourceType }, (err, result) => {
         if (err) {
           reject(err);
         } else {

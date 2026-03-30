@@ -48,7 +48,7 @@ const educationSchema = z.object({
 // Base employee schema
 const employeeBaseSchema = z.object({
   companyId: z.string().uuid("Invalid company ID format"),
-  employeeType: z.string().optional(),
+  employeeType: z.string().toUpperCase().optional(),
   departmentId: z.string().uuid("Invalid department ID format").optional().nullable(),
   managerId: z
     .string()
@@ -58,9 +58,10 @@ const employeeBaseSchema = z.object({
   hireDate: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Hire date must be in YYYY-MM-DD format"),
-  employmentType: z.string().min(1, "Employment type is required"),
+  employmentType: z.string().toUpperCase().min(1, "Employment type is required"),
   employmentStatus: z
     .string()
+    .toUpperCase()
     .min(1, "Employment status is required")
     .default("ACTIVE"),
   terminationDate: z
@@ -78,7 +79,7 @@ const employeeBaseSchema = z.object({
     middleNameAmharic: z.string().optional().nullable(),
     lastName: z.string().min(1, "Last name is required"),
     lastNameAmharic: z.string().optional().nullable(),
-    gender: z.string().optional().nullable(),
+    gender: z.string().toUpperCase().optional().nullable(),
     dateOfBirth: z
       .string()
       .regex(
@@ -125,7 +126,7 @@ const employeeBaseSchema = z.object({
         .nullable(),
       academicRank: z.string().optional().nullable(),
       academicRankAmharic: z.string().optional().nullable(),
-      academicStatus: z.string().optional().nullable().default("ACTIVE"),
+      academicStatus: z.string().toUpperCase().optional().nullable().default("ACTIVE"),
       fieldOfSpecialization: z.string().optional().nullable(),
       fieldOfSpecializationAmharic: z.string().optional().nullable(),
     })

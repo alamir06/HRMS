@@ -101,7 +101,7 @@ CREATE TABLE employeePersonal (
     emergencyContactName VARCHAR(100) NULL,
     emergencyContactNameAmharic VARCHAR(100) NULL,
     emergencyContactPhone VARCHAR(20) NULL,
-    profilePicture VARCHAR(255) NULL,
+    profilePicture VARCHAR(500) NULL,
     createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -148,7 +148,7 @@ CREATE TABLE employeeDocuments (
     documentName VARCHAR(100) NOT NULL,
     documentNameAmharic VARCHAR(255),
     fileName VARCHAR(100) NOT NULL,
-    filePath VARCHAR(100) NOT NULL,
+    filePath VARCHAR(500) NOT NULL,
     fileSize INT,
     mimeType VARCHAR(100),
     issueDate DATE,

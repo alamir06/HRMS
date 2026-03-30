@@ -188,7 +188,13 @@ process.on('uncaughtException', (error) => {
 
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-  process.exit(1);
+  // Avoid crashing the entire server due to third-party network promise rejections like Cloudinary
+  if (reason && reason.code === 'ENOTFOUND') {
+    console.error('⚠️ Warning: Network error prevented an unhandled promise from resolving. Server will not terminate.');
+  } else {
+    // Keep server running but log loudly
+    console.error('⚠️ Warning: Unhandled rejection detected. Evaluate if process.exit(1) is needed.');
+  }
 });
 
 //By Group1:Start the application
