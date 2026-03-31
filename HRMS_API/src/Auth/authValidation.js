@@ -9,7 +9,7 @@ const uuidSchema = z.string().uuid("Invalid UUID");
 
 export const authValidation = {
   login: z.object({
-    identifier: z.string().min(1, "Username or email is required"),
+    identifier: z.string().min(1, "Username, email or phone is required"),
     password: z.string().min(1, "Password is required"),
   }).strict(),
   createUser: z.object({

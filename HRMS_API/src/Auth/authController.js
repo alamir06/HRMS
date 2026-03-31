@@ -16,18 +16,28 @@ const signToken = ({ userId, employeeId, role }) => {
 };
 
 export const login = async (req, res, next) => {
-  const { identifier, password } = req.body;
+  let { identifier, password } = req.body;
+
+  // Normalize Ethiopian phone number to start with +2519
+  const ethPhoneMatch = identifier.match(/^(?:\+251|0)?(9\d{8})$/);
+  if (ethPhoneMatch) {
+    identifier = `+251${ethPhoneMatch[1]}`;
+  }
 
   try {
     const user = await findUserByIdentifier(identifier);
 
-    if (!user || !user.isActive) {
-      return res.status(401).json({ success: false, error: "Invalid credentials" });
+    if (!user) {
+      return res.status(401).json({ success: false, error: "User not found with the provided identifier" });
+    }
+
+    if (!user.isActive) {
+      return res.status(401).json({ success: false, error: "User account is inactive" });
     }
 
     const passwordMatches = await bcrypt.compare(password, user.passwordHash);
     if (!passwordMatches) {
-      return res.status(401).json({ success: false, error: "Invalid credentials" });
+      return res.status(401).json({ success: false, error: "Incorrect password" });
     }
 
     const token = signToken({ userId: user.id, employeeId: user.employeeId, role: user.systemRole || user.employeeRole });
@@ -45,6 +55,11 @@ export const login = async (req, res, next) => {
           employmentStatus: user.employmentStatus,
           mustChangePassword: Boolean(user.mustChangePassword),
           name: [user.firstName, user.middleName, user.lastName].filter(Boolean).join(" ") || user.username,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.personalEmail,
+          phone: user.personalPhone,
+          profilePicture: user.profilePicture,
         },
       },
     });

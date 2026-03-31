@@ -1,17 +1,46 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Moon } from 'lucide-react';
+import { toast } from 'react-toastify';
+import { authService } from '../../services/authService';
 import './Login.css';
 
 const AdminLogin = () => {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
+  const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    // Dummy login logic: redirect to protected dashboard
-    localStorage.setItem('adminToken', 'dummy-token');
-    navigate('/dashboard');
+    
+    // Validate phone number format matching Ethiopian +251 9...
+    const phoneRegex = /^9\d{8}$/;
+    if (!phoneRegex.test(phone)) {
+      toast.error("Please enter a valid phone number starting with 9 (9 digits total)");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      // Construct the identifier expected by the backend logic (+251 is fixed in UI)
+      const identifier = `+251${phone}`;
+      const response = await authService.login({ identifier, password });
+      
+      if (response.success && response.data?.token) {
+        localStorage.setItem('adminToken', response.data.token);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+        toast.success("Login successful!");
+        navigate('/dashboard');
+      } else {
+        toast.error("Login failed. Please try again.");
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.error || "Session validation error");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const toggleTheme = () => {
@@ -89,7 +118,17 @@ const AdminLogin = () => {
                     <span>+251</span>
                     <svg className="caret" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                   </div>
-                  <input type="tel" placeholder="Enter phone number" required />
+                  <input 
+                    id="username"
+                    name="username"
+                    type="tel" 
+                    placeholder="Enter phone number" 
+                    required 
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    maxLength="9"
+                    autoComplete="phone"
+                  />
                 </div>
               </div>
 
@@ -101,9 +140,14 @@ const AdminLogin = () => {
                 </div>
                 <div className="composite-input password-input">
                   <input 
+                    id="password"
+                    name="password"
                     type={showPassword ? "text" : "password"} 
                     placeholder="Enter password" 
                     required 
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    autoComplete="current-password"
                   />
                   <button 
                     type="button" 
@@ -125,8 +169,8 @@ const AdminLogin = () => {
               </div>
 
               {/* Submit */}
-              <button type="submit" className="pro-btn-signin">
-                Sign in
+              <button type="submit" className="pro-btn-signin" disabled={isLoading}>
+                {isLoading ? "Signing in..." : "Sign in"}
               </button>
             </form>
           </div>
