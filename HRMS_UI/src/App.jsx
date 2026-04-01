@@ -4,6 +4,7 @@ import LandingPage from './pages/LandingPage';
 import AdminLogin from './pages/Admin/Login';
 import DashboardLayout from './layouts/DashboardLayout';
 import DashboardOverview from './pages/Admin/DashboardOverview';
+import Colleges from './pages/Admin/Colleges';
 import './index.css';
 
 // Protected Route Component
@@ -60,6 +61,7 @@ function App() {
         >
           {/* Default Outlet Render when visiting /dashboard */}
           <Route index element={<DashboardOverview />} />
+          <Route path="colleges" element={<Colleges />} />
           
           {/* Future sub-routes like /dashboard/employees, /dashboard/payroll will go here */}
           {/* Example placeholder wildcard so navigation doesn't instantly break */}
