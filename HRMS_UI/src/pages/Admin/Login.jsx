@@ -48,7 +48,7 @@ const AdminLogin = () => {
     const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
     document.documentElement.setAttribute('data-theme', newTheme);
   };
-
+// jsdfchsvdmc
   return (
     <div className="login-master-container">
       <div className="login-split-card">
