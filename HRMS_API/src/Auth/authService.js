@@ -24,6 +24,8 @@ export const findUserByIdentifier = async (identifier) => {
        e.employeeRole,
        e.employmentStatus,
        ep.personalEmail,
+       ep.personalPhone,
+       ep.profilePicture,
        ep.firstName,
        ep.middleName,
        ep.lastName

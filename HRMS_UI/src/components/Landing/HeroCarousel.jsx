@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import './HeroCarousel.css';
+import inu1 from '../../assets/Landing images/inu 1.jpg';
+import inu2 from '../../assets/Landing images/HR people.jpg';
+import imgLogo from '../../assets/Landing images/inu2.jpg';
 
 const images = [
-  "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=1200&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=1200&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?q=80&w=1200&auto=format&fit=crop"
+  inu1,
+  inu2,
+  imgLogo
 ];
 
 const HeroCarousel = () => {
