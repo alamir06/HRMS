@@ -1,27 +1,69 @@
 .navbar {
   background-color: var(--header-bg);
-  height: 60px;
+  height: 70px;
   display: flex;
   align-items: center;
-  position: sticky;
+  position: fixed;
   top: 0;
-  z-index: 1000;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  left: 0;
+  width: 100vw;
+  z-index: 9999;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.3s ease;
 }
 
 .nav-container {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  width: 100%;
+  padding: 0 2rem;
+}
+
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .logo-icon-wrapper {
   background-color: var(--primary-hover);
-  padding: 8px;
-  border-radius: var(--radius-sm);
+  padding: 0;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.nav-brand-text {
+  display: flex;
+  flex-direction: column;
+  color: white;
+  line-height: 1.1;
+  margin-left: 0.5rem;
+}
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.theme-toggle-btn {
+  background: transparent;
+  border: none;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.4rem;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+}
+
+.theme-toggle-btn:hover {
+  background-color: rgba(255,255,255,0.1);
 }
 
 .btn-signin {
@@ -49,4 +91,14 @@
 
 [data-theme='dark'] .btn-signin:hover {
   background-color: #2a2a2a;
+}
+
+/* Responsiveness Configuration */
+@media (max-width: 768px) {
+  .nav-brand-text {
+    display: none; /* Hide comprehensive text on super small mobile to preserve layout */
+  }
+  .nav-container {
+    padding: 0 1rem;
+  }
 }

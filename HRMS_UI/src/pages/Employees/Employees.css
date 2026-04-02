@@ -83,3 +83,18 @@
   height: 100%;
   object-fit: cover;
 }
+
+/* Dark Mode Extrapolations */
+[data-theme='dark'] .employees-top-toolbar,
+[data-theme='dark'] .employees-table-card {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-color);
+}
+
+[data-theme='dark'] .search-wrapper-emp {
+  background-color: var(--bg-secondary);
+}
+
+[data-theme='dark'] .search-wrapper-emp input {
+  color: var(--text-primary);
+}

@@ -232,3 +232,23 @@
   font-size: 0.8rem;
   color: var(--text-secondary);
 }
+
+/* Dark Mode Handling */
+[data-theme='dark'] .profile-hero-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+}
+
+[data-theme='dark'] .profile-info-card,
+[data-theme='dark'] .doc-item {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+}
+
+[data-theme='dark'] .empty-docs {
+  background: var(--bg-primary);
+}
+
+[data-theme='dark'] .btn-back {
+  background: transparent;
+}
