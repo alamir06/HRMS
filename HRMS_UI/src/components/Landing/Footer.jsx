@@ -34,6 +34,18 @@ const Footer = () => {
             <li><Mail size={16} /> info@injibara.edu.et</li>
           </ul>
         </div>
+        
+        <div className="footer-map">
+          <h4>Location</h4>
+          <div className="map-container">
+            <iframe 
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15655.885651558!2d36.92095945!3d10.95754595!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x1646df8f8c2e6b7d%3A0x6bba84784de2a5cb!2sInjibara%20University!5e0!3m2!1sen!2set!4v1700000000000!5m2!1sen!2set" 
+              loading="lazy" 
+              referrerPolicy="no-referrer-when-downgrade"
+              title="Injibara University Location">
+            </iframe>
+          </div>
+        </div>
       </div>
       
       <div className="footer-bottom">

@@ -1,7 +1,8 @@
 .hero-carousel {
   position: relative;
-  width: 100%;
+  width: 100vw;
   height: 480px;
+  margin-top: 70px; /* Offset for Fixed Navbar */
   overflow: hidden;
   background-color: var(--bg-secondary);
 }

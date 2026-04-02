@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
+import injLogo from '../../assets/inj-logo.jpg';
 import { 
   LayoutDashboard, 
   Users, 
@@ -15,11 +16,26 @@ import {
   UsersRound, 
   Component, 
   FileSearch,
-  LogOut
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import './Sidebar.css';
 
 const Sidebar = () => {
+  const [authUser, setAuthUser] = useState(null);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  useEffect(() => {
+    try {
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        setAuthUser(JSON.parse(storedUser));
+      }
+    } catch (e) {
+      console.error("Failed to parse user data", e);
+    }
+  }, []);
+
   const navItems = [
     { name: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard size={20} /> },
     { name: 'Employees', path: '/dashboard/employees', icon: <Users size={20} /> },
@@ -38,17 +54,19 @@ const Sidebar = () => {
   ];
 
   return (
-    <aside className="dashboard-sidebar">
+    <aside className={`dashboard-sidebar ${isCollapsed ? 'collapsed' : ''}`}>
       <div className="sidebar-brand">
-        <div className="user-profile-widget" style={{ backgroundColor: 'transparent', padding: 0 }}>
-          <div className="user-avatar" style={{ overflow: 'hidden' }}>
-            <img src="https://ui-avatars.com/api/?name=Admin+User&background=0D875A&color=fff" alt="User Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          </div>
-          <div className="user-info">
-            <span className="user-name">Admin User</span>
-            <span className="user-role">Manager Access</span>
-          </div>
+        <div className="brand-logo-wrapper">
+          <img src={injLogo} alt="INJ Logo" className="brand-logo-img" />
+          {!isCollapsed && <span className="brand-text">HRMS.</span>}
         </div>
+        <button 
+          className="collapse-btn" 
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+        >
+          {isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+        </button>
       </div>
 
       <nav className="sidebar-nav">
@@ -59,23 +77,46 @@ const Sidebar = () => {
                 to={item.path} 
                 end={item.path === '/dashboard'} 
                 className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}
+                title={isCollapsed ? item.name : undefined}
               >
                 <div className="nav-icon-wrapper">{item.icon}</div>
-                <span className="nav-text">{item.name}</span>
+                {!isCollapsed && <span className="nav-text">{item.name}</span>}
               </NavLink>
             </li>
           ))}
         </ul>
       </nav>
 
+      {/* Moved from top to bottom fixed footer space */}
       <div className="sidebar-footer">
-        <button className="logout-button" onClick={() => {
-          localStorage.removeItem('adminToken');
-          window.location.href = '/login';
-        }}>
-          <LogOut size={20} />
-          <span>Logout</span>
-        </button>
+        <div className="user-profile-widget">
+          <div className="user-avatar" title={isCollapsed ? authUser?.name || 'Admin User' : undefined}>
+            <img 
+              src={
+                authUser?.profilePicture 
+                  ? (authUser.profilePicture.startsWith('http') 
+                      ? authUser.profilePicture 
+                      : `http://localhost:5000/${authUser.profilePicture.replace(/^\//, '')}`)
+                  : `https://ui-avatars.com/api/?name=${encodeURIComponent(authUser?.name || "Admin User")}&background=0B8255&color=fff`
+              } 
+              onError={(e) => { 
+                e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(authUser?.name || "Admin User")}&background=0B8255&color=fff`; 
+              }}
+              alt="User Profile" 
+            />
+          </div>
+          {!isCollapsed && (
+            <div className="user-info">
+              <span className="user-name">{authUser?.name || 'Admin User'}</span>
+              <span className="user-role">
+                {authUser?.role 
+                  ? authUser.role.charAt(0).toUpperCase() + authUser.role.slice(1).toLowerCase().replace('_', ' ') 
+                  : 'Manager Access'
+                }
+              </span>
+            </div>
+          )}
+        </div>
       </div>
     </aside>
   );

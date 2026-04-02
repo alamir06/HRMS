@@ -6,7 +6,10 @@ import LandingPage from './pages/LandingPage';
 import AdminLogin from './pages/Admin/Login';
 import DashboardLayout from './layouts/DashboardLayout';
 import DashboardOverview from './pages/Admin/DashboardOverview';
-import Colleges from './pages/Admin/Colleges';
+import Colleges from './pages/Colleges/Colleges';
+import Departments from './pages/Departments/Departments';
+import Employees from './pages/Employees/Employees';
+import EmployeeProfile from './pages/Employees/EmployeeProfile';
 import './index.css';
 
 // Protected Route Component
@@ -65,10 +68,13 @@ function App() {
           {/* Default Outlet Render when visiting /dashboard */}
           <Route index element={<DashboardOverview />} />
           <Route path="colleges" element={<Colleges />} />
+          <Route path="departments" element={<Departments />} />
+          <Route path="employees" element={<Employees />} />
+          <Route path="employees/:id" element={<EmployeeProfile />} />
           
-          {/* Future sub-routes like /dashboard/employees, /dashboard/payroll will go here */}
-          {/* Example placeholder wildcard so navigation doesn't instantly break */}
-          <Route path="*" element={<DashboardOverview />} />
+          {/* Future sub-routes like /dashboard/payroll will go here */}
+          {/* Catch-all for unmatched dashboard routes */}
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Route>
 
         {/* Catch-all */}

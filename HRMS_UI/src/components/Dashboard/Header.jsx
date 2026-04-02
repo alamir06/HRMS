@@ -1,12 +1,16 @@
-import React from 'react';
-import { useLocation } from 'react-router-dom';
-import { Search, Bell, Plus } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Bell, Settings, Moon, Sun, User, Globe, LogOut } from 'lucide-react';
 import './Header.css';
 
 const Header = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const [isDarkTheme, setIsDarkTheme] = useState(
+    document.documentElement.getAttribute('data-theme') === 'dark'
+  );
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
-  // Simple dynamic title generator based on route
   const getPageTitle = (path) => {
     if (path === '/dashboard') return 'Dashboard Overview';
     const parts = path.split('/');
@@ -16,6 +20,31 @@ const Header = () => {
 
   const title = getPageTitle(location.pathname);
 
+  // Toggle global theme exactly like in Login.jsx
+  const toggleTheme = () => {
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', newTheme);
+    setIsDarkTheme(newTheme === 'dark');
+  };
+
+  // Perform secure logout
+  const handleLogout = () => {
+    localStorage.removeItem('adminToken');
+    window.location.href = '/login';
+  };
+
+  // Close dropdown on outside clicks
+  useEffect(() => {
+    const closeMenu = (e) => {
+      if (dropdownOpen && !e.target.closest('.settings-dropdown-wrapper')) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener('click', closeMenu);
+    return () => document.removeEventListener('click', closeMenu);
+  }, [dropdownOpen]);
+
   return (
     <header className="dashboard-header">
       <div className="header-left">
@@ -24,19 +53,42 @@ const Header = () => {
       </div>
 
       <div className="header-right">
-        <div className="search-wrapper">
-          <Search size={18} className="search-icon" />
-          <input type="text" placeholder="Search employee..." className="search-input" />
-        </div>
+        {/* Dark/Light Mode Config */}
+        <button className="icon-action-btn" onClick={toggleTheme} aria-label="Toggle Theme">
+          {isDarkTheme ? <Sun size={20} /> : <Moon size={20} />}
+        </button>
 
-        <button className="notification-btn">
-          <Bell size={22} color="var(--text-secondary)" />
+        {/* Global Notifications */}
+        <button className="icon-action-btn notification-btn" title="View Notifications">
+          <Bell size={20} />
           <span className="notification-badge"></span>
         </button>
 
-        <button className="btn-new-task">
-          <Plus size={18} /> New Task
-        </button>
+        {/* Account & Settings Dropdown */}
+        <div className="settings-dropdown-wrapper">
+          <button 
+            className={`icon-action-btn ${dropdownOpen ? 'active' : ''}`}
+            onClick={(e) => { e.stopPropagation(); setDropdownOpen(!dropdownOpen); }}
+            title="Account Settings"
+          >
+            <Settings size={20} />
+          </button>
+          
+          {dropdownOpen && (
+            <div className="settings-dropdown-menu">
+              <button className="dropdown-item">
+                <User size={16} /> Profile
+              </button>
+              <button className="dropdown-item">
+                <Globe size={16} /> Language
+              </button>
+              <div className="dropdown-divider"></div>
+              <button className="dropdown-item text-danger" onClick={handleLogout}>
+                <LogOut size={16} /> Logout
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );
