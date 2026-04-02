@@ -1,0 +1,352 @@
+.login-master-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  overflow: hidden;
+  background-color: #f7f9fc;
+  padding: 2rem;
+  position: relative;
+}
+
+[data-theme='dark'] .login-master-container {
+  background-color: var(--bg-primary);
+}
+
+/* The Core Dual-Panel Card */
+.login-split-card {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  max-width: 1000px;
+  min-height: 600px;
+  background-color: var(--bg-secondary);
+  border-radius: 20px;
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+/* -----------------------------
+   LEFT PANEL (SVG Graphic) 
+----------------------------- */
+.login-left-panel {
+  flex: 1;
+  background: linear-gradient(135deg, #e3f9eb 0%, #bbf7d0 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  position: relative;
+}
+
+[data-theme='dark'] .login-left-panel {
+  background: linear-gradient(135deg, #064e3b 0%, #022c22 100%);
+}
+
+.illustration-wrapper {
+  transform: scale(1.1);
+}
+
+/* -----------------------------
+   RIGHT PANEL (Form Controls) 
+----------------------------- */
+.login-right-panel {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 4rem;
+  background-color: #ffffff;
+}
+
+[data-theme='dark'] .login-right-panel {
+  background-color: var(--bg-secondary);
+}
+
+.form-wrapper {
+  width: 100%;
+  max-width: 380px;
+}
+
+.login-heading {
+  font-family: 'Georgia', 'Times New Roman', serif;
+  font-size: 2.4rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 0.75rem;
+  text-align: center;
+}
+
+[data-theme='dark'] .login-heading {
+  color: #f9fafb;
+}
+
+.login-subtitle {
+  font-size: 0.9rem;
+  color: #6b7280;
+  text-align: center;
+  font-style: italic;
+  margin-bottom: 2.5rem;
+  line-height: 1.5;
+}
+
+/* Form Styles */
+.pro-login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 0.5rem;
+}
+
+.input-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #4b5563;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+
+[data-theme='dark'] .input-label {
+  color: #9ca3af;
+}
+
+.star {
+  color: #ef4444;
+}
+
+.forgot-link {
+  font-size: 0.8rem;
+  color: #10b981;
+  font-weight: 600;
+}
+
+.forgot-link:hover {
+  text-decoration: underline;
+}
+
+/* Custom Composite Inputs */
+.composite-input {
+  display: flex;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: #ffffff;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+[data-theme='dark'] .composite-input {
+  background-color: #1f2937;
+  border-color: #374151;
+}
+
+.composite-input:focus-within {
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.country-code {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 1rem;
+  background-color: #f9fafb;
+  border-right: 1px solid #d1d5db;
+  color: #4b5563;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+[data-theme='dark'] .country-code {
+  background-color: #374151;
+  border-right-color: #4b5563;
+  color: #e5e7eb;
+}
+
+.flag-placeholder {
+  width: 18px;
+  height: 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 2px;
+  background: linear-gradient(
+    to bottom,
+    #078930 0%, #078930 33.33%,
+    #fcdd09 33.33%, #fcdd09 66.66%,
+    #da121a 66.66%, #da121a 100%
+  );
+}
+
+.caret {
+  color: #9ca3af;
+}
+
+.composite-input input {
+  flex: 1;
+  border: none;
+  padding: 0.85rem 1rem;
+  font-size: 0.95rem;
+  font-family: inherit;
+  outline: none;
+  background-color: transparent;
+  color: #111827;
+}
+
+[data-theme='dark'] .composite-input input {
+  color: #f9fafb;
+}
+
+.password-input {
+  position: relative;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+}
+
+/* Custom Checkbox */
+.checkbox-group {
+  margin-top: -0.5rem;
+}
+
+.checkbox-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.checkbox-container input {
+  display: none;
+}
+
+.checkmark {
+  width: 18px;
+  height: 18px;
+  border: 1px solid #d1d5db;
+  border-radius: 50%;
+  position: relative;
+  background-color: #ffffff;
+  transition: all 0.2s ease;
+}
+
+[data-theme='dark'] .checkmark {
+  background-color: #1f2937;
+  border-color: #4b5563;
+}
+
+.checkbox-container input:checked + .checkmark {
+  background-color: #10b981;
+  border-color: #10b981;
+}
+
+.checkbox-container input:checked + .checkmark::after {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 3px;
+  width: 4px;
+  height: 8px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.checkbox-label-text {
+  font-size: 0.9rem;
+  color: #4b5563;
+}
+
+[data-theme='dark'] .checkbox-label-text {
+  color: #9ca3af;
+}
+
+/* Submit Button */
+.pro-btn-signin {
+  background-color: #10b981;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 1rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.pro-btn-signin:hover {
+  background-color: #059669;
+}
+
+.pro-btn-signin:active {
+  transform: scale(0.98);
+}
+
+/* Floating Dark Mode Toggle */
+.floating-theme-toggle {
+  position: absolute;
+  bottom: 2rem;
+  right: 2rem;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background-color: #1f2937;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  transition: transform 0.2s ease, background-color 0.2s ease;
+  border: 2px solid #374151;
+}
+
+.floating-theme-toggle:hover {
+  transform: scale(1.1);
+}
+
+[data-theme='dark'] .floating-theme-toggle {
+  background-color: #f3f4f6;
+  border-color: #e5e7eb;
+}
+
+[data-theme='dark'] .floating-theme-toggle svg {
+  color: #1f2937 !important;
+}
+
+/* Responsive constraints */
+@media (max-width: 860px) {
+  .login-split-card {
+    flex-direction: column;
+    max-width: 480px;
+    min-height: auto;
+  }
+  
+  .login-left-panel {
+    display: none; /* Hide heavy illustration on mobile */
+  }
+  
+  .login-right-panel {
+    padding: 3rem 2rem;
+  }
+}
