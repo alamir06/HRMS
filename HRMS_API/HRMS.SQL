@@ -394,7 +394,6 @@ CREATE TABLE trainingSessions (
     maxParticipants INT,
     createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
 CREATE TABLE trainingParticipants (
     id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
     trainingSessionId BINARY(16) NOT NULL,
