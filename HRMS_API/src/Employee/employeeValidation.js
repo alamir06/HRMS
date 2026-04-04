@@ -48,21 +48,22 @@ const educationSchema = z.object({
 // Base employee schema
 const employeeBaseSchema = z.object({
   companyId: z.string().uuid("Invalid company ID format"),
-  employeeType: z.string().toUpperCase().optional(),
+  employeeType: z.enum(["ACADEMIC", "ADMINISTRATIVE", "OUTSOURCE"]),
   departmentId: z.string().uuid("Invalid department ID format").optional().nullable(),
   managerId: z
     .string()
     .uuid("Invalid manager ID format")
     .nullable()
     .optional(),
+  employeeRole: z.enum([
+    "HRMANAGER", "DEAN", "HEAD", "HROFFICER", "RECRUITER", "PAYROLLOFFICER", "EMPLOYEE"
+  ]).optional(),
   hireDate: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Hire date must be in YYYY-MM-DD format"),
-  employmentType: z.string().toUpperCase().min(1, "Employment type is required"),
+  employmentType: z.enum(["FULLTIME", "PARTTIME", "CONTRACT", "INTERN"]),
   employmentStatus: z
-    .string()
-    .toUpperCase()
-    .min(1, "Employment status is required")
+    .enum(["ACTIVE", "ONLEAVE", "TERMINATED", "RESIGNED"])
     .default("ACTIVE"),
   terminationDate: z
     .string()
@@ -126,7 +127,7 @@ const employeeBaseSchema = z.object({
         .nullable(),
       academicRank: z.string().optional().nullable(),
       academicRankAmharic: z.string().optional().nullable(),
-      academicStatus: z.string().toUpperCase().optional().nullable().default("ACTIVE"),
+      academicStatus: z.enum(["ACTIVE", "ONLEAVE", "SABBATICAL"]).optional().nullable().default("ACTIVE"),
       fieldOfSpecialization: z.string().optional().nullable(),
       fieldOfSpecializationAmharic: z.string().optional().nullable(),
     })

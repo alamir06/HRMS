@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Bell, Settings, Moon, Sun, User, Globe, LogOut } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import './Header.css';
 
 const Header = () => {
@@ -10,6 +11,13 @@ const Header = () => {
     document.documentElement.getAttribute('data-theme') === 'dark'
   );
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const { i18n } = useTranslation();
+
+  const toggleLanguage = () => {
+    const newLang = i18n.language === 'en' ? 'am' : 'en';
+    i18n.changeLanguage(newLang);
+    localStorage.setItem('i18nextLng', newLang);
+  };
 
   const getPageTitle = (path) => {
     if (path === '/dashboard') return 'Dashboard Overview';
@@ -79,8 +87,8 @@ const Header = () => {
               <button className="dropdown-item">
                 <User size={16} /> Profile
               </button>
-              <button className="dropdown-item">
-                <Globe size={16} /> Language
+              <button className="dropdown-item" onClick={toggleLanguage}>
+                <Globe size={16} /> {i18n.language === 'en' ? 'አማርኛ (Amharic)' : 'English (U.S.)'}
               </button>
               <div className="dropdown-divider"></div>
               <button className="dropdown-item text-danger" onClick={handleLogout}>

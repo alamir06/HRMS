@@ -17,7 +17,7 @@ const Stepper = ({ steps, currentStep }) => {
               </div>
               <div className="step-name">
                 {step.title}
-                {step.subtitle && <span className="step-subtitle">{step.subtitle}</span>}
+                {/* {step.subtitle && <span className="step-subtitle">{step.subtitle}</span>} */}
               </div>
               {/* Connector line - don't show after last item */}
               {index < steps.length - 1 && <div className="step-connector"></div>}
