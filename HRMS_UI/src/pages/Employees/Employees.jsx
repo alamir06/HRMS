@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Search, Plus, Pencil, Trash2, Eye, ChevronLeft, ChevronRight, ArrowUpDown, ArrowDown, ArrowUp } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { useTranslation } from 'react-i18next';
 import { employeeService } from '../../services/employeeService';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import EmployeeWizard from './EmployeeWizard';
@@ -8,6 +9,7 @@ import EmployeeProfileModal from './EmployeeProfile';
 import './Employees.css';
 
 const Employees = () => {
+  const { t, i18n } = useTranslation();
   const [employees, setEmployees] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   
@@ -160,7 +162,9 @@ const Employees = () => {
                       </div>
                     </td>
                     <td className="col-primary-text">
-                       {emp.firstName} {emp.lastName}
+                       {i18n.language === 'am' && emp.firstNameAmharic 
+                         ? `${emp.firstNameAmharic} ${emp.lastNameAmharic || ''}`
+                         : `${emp.firstName} ${emp.lastName}`}
                        <span style={{display: 'block', fontSize: '0.75rem', color: '#6b7280', fontWeight: 'normal'}}>
                          {emp.officialEmail || emp.personalEmail || "No Email"}
                        </span>
@@ -203,9 +207,13 @@ const Employees = () => {
           <div className="page-limit-selector">
             <span>Show</span>
             <select className="limit-dropdown" value={limit} onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}>
+              <option value={5}>5</option>
               <option value={10}>10</option>
+              <option value={15}>15</option>
               <option value={20}>20</option>
+              <option value={25}>25</option>
               <option value={50}>50</option>
+              <option value={100}>100</option>
             </select>
             <span>entries</span>
           </div>

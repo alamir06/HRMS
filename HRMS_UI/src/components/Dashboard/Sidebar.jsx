@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import injLogo from '../../assets/inj-logo.jpg';
 import { 
   LayoutDashboard, 
@@ -36,21 +37,23 @@ const Sidebar = () => {
     }
   }, []);
 
+  const { t } = useTranslation();
+
   const navItems = [
-    { name: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard size={20} /> },
-    { name: 'Employees', path: '/dashboard/employees', icon: <Users size={20} /> },
-    { name: 'Departments', path: '/dashboard/departments', icon: <Building2 size={20} /> },
-    { name: 'Colleges', path: '/dashboard/colleges', icon: <GraduationCap size={20} /> },
-    { name: 'Attendance', path: '/dashboard/attendance', icon: <Clock size={20} /> },
-    { name: 'Payroll', path: '/dashboard/payroll', icon: <Banknote size={20} /> },
-    { name: 'Leave', path: '/dashboard/leave', icon: <CalendarOff size={20} /> },
-    { name: 'Benefits', path: '/dashboard/benefit', icon: <Gift size={20} /> },
-    { name: 'Assets', path: '/dashboard/asset', icon: <Component size={20} /> },
-    { name: 'Recruitment', path: '/dashboard/recruitment', icon: <FileSearch size={20} /> },
-    { name: 'Designations', path: '/dashboard/designation', icon: <Briefcase size={20} /> },
-    { name: 'Outsourcing', path: '/dashboard/outsourcing', icon: <UsersRound size={20} /> },
-    { name: 'Notice Board', path: '/dashboard/notice', icon: <Megaphone size={20} /> },
-    { name: 'Notifications', path: '/dashboard/notification', icon: <Bell size={20} /> },
+    { name: t('sidebar.dashboard', 'Dashboard'), path: '/dashboard', icon: <LayoutDashboard size={20} /> },
+    { name: t('sidebar.employees', 'Employees'), path: '/dashboard/employees', icon: <Users size={20} /> },
+    { name: t('sidebar.departments', 'Departments'), path: '/dashboard/departments', icon: <Building2 size={20} /> },
+    { name: t('sidebar.colleges', 'Colleges'), path: '/dashboard/colleges', icon: <GraduationCap size={20} /> },
+    { name: t('sidebar.attendance', 'Attendance'), path: '/dashboard/attendance', icon: <Clock size={20} /> },
+    { name: t('sidebar.payroll', 'Payroll'), path: '/dashboard/payroll', icon: <Banknote size={20} /> },
+    { name: t('sidebar.leave', 'Leave'), path: '/dashboard/leave', icon: <CalendarOff size={20} /> },
+    { name: t('sidebar.benefits', 'Benefits'), path: '/dashboard/benefit', icon: <Gift size={20} /> },
+    { name: t('sidebar.assets', 'Assets'), path: '/dashboard/asset', icon: <Component size={20} /> },
+    { name: t('sidebar.recruitment', 'Recruitment'), path: '/dashboard/recruitment', icon: <FileSearch size={20} /> },
+    { name: t('sidebar.designations', 'Designations'), path: '/dashboard/designation', icon: <Briefcase size={20} /> },
+    { name: t('sidebar.outsourcing', 'Outsourcing'), path: '/dashboard/outsourcing', icon: <UsersRound size={20} /> },
+    { name: t('sidebar.noticeBoard', 'Notice Board'), path: '/dashboard/notice', icon: <Megaphone size={20} /> },
+    { name: t('sidebar.notifications', 'Notifications'), path: '/dashboard/notification', icon: <Bell size={20} /> },
   ];
 
   return (

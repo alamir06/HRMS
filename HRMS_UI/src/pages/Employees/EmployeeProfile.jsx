@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, User, Briefcase, GraduationCap, FileText, UploadCloud, Trash, X } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { useTranslation } from 'react-i18next';
 import { employeeService } from '../../services/employeeService';
 import './EmployeeProfile.css';
 
 const EmployeeProfileModal = ({ employeeId, onClose }) => {
+  const { i18n } = useTranslation();
   const [employee, setEmployee] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -116,7 +118,12 @@ const EmployeeProfileModal = ({ employeeId, onClose }) => {
         </div>
         
         <div className="profile-hero-info">
-           <h2>{employee.personal_firstName} {employee.personal_middleName || ''} {employee.personal_lastName}</h2>
+           <h2>
+             {i18n.language === 'am' && employee.personal_firstNameAmharic 
+               ? `${employee.personal_firstNameAmharic} ${employee.personal_middleNameAmharic || ''} ${employee.personal_lastNameAmharic || ''}`.trim()
+               : `${employee.personal_firstName} ${employee.personal_middleName || ''} ${employee.personal_lastName || ''}`.trim()
+             }
+           </h2>
            <div className="hero-badges">
              <span className="badge badge-academic">{employee.employeeType || "STAFF"}</span>
              <span className={`badge ${employee.employmentStatus === 'ACTIVE' ? 'badge-active' : 'badge-inactive'}`}>

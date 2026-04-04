@@ -1,0 +1,43 @@
+{
+  "wizard": {
+    "title": "ምዝገባ",
+    "nextStep": "ቀጣይ እርምጃ",
+    "register": "መዝግብ",
+    "close": "ዝጋ",
+    "cancel": "ይቅር",
+    "processing": "በሂደት ላይ..."
+  },
+  "forms": {
+    "employeeCategory": "የሰራተኛ ምድብ",
+    "academic": "አካዳሚክ",
+    "administrative": "አስተዳደር",
+    "hr": "የሰው ኃይል",
+    "outsourced": "ውጫዊ ተቋራጭ",
+    "hireDate": "የቅጥር ቀን",
+    "employmentType": "የቅጥር አይነት",
+    "fullTime": "ሙሉ ግዜ",
+    "partTime": "የትርፍ ሰዓት",
+    "contract": "ኮንትራት",
+    "status": "ሁኔታ",
+    "active": "ገባሪ",
+    "onLeave": "በፍቃድ",
+    "terminated": "ተሰናብቷል",
+    "resigned": "ስራ ለቋል"
+  },
+  "sidebar": {
+    "dashboard": "ዳሽቦርድ",
+    "employees": "ሰራተኞች",
+    "departments": "መምሪያዎች",
+    "colleges": "ኮሌጆች",
+    "attendance": "ክትትል",
+    "payroll": "የደመወዝ ክፍያ",
+    "leave": "የፈቃድ",
+    "benefits": "ጥቅማጥቅሞች",
+    "assets": "ንብረቶች",
+    "recruitment": "ቅጥር",
+    "designations": "የስራ መደቦች",
+    "outsourcing": "ውጫዊ ተቋራጮች",
+    "noticeBoard": "ማስታወቂያ",
+    "notifications": "ማሳወቂያዎች"
+  }
+}
