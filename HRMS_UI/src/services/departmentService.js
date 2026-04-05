@@ -15,6 +15,11 @@ export const departmentService = {
     return response.data;
   },
 
+  getDepartmentsByParent: async (parentId) => {
+    const response = await api.get(`/departments/parent/${parentId}`);
+    return response.data;
+  },
+
   createDepartment: async (data) => {
     const response = await api.post('/departments', data);
     return response.data;

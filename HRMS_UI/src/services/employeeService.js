@@ -1,5 +1,17 @@
 import api from './api';
 
+const handleResponse = async (apiCall) => {
+  try {
+    const response = await apiCall();
+    return response.data;
+  } catch (error) {
+    if (error.response && error.response.data) {
+      return error.response.data;
+    }
+    return { success: false, message: error.message || 'An unexpected error occurred' };
+  }
+};
+
 export const employeeService = {
   // CRUDS
   getAllEmployees: async (page = 1, limit = 10, search = '', sortBy = 'createdAt', sortOrder = 'DESC', filters = {}) => {
@@ -11,8 +23,7 @@ export const employeeService = {
       if (val) params.append(key, val);
     });
 
-    const response = await api.get(`/employees?${params.toString()}`);
-    return response.data;
+    return handleResponse(() => api.get(`/employees?${params.toString()}`));
   },
 
   getEmployeeById: async (id, includes = []) => {
@@ -20,18 +31,19 @@ export const employeeService = {
     if (includes.length > 0) {
       params.append('include', includes.join(','));
     }
-    const response = await api.get(`/employees/${id}?${params.toString()}`);
-    return response.data;
+    return handleResponse(() => api.get(`/employees/${id}?${params.toString()}`));
   },
 
   createEmployee: async (employeeData) => {
-    const response = await api.post('/employees', employeeData);
-    return response.data;
+    return handleResponse(() => api.post('/employees', employeeData));
   },
 
   updateEmployee: async (id, employeeData) => {
-    const response = await api.put(`/employees/${id}`, employeeData);
-    return response.data;
+    return handleResponse(() => api.put(`/employees/${id}`, employeeData));
+  },
+
+  deleteEmployee: async (id) => {
+    return handleResponse(() => api.delete(`/employees/${id}`));
   },
 
   // MEDIA & FILE UPLOADS
@@ -39,32 +51,27 @@ export const employeeService = {
     const formData = new FormData();
     formData.append('profilePicture', file);
     // Explicitly set headers for multipart
-    const response = await api.post(`/employees/${id}/profile-picture`, formData, {
+    return handleResponse(() => api.post(`/employees/${id}/profile-picture`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
-    });
-    return response.data;
+    }));
   },
 
   deleteProfilePicture: async (id) => {
-    const response = await api.delete(`/employees/${id}/profile-picture`);
-    return response.data;
+    return handleResponse(() => api.delete(`/employees/${id}/profile-picture`));
   },
 
   // DOCUMENTS
   uploadSingleDocument: async (id, formData) => {
-    const response = await api.post(`/employees/${id}/documents`, formData, {
+    return handleResponse(() => api.post(`/employees/${id}/documents`, formData, {
        headers: { 'Content-Type': 'multipart/form-data' }
-    });
-    return response.data;
+    }));
   },
 
   getDocuments: async (id) => {
-    const response = await api.get(`/employees/${id}/documents`);
-    return response.data;
+    return handleResponse(() => api.get(`/employees/${id}/documents`));
   },
   
   deleteDocument: async (documentId) => {
-    const response = await api.delete(`/employees/documents/${documentId}`);
-    return response.data;
+    return handleResponse(() => api.delete(`/employees/documents/${documentId}`));
   }
 };

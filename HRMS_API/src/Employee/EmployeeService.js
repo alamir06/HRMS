@@ -634,7 +634,7 @@ export class EmployeeService extends CrudService {
       employmentType,
     } = filters;
     const offset = (page - 1) * limit;
-    const defaultIncludes = ["personal", "company", "DEPARTMENT"];
+    const defaultIncludes = ["personal", "company", "DEPARTMENT", "EMPLOYMENT"];
     const allIncludes = [...new Set([...defaultIncludes, ...include])];
     let query = `
       SELECT 
@@ -650,7 +650,10 @@ export class EmployeeService extends CrudService {
     if (allIncludes.includes("personal")) {
       query += `,
         ep.firstName,
+        ep.firstNameAmharic,
         ep.lastName,
+        ep.lastNameAmharic,
+        ep.personalEmail,
         ep.profilePicture
       `;
     }
@@ -662,6 +665,11 @@ export class EmployeeService extends CrudService {
     if (allIncludes.includes("DEPARTMENT")) {
       query += `,
         d.departmentName
+      `;
+    }
+    if (allIncludes.includes("EMPLOYMENT")) {
+      query += `,
+        ee.officialEmail
       `;
     }
     query += ` FROM employee e`;
@@ -676,6 +684,10 @@ export class EmployeeService extends CrudService {
     if (allIncludes.includes("DEPARTMENT")) {
       query += ` LEFT JOIN department d ON e.departmentId = d.id`;
       countQuery += ` LEFT JOIN department d ON e.departmentId = d.id`;
+    }
+    if (allIncludes.includes("EMPLOYMENT")) {
+      query += ` LEFT JOIN employeeEmployment ee ON e.id = ee.employeeId`;
+      countQuery += ` LEFT JOIN employeeEmployment ee ON e.id = ee.employeeId`;
     }
     const whereConditions = [
       "(e.employeeRole != 'HRMANAGER' OR e.employeeRole IS NULL)"
