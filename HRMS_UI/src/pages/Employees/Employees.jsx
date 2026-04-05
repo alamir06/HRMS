@@ -24,6 +24,7 @@ const Employees = () => {
 
   // Multi-step Wizard States
   const [isWizardOpen, setIsWizardOpen] = useState(false);
+  const [editEmployeeId, setEditEmployeeId] = useState(null);
   const [viewEmployeeId, setViewEmployeeId] = useState(null);
   
   // Delete confirm states
@@ -82,11 +83,13 @@ const Employees = () => {
   const confirmDelete = async () => {
     if (!employeeToDelete) return;
     try {
-      // NOTE: Standard CRUD routes map 'delete' to employee controller
-      // We didn't explicitly check if backend has delete logic but standard implementation suggests yes
-      // The instructions said map endpoints, assuming /api/employees/:id DELETE exists.
-      toast.error("Delete endpoint requires backend verification");
-      // Actually we should just ignore it or implement a gentle placeholder.
+      const resp = await employeeService.deleteEmployee(employeeToDelete.id);
+      if (resp.success) {
+        toast.success("Employee deleted successfully.");
+        loadEmployees();
+      } else {
+        toast.error(resp.message || "Failed to delete employee.");
+      }
     } catch (error) {
       toast.error("Failed to delete from server");
     } finally {
@@ -100,8 +103,8 @@ const Employees = () => {
   };
   
   const triggerEdit = (emp) => {
-     toast.info(`Edit interface for ${emp.firstName} is launching...`);
-     // Open wizard in edit mode coming soon. For now we acknowledge the user requested it.
+     setEditEmployeeId(emp.id);
+     setIsWizardOpen(true);
   };
 
   return (
@@ -117,7 +120,7 @@ const Employees = () => {
             onChange={(e) => setSearch(e.target.value)}
           />
         </label>
-        <button className="btn-add-employee" onClick={() => setIsWizardOpen(true)}>
+        <button className="btn-add-employee" onClick={() => { setEditEmployeeId(null); setIsWizardOpen(true); }}>
           <Plus size={18} /> Add Employee
         </button>
       </div>
@@ -228,12 +231,17 @@ const Employees = () => {
         </div>
       </div>
 
-      {/* Multi-step Modal Form for Employee Creation */}
+      {/* Multi-step Modal Form for Employee Creation/Editing */}
       {isWizardOpen && (
         <EmployeeWizard 
-          onClose={() => setIsWizardOpen(false)} 
+          editEmployeeId={editEmployeeId}
+          onClose={() => {
+            setIsWizardOpen(false);
+            setEditEmployeeId(null);
+          }} 
           onSuccess={() => {
             setIsWizardOpen(false);
+            setEditEmployeeId(null);
             loadEmployees();
           }} 
         />

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   X, ArrowRight, ChevronLeft, Plus, Trash2, 
-  User, Calendar, Phone, Briefcase, Building, Info, FileUp, File
+  User, Calendar, Phone, Briefcase, Building, Info, FileUp, File, ZoomIn, ZoomOut
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
@@ -19,15 +19,40 @@ const steps = [
   { title: "Documents", subtitle: "Upload Files" }
 ];
 
-const EmployeeWizard = ({ onClose, onSuccess }) => {
+const EmployeeWizard = ({ onClose, onSuccess, editEmployeeId }) => {
   const { t, i18n } = useTranslation();
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isEditLoading, setIsEditLoading] = useState(!!editEmployeeId);
+
+  // File Preview Modal State
+  const [previewModal, setPreviewModal] = useState({
+    isOpen: false,
+    file: null,
+    url: null,
+    zoom: 1
+  });
+
+  const openPreview = (file) => {
+    setPreviewModal({
+      isOpen: true,
+      file,
+      url: URL.createObjectURL(file),
+      zoom: 1
+    });
+  };
+
+  const closePreview = () => {
+    if (previewModal.url) URL.revokeObjectURL(previewModal.url);
+    setPreviewModal({ isOpen: false, file: null, url: null, zoom: 1 });
+  };
 
   // Lookups
   const [departments, setDepartments] = useState([]);
   const [colleges, setColleges] = useState([]);
   const [outsourceCompanies, setOutsourceCompanies] = useState([]);
+  const [adminHierarchy, setAdminHierarchy] = useState([]);
+  const [adminChildrenOptions, setAdminChildrenOptions] = useState({});
 
   // Form State
   const [formData, setFormData] = useState({
@@ -83,26 +108,72 @@ const EmployeeWizard = ({ onClose, onSuccess }) => {
     documents: []
   });
 
-  useEffect(() => {
+  useEffect(() => {    // Initialize Lookups
     const loadLookups = async () => {
       try {
-        const [deptRes, colRes, outRes] = await Promise.all([
-          departmentService.getAllDepartments(1, 200),
+        const [deptRes, collRes, outsourceRes] = await Promise.all([
+          departmentService.getAllDepartments(1, 100),
           collegeService.getAllColleges(1, 100),
           outsourceCompanyService.getAllCompanies(1, 100)
         ]);
-
-        if (deptRes?.success) setDepartments(deptRes.data);
-        if (colRes?.success) setColleges(colRes.data);
-        if (outRes?.success) setOutsourceCompanies(outRes.data);
-      } catch (e) {
-        console.error("Failed to load dependency lookups");
-      }
+        if (deptRes.success) setDepartments(deptRes.data);
+        if (collRes.success) setColleges(collRes.data);
+        if (outsourceRes.success) setOutsourceCompanies(outsourceRes.data);
+      } catch (err) {}
     };
+
+    const loadEditData = async () => {
+       if (!editEmployeeId) return;
+       try {
+          const res = await employeeService.getEmployeeById(editEmployeeId);
+          if (res.success && res.data) {
+             const e = res.data;
+             setFormData(prev => ({
+                ...prev,
+                employeeType: e.employeeType || 'ACADEMIC',
+                departmentId: e.departmentId || '',
+                hireDate: e.hireDate ? new Date(e.hireDate).toISOString().split('T')[0] : prev.hireDate,
+                employmentType: e.employmentType || 'FULL_TIME',
+                employmentStatus: e.employmentStatus || 'ACTIVE',
+                personal: {
+                  firstName: e.firstName || '',
+                  firstNameAmharic: e.firstNameAmharic || '',
+                  middleName: e.middleName || '',
+                  middleNameAmharic: e.middleNameAmharic || '',
+                  lastName: e.lastName || '',
+                  lastNameAmharic: e.lastNameAmharic || '',
+                  gender: e.gender || 'MALE',
+                  dateOfBirth: e.dateOfBirth ? new Date(e.dateOfBirth).toISOString().split('T')[0] : '',
+                  personalEmail: e.personalEmail || '',
+                  personalPhone: e.personalPhone || '',
+                  emergencyContactName: e.emergencyContactName || '',
+                  emergencyContactNameAmharic: e.emergencyContactNameAmharic || '',
+                  emergencyContactPhone: e.emergencyContactPhone || ''
+                },
+                employment: {
+                  officialEmail: e.officialEmail || '',
+                  officialPhone: e.officialPhone || '',
+                  salary: e.salary || '',
+                  qualification: e.qualification || '',
+                  qualificationAmharic: e.qualificationAmharic || ''
+                }
+             }));
+          }
+       } catch (err) {
+          toast.error("Failed to load employee details for editing.");
+       } finally {
+          setIsEditLoading(false);
+       }
+    };
+
     loadLookups();
-  }, []);
+    if (editEmployeeId) loadEditData();
+  }, [editEmployeeId]);
 
   const updateBase = (field, value) => {
+    if (field === 'employeeType') {
+      setAdminHierarchy([]);
+    }
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -123,34 +194,43 @@ const EmployeeWizard = ({ onClose, onSuccess }) => {
     if (currentStep > 0) setCurrentStep(c => c - 1);
   };
 
-  const handleDocumentChange = (e) => {
-    const files = Array.from(e.target.files);
-    if (!files.length) return;
-    
-    const newDocs = files.map(file => ({
-      file,
-      documentType: 'OTHER',
-      documentName: file.name
-    }));
+  const formatFileSize = (bytes) => {
+    if (!bytes || bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
 
+  const addDocument = () => {
     setFormData(prev => ({
       ...prev,
-      documents: [...prev.documents, ...newDocs]
+      documents: [...prev.documents, { 
+        documentType: 'OTHER', 
+        documentName: '', 
+        documentNameAmharic: '', 
+        issueDate: '', 
+        issuingAuthority: '', 
+        description: '', 
+        file: null 
+      }]
     }));
-    e.target.value = '';
   };
-  
-  const updateDocumentType = (idx, value) => {
+
+  const updateDocumentField = (idx, field, value) => {
     const newDocs = [...formData.documents];
-    newDocs[idx].documentType = value;
+    newDocs[idx][field] = value;
     setFormData(prev => ({ ...prev, documents: newDocs }));
   };
 
-  const updateDocumentName = (idx, value) => {
+  const updateDocumentFile = (idx, file) => {
     const newDocs = [...formData.documents];
-    newDocs[idx].documentName = value;
+    newDocs[idx].file = file;
+    if (!newDocs[idx].documentName && file) {
+      newDocs[idx].documentName = file.name.split('.')[0];
+    }
     setFormData(prev => ({ ...prev, documents: newDocs }));
-  }
+  };
 
   const removeDocument = (idx) => {
     const newDocs = [...formData.documents];
@@ -161,7 +241,12 @@ const EmployeeWizard = ({ onClose, onSuccess }) => {
   const addEducation = () => {
     setFormData(prev => ({
       ...prev,
-      education: [...prev.education, { institutionName: '', institutionNameAmharic: '', qualification: '', startDate: '', endDate: '' }]
+      education: [...prev.education, { 
+        institutionName: '', institutionNameAmharic: '', qualification: '', qualificationAmharic: '',
+        fieldOfStudy: '', fieldOfStudyAmharic: '', grade: '',
+        startDate: '', endDate: '', graduationDate: '', 
+        description: '', descriptionAmharic: ''
+      }]
     }));
   };
   const updateEducation = (idx, field, value) => {
@@ -192,8 +277,8 @@ const EmployeeWizard = ({ onClose, onSuccess }) => {
       if (!payload.personal.dateOfBirth) delete payload.personal.dateOfBirth;
 
       if (payload.employeeType !== 'ACADEMIC') delete payload.academic;
-      if (payload.employeeType !== 'HR') delete payload.hr;
-      if (payload.employeeType !== 'OUTSOURCED') delete payload.outsource;
+      if (payload.employeeType !== 'ADMINISTRATIVE') delete payload.hr;
+      if (payload.employeeType !== 'OUTSOURCE') delete payload.outsource;
 
       if (payload.education.length === 0) {
         delete payload.education;
@@ -205,55 +290,48 @@ const EmployeeWizard = ({ onClose, onSuccess }) => {
       const submitPayload = { ...payload };
       
       // Map UI values to strictly match Database ENUMs
-      if (submitPayload.employeeType === 'HR') {
-        submitPayload.employeeType = 'ADMINISTRATIVE';
-        submitPayload.employeeRole = 'HROFFICER'; 
-      }
-      
-      if (submitPayload.employeeType === 'OUTSOURCED') {
-        submitPayload.employeeType = 'OUTSOURCE';
-      }
-      
       if (submitPayload.employmentType === 'FULL_TIME') {
         submitPayload.employmentType = 'FULLTIME';
       } else if (submitPayload.employmentType === 'PART_TIME') {
         submitPayload.employmentType = 'PARTTIME';
       }
 
-      const res = await employeeService.createEmployee(submitPayload);
+      const res = editEmployeeId 
+          ? await employeeService.updateEmployee(editEmployeeId, submitPayload)
+          : await employeeService.createEmployee(submitPayload);
+          
       if (res.success) {
-         const newEmployeeId = res.data.id;
+         const newEmployeeId = editEmployeeId || res.data.id;
          
-         if (documentsToUpload && documentsToUpload.length > 0) {
+         if (documentsToUpload && documentsToUpload.length > 0 && !editEmployeeId) {
             toast.info(`Employee created. Uploading ${documentsToUpload.length} documents...`);
             for (const docObj of documentsToUpload) {
                const docFormData = new FormData();
                docFormData.append('document', docObj.file);
                docFormData.append('documentType', docObj.documentType);
                docFormData.append('documentName', docObj.documentName);
-               try {
-                 await employeeService.uploadSingleDocument(newEmployeeId, docFormData);
-               } catch (err) {
-                 console.error("Doc upload failed", err);
+               const docRes = await employeeService.uploadSingleDocument(newEmployeeId, docFormData);
+               if (!docRes.success) {
+                 console.error("Doc upload failed", docRes.message);
                  toast.warn(`Failed to upload document: ${docObj.documentName}`);
                }
             }
          }
          
-         toast.success("Employee Registration completed successfully!");
+         toast.success(`Employee ${editEmployeeId ? 'Updated' : 'Registration'} completed successfully!`);
          onSuccess();
       } else {
-         toast.error(res?.error || "Failed to create employee");
+         const errs = res.details;
+         if (Array.isArray(errs)) {
+            errs.forEach(err => toast.error(`${err.field}: ${err.message}`));
+         } else if (res.message) {
+            toast.error(res.message);
+         } else {
+            toast.error(res.error || "Failed to create employee");
+         }
       }
     } catch (e) {
-      const errs = e?.response?.data?.details;
-      if (Array.isArray(errs)) {
-         errs.forEach(err => toast.error(`${err.field}: ${err.message}`));
-      } else if (e?.response?.data?.message) {
-         toast.error(e.response.data.message);
-      } else {
-         toast.error("An unexpected error occurred during submission.");
-      }
+      toast.error("An unexpected error occurred processing your submission.");
     } finally {
       setIsSubmitting(false);
     }
@@ -265,7 +343,7 @@ const EmployeeWizard = ({ onClose, onSuccess }) => {
         <div className="premium-header">
           <div className="header-left" onClick={currentStep > 0 ? handlePrev : onClose}>
             <ChevronLeft size={20} className="header-icon" />
-            <span className="header-title">{t('wizard.title', 'Registration')}</span>
+            <span className="header-title">{t('wizard.title', editEmployeeId ? 'Edit Employee' : 'Registration')}</span>
           </div>
           <div className="header-center">
             <Stepper steps={steps} currentStep={currentStep} />
@@ -291,10 +369,9 @@ const EmployeeWizard = ({ onClose, onSuccess }) => {
                         <div className="premium-input-wrap select-wrap">
                           <Briefcase size={18} className="input-icon" />
                           <select value={formData.employeeType} onChange={e => updateBase('employeeType', e.target.value)}>
-                            <option value="ACADEMIC">{t('forms.academic', 'Academic / Teaching')}</option>
+                            <option value="ACADEMIC">{t('forms.academic', 'Academic')}</option>
                             <option value="ADMINISTRATIVE">{t('forms.administrative', 'Administrative')}</option>
-                            <option value="HR">{t('forms.hr', 'Human Resources')}</option>
-                            <option value="OUTSOURCED">{t('forms.outsourced', 'Outsourced Contractor')}</option>
+                            <option value="OUTSOURCE">{t('forms.outsourced', 'Outsource')}</option>
                           </select>
                         </div>
                       </div>
@@ -372,22 +449,75 @@ const EmployeeWizard = ({ onClose, onSuccess }) => {
                         </>
                       )}
 
-                      {(formData.employeeType === 'ADMINISTRATIVE' || formData.employeeType === 'HR') && (
-                        <div className="premium-form-group">
-                            <label>Administrative Department <span className="req">*</span></label>
-                            <div className="premium-input-wrap select-wrap">
-                              <Building size={18} className="input-icon" />
-                              <select value={formData.departmentId} onChange={e => updateBase('departmentId', e.target.value)}>
-                                <option value="">-- Select Department --</option>
-                                {departments
-                                    .filter(d => d.departmentType === 'ADMINISTRATIVE')
-                                    .map(d => <option key={d.id} value={d.id}>{d.departmentName}</option>)}
-                              </select>
-                            </div>
-                        </div>
-                      )}
+                      {formData.employeeType === 'ADMINISTRATIVE' && (() => {
+                        const selects = [];
+                        let currentParentId = null;
 
-                      {formData.employeeType === 'OUTSOURCED' && (
+                        for (let i = 0; i <= adminHierarchy.length; i++) {
+                          let availableOptions = [];
+                          
+                          if (currentParentId === null) {
+                            // Root level: use preloaded departments
+                            availableOptions = departments.filter(d => 
+                               d.departmentType === 'ADMINISTRATIVE' && !d.parentDepartmentId
+                            );
+                          } else {
+                            // Child levels: use fetched options from API
+                            availableOptions = adminChildrenOptions[currentParentId];
+                          }
+
+                          // If options are not loaded yet or empty, break out
+                          if (!availableOptions || availableOptions.length === 0) break;
+
+                          const selectedValue = adminHierarchy[i] || '';
+
+                          selects.push(
+                            <div className="premium-form-group" key={`admin_dept_${i}`}>
+                                <label>{t('forms.administrativeDepartment', 'Administrative Department')} (Level {i + 1}) {i === 0 && <span className="req">*</span>}</label>
+                                <div className="premium-input-wrap select-wrap">
+                                  <Building size={18} className="input-icon" />
+                                  <select value={selectedValue} onChange={async (e) => {
+                                      const val = e.target.value;
+                                      const newHierarchy = adminHierarchy.slice(0, i);
+                                      if (val) {
+                                          newHierarchy.push(val);
+                                          updateBase('departmentId', val);
+                                          
+                                          // Fetch child departments via API
+                                          try {
+                                              if (!adminChildrenOptions[val]) {
+                                                  const res = await departmentService.getDepartmentsByParent(val);
+                                                  if (res && res.success) {
+                                                      setAdminChildrenOptions(prev => ({ ...prev, [val]: res.data }));
+                                                  }
+                                              }
+                                          } catch (err) {
+                                              console.error("Failed to fetch sub-departments", err);
+                                          }
+                                      } else {
+                                          updateBase('departmentId', i > 0 ? newHierarchy[i-1] : '');
+                                      }
+                                      setAdminHierarchy(newHierarchy);
+                                  }}>
+                                    <option value="">-- {t('forms.selectDepartment', 'Select Department')} --</option>
+                                    {availableOptions.map(d => (
+                                      <option key={d.id} value={d.id}>
+                                        {i18n.language === 'am' && d.departmentNameAmharic ? d.departmentNameAmharic : d.departmentName}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                            </div>
+                          );
+
+                          if (!selectedValue) break;
+                          currentParentId = selectedValue;
+                        }
+
+                        return selects;
+                      })()}
+
+                      {formData.employeeType === 'OUTSOURCE' && (
                         <div className="premium-form-group">
                             <label>Vendor Company <span className="req">*</span></label>
                             <div className="premium-input-wrap select-wrap">
@@ -575,7 +705,108 @@ const EmployeeWizard = ({ onClose, onSuccess }) => {
               <>
                 <h3 className="premium-section-title">Specialization & Details</h3>
                 <div className="wizard-split-layout">
-                  {/* Left Column */}
+                  {/* Left Column - Specialization */}
+                  {formData.employeeType !== 'ADMINISTRATIVE' && (
+                    <div className="wizard-column">
+                      <div className="premium-card">
+                        {formData.employeeType === 'ACADEMIC' && (
+                          <>
+                            {i18n.language === 'en' && (
+                              <div className="premium-form-group">
+                                <label>Academic Rank (English)</label>
+                                <div className="premium-input-wrap">
+                                  <Briefcase size={18} className="input-icon" />
+                                  <input type="text" value={formData.academic.academicRank} onChange={e => updateNested('academic', 'academicRank', e.target.value)} placeholder="e.g. Professor" />
+                                </div>
+                              </div>
+                            )}
+                            {i18n.language === 'am' && (
+                              <div className="premium-form-group">
+                                <label>የአካዳሚክ ደረጃ</label>
+                                <div className="premium-input-wrap">
+                                  <Briefcase size={18} className="input-icon" />
+                                  <input type="text" value={formData.academic.academicRankAmharic} onChange={e => updateNested('academic', 'academicRankAmharic', e.target.value)} placeholder="Amharic" />
+                                </div>
+                              </div>
+                            )}
+                            {i18n.language === 'en' && (
+                              <div className="premium-form-group">
+                                <label>Field of Specialization (English)</label>
+                                <div className="premium-input-wrap">
+                                  <Info size={18} className="input-icon" />
+                                  <input type="text" value={formData.academic.fieldOfSpecialization} onChange={e => updateNested('academic', 'fieldOfSpecialization', e.target.value)} placeholder="e.g. Mathematics" />
+                                </div>
+                              </div>
+                            )}
+                            {i18n.language === 'am' && (
+                              <div className="premium-form-group">
+                                <label>የትምህርት መስክ</label>
+                                <div className="premium-input-wrap">
+                                  <Info size={18} className="input-icon" />
+                                  <input type="text" value={formData.academic.fieldOfSpecializationAmharic} onChange={e => updateNested('academic', 'fieldOfSpecializationAmharic', e.target.value)} placeholder="Amharic" />
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        )}
+
+                        {/* Previously HR Specialization block, now ignored or could be keyed differently, currently inactive. */}
+                        {formData.employeeType === 'HR_OBSOLETE' && (
+                          <>
+                            <div className="premium-form-group">
+                              <label>HR Specialization</label>
+                              <div className="premium-input-wrap select-wrap">
+                                <Briefcase size={18} className="input-icon" />
+                                <select value={formData.hr.hrSpecialization} onChange={e => updateNested('hr', 'hrSpecialization', e.target.value)}>
+                                  <option value="generalist">Generalist</option>
+                                  <option value="recruitment">Recruitment</option>
+                                  <option value="payroll">Payroll</option>
+                                  <option value="training">Training</option>
+                                </select>
+                              </div>
+                            </div>
+                            <div className="premium-form-group">
+                              <label>Access Level</label>
+                              <div className="premium-input-wrap select-wrap">
+                                <Info size={18} className="input-icon" />
+                                <select value={formData.hr.hrLevel} onChange={e => updateNested('hr', 'hrLevel', e.target.value)}>
+                                  <option value="officer">Officer</option>
+                                  <option value="supervisor">Supervisor</option>
+                                  <option value="manager">Manager</option>
+                                </select>
+                              </div>
+                            </div>
+                          </>
+                        )}
+
+                        {formData.employeeType === 'OUTSOURCE' && (
+                          <>
+                            <div className="premium-form-group">
+                              <label>Service Type <span className="req">*</span></label>
+                              <div className="premium-input-wrap select-wrap">
+                                <Briefcase size={18} className="input-icon" />
+                                <select value={formData.outsource.serviceType} onChange={e => updateNested('outsource', 'serviceType', e.target.value)}>
+                                  <option value="SECURITY">Security</option>
+                                  <option value="CLEANING">Cleaning</option>
+                                  <option value="IT">IT Support</option>
+                                  <option value="OTHER">Other</option>
+                                </select>
+                              </div>
+                            </div>
+                            <div className="premium-form-group">
+                              <label>Contract End Date</label>
+                              <div className="premium-input-wrap">
+                                <Calendar size={18} className="input-icon" />
+                                <input type="date" value={formData.outsource.contractEndDate} onChange={e => updateNested('outsource', 'contractEndDate', e.target.value)} />
+                              </div>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Right Column - Official Data */}
                   <div className="wizard-column">
                     <div className="premium-card">
                       <div className="premium-form-group">
@@ -599,104 +830,6 @@ const EmployeeWizard = ({ onClose, onSuccess }) => {
                           <input type="number" min="0" value={formData.employment.salary} onChange={e => updateNested('employment', 'salary', e.target.value)} placeholder="0.00" />
                         </div>
                       </div>
-                    </div>
-                  </div>
-
-                  {/* Right Column */}
-                  <div className="wizard-column">
-                    <div className="premium-card">
-                      {formData.employeeType === 'ACADEMIC' && (
-                        <>
-                          {i18n.language === 'en' && (
-                            <div className="premium-form-group">
-                              <label>Academic Rank (English)</label>
-                              <div className="premium-input-wrap">
-                                <Briefcase size={18} className="input-icon" />
-                                <input type="text" value={formData.academic.academicRank} onChange={e => updateNested('academic', 'academicRank', e.target.value)} placeholder="e.g. Professor" />
-                              </div>
-                            </div>
-                          )}
-                          {i18n.language === 'am' && (
-                            <div className="premium-form-group">
-                              <label>የአካዳሚክ ደረጃ</label>
-                              <div className="premium-input-wrap">
-                                <Briefcase size={18} className="input-icon" />
-                                <input type="text" value={formData.academic.academicRankAmharic} onChange={e => updateNested('academic', 'academicRankAmharic', e.target.value)} placeholder="Amharic" />
-                              </div>
-                            </div>
-                          )}
-                          {i18n.language === 'en' && (
-                            <div className="premium-form-group">
-                              <label>Field of Specialization (English)</label>
-                              <div className="premium-input-wrap">
-                                <Info size={18} className="input-icon" />
-                                <input type="text" value={formData.academic.fieldOfSpecialization} onChange={e => updateNested('academic', 'fieldOfSpecialization', e.target.value)} placeholder="e.g. Mathematics" />
-                              </div>
-                            </div>
-                          )}
-                          {i18n.language === 'am' && (
-                            <div className="premium-form-group">
-                              <label>የትምህርት መስክ</label>
-                              <div className="premium-input-wrap">
-                                <Info size={18} className="input-icon" />
-                                <input type="text" value={formData.academic.fieldOfSpecializationAmharic} onChange={e => updateNested('academic', 'fieldOfSpecializationAmharic', e.target.value)} placeholder="Amharic" />
-                              </div>
-                            </div>
-                          )}
-                        </>
-                      )}
-
-                      {formData.employeeType === 'HR' && (
-                        <>
-                          <div className="premium-form-group">
-                            <label>HR Specialization</label>
-                            <div className="premium-input-wrap select-wrap">
-                              <Briefcase size={18} className="input-icon" />
-                              <select value={formData.hr.hrSpecialization} onChange={e => updateNested('hr', 'hrSpecialization', e.target.value)}>
-                                <option value="generalist">Generalist</option>
-                                <option value="recruitment">Recruitment</option>
-                                <option value="payroll">Payroll</option>
-                                <option value="training">Training</option>
-                              </select>
-                            </div>
-                          </div>
-                          <div className="premium-form-group">
-                            <label>Access Level</label>
-                            <div className="premium-input-wrap select-wrap">
-                              <Info size={18} className="input-icon" />
-                              <select value={formData.hr.hrLevel} onChange={e => updateNested('hr', 'hrLevel', e.target.value)}>
-                                <option value="officer">Officer</option>
-                                <option value="supervisor">Supervisor</option>
-                                <option value="manager">Manager</option>
-                              </select>
-                            </div>
-                          </div>
-                        </>
-                      )}
-
-                      {formData.employeeType === 'OUTSOURCED' && (
-                        <>
-                          <div className="premium-form-group">
-                            <label>Service Type <span className="req">*</span></label>
-                            <div className="premium-input-wrap select-wrap">
-                              <Briefcase size={18} className="input-icon" />
-                              <select value={formData.outsource.serviceType} onChange={e => updateNested('outsource', 'serviceType', e.target.value)}>
-                                <option value="SECURITY">Security</option>
-                                <option value="CLEANING">Cleaning</option>
-                                <option value="IT">IT Support</option>
-                                <option value="OTHER">Other</option>
-                              </select>
-                            </div>
-                          </div>
-                          <div className="premium-form-group">
-                            <label>Contract End Date</label>
-                            <div className="premium-input-wrap">
-                              <Calendar size={18} className="input-icon" />
-                              <input type="date" value={formData.outsource.contractEndDate} onChange={e => updateNested('outsource', 'contractEndDate', e.target.value)} />
-                            </div>
-                          </div>
-                        </>
-                      )}
                     </div>
                   </div>
                 </div>
@@ -741,9 +874,39 @@ const EmployeeWizard = ({ onClose, onSuccess }) => {
                            <div className="premium-input-wrap">
                               <Calendar size={18} className="input-icon" />
                               <input type="date" value={ed.endDate} onChange={e => updateEducation(idx, 'endDate', e.target.value)} />
-                           </div>
-                         </div>
-                       </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="wizard-split-layout" style={{ gap: '1rem', marginTop: '1rem' }}>
+                          <div className="premium-form-group">
+                            <label>Field of Study <span className="req">*</span></label>
+                            <div className="premium-input-wrap">
+                               <Building size={18} className="input-icon" />
+                               <input required value={i18n.language === 'en' ? ed.fieldOfStudy : ed.fieldOfStudyAmharic} onChange={e => updateEducation(idx, i18n.language === 'en' ? 'fieldOfStudy' : 'fieldOfStudyAmharic', e.target.value)} placeholder="e.g. Computer Science" />
+                            </div>
+                          </div>
+                          <div className="premium-form-group">
+                            <label>Grade / GPA</label>
+                            <div className="premium-input-wrap">
+                               <Info size={18} className="input-icon" />
+                               <input value={ed.grade} onChange={e => updateEducation(idx, 'grade', e.target.value)} placeholder="e.g. 3.8 / Great Distinction" />
+                            </div>
+                          </div>
+                          <div className="premium-form-group">
+                            <label>Graduation Date</label>
+                            <div className="premium-input-wrap">
+                               <Calendar size={18} className="input-icon" />
+                               <input type="date" value={ed.graduationDate} onChange={e => updateEducation(idx, 'graduationDate', e.target.value)} />
+                            </div>
+                          </div>
+                        </div>
+                        <div className="premium-form-group" style={{ marginTop: '1rem' }}>
+                          <label>Description</label>
+                          <div className="premium-input-wrap">
+                             <Info size={18} className="input-icon" />
+                             <input value={i18n.language === 'en' ? ed.description : ed.descriptionAmharic} onChange={e => updateEducation(idx, i18n.language === 'en' ? 'description' : 'descriptionAmharic', e.target.value)} placeholder="Any special honors or details" />
+                          </div>
+                        </div>
                     </div>
                   ))
                 )}
@@ -753,67 +916,89 @@ const EmployeeWizard = ({ onClose, onSuccess }) => {
             {/* STEP 4: DOCUMENTS */}
             {currentStep === 3 && (
               <>
-                <h3 className="premium-section-title">Upload Documents</h3>
-                <div className="wizard-split-layout">
-                  {/* Left Column: Uploader */}
-                  <div className="wizard-column">
-                    <div className="premium-card document-upload-card" style={{ textAlign: 'center', padding: '3rem 2rem' }}>
-                      <FileUp size={48} color="var(--primary-color)" style={{ margin: '0 auto 1rem', opacity: 0.8 }} />
-                      <h4 style={{ marginBottom: '0.5rem' }}>Select Files to Attach</h4>
-                      <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
-                        Upload ID, certificates, resumes, and contracts.
-                      </p>
-                      
-                      <label className="upload-btn-label" style={{ display: 'inline-block', padding: '0.8rem 1.5rem', backgroundColor: 'var(--primary-color)', color: 'white', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontWeight: '500' }}>
-                        Browse Files
-                        <input type="file" multiple onChange={handleDocumentChange} style={{ display: 'none' }} />
-                      </label>
-                    </div>
-                  </div>
-
-                  {/* Right Column: File List */}
-                  <div className="wizard-column">
-                    <div className="premium-card">
-                      <h4 style={{ marginBottom: '1rem' }}>Pending Documents ({formData.documents.length})</h4>
-                      {formData.documents.length === 0 ? (
-                        <p className="empty-text">No documents selected.</p>
-                      ) : (
-                        <div className="document-upload-section">
-                          {formData.documents.map((doc, idx) => (
-                            <div key={idx} className="document-item">
-                              <div className="document-item-info">
-                                <File size={16} />
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-                                  <input 
-                                    className="document-item-title" 
-                                    style={{ border: 'none', background: 'transparent', outline: 'none' }} 
-                                    value={doc.documentName} 
-                                    onChange={e => updateDocumentName(idx, e.target.value)} 
-                                  />
-                                  <select 
-                                    className="document-item-type" 
-                                    value={doc.documentType} 
-                                    onChange={e => updateDocumentType(idx, e.target.value)}
-                                    style={{ border: 'none', background: 'var(--border-color)', outline: 'none', cursor: 'pointer' }}
-                                  >
-                                    <option value="IDDOCUMENT">ID Document</option>
-                                    <option value="EDUCATION">Education</option>
-                                    <option value="CERTIFICATION">Certification</option>
-                                    <option value="CONTRACT">Contract</option>
-                                    <option value="OTHER">Other</option>
-                                  </select>
-                                </div>
-                              </div>
-                              <button type="button" className="btn-remove-doc" onClick={() => removeDocument(idx)}>
-                                <Trash2 size={14} />
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                <div className="premium-section-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>Upload Documents</span>
+                  <button type="button" className="add-record-btn" onClick={addDocument}>
+                    <Plus size={14} /> Add Document
+                  </button>
                 </div>
+                
+                {formData.documents.length === 0 ? (
+                  <div className="premium-card" style={{ textAlign: 'center', padding: '3rem' }}>
+                    <FileUp size={48} color="var(--border-color)" style={{ margin: '0 auto 1rem', opacity: 0.5 }} />
+                    <h4 style={{ color: 'var(--text-secondary)' }}>No documents added yet</h4>
+                    <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Click "Add Document" to begin uploading required files like ID, Certificates, and Contracts.</p>
+                  </div>
+                ) : (
+                  formData.documents.map((doc, idx) => (
+                    <div key={idx} className="premium-card array-item-card">
+                       <button type="button" className="btn-remove-array" onClick={() => removeDocument(idx)}><Trash2 size={12} /></button>
+                       <div className="wizard-split-layout" style={{ gap: '1.5rem', gridTemplateColumns: '1.5fr 1fr' }}>
+                         <div className="document-metadata">
+                           <div className="premium-form-group" style={{ marginBottom: '1rem' }}>
+                             <label>Document Type <span className="req">*</span></label>
+                             <div className="premium-input-wrap select-wrap">
+                               <File size={18} className="input-icon" />
+                               <select value={doc.documentType} onChange={e => updateDocumentField(idx, 'documentType', e.target.value)}>
+                                 <option value="IDDOCUMENT">ID Document</option>
+                                 <option value="EDUCATION">Education Certificate</option>
+                                 <option value="CERTIFICATION">Professional Certification</option>
+                                 <option value="CONTRACT">Contract</option>
+                                 <option value="OTHER">Other</option>
+                               </select>
+                             </div>
+                           </div>
+                           <div className="premium-form-group" style={{ marginBottom: '1rem' }}>
+                             <label>Document Name <span className="req">*</span></label>
+                             <div className="premium-input-wrap">
+                               <Info size={18} className="input-icon" />
+                               <input required value={doc.documentName} onChange={e => updateDocumentField(idx, 'documentName', e.target.value)} placeholder="e.g. Master's Degree Certificate" />
+                             </div>
+                           </div>
+                           <div className="wizard-split-layout" style={{ gap: '1rem', marginTop: '1rem' }}>
+                             <div className="premium-form-group">
+                               <label>Issue Date</label>
+                               <div className="premium-input-wrap">
+                                 <Calendar size={18} className="input-icon" />
+                                 <input type="date" value={doc.issueDate} onChange={e => updateDocumentField(idx, 'issueDate', e.target.value)} />
+                               </div>
+                             </div>
+                             <div className="premium-form-group">
+                               <label>Issuing Authority</label>
+                               <div className="premium-input-wrap">
+                                 <Building size={18} className="input-icon" />
+                                 <input type="text" value={doc.issuingAuthority} onChange={e => updateDocumentField(idx, 'issuingAuthority', e.target.value)} placeholder="e.g. Addis Ababa University" />
+                               </div>
+                             </div>
+                           </div>
+                         </div>
+                         <div className="document-uploader" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                           <div className="premium-dashboard-file-upload" style={{ flex: 1, minHeight: '180px' }}>
+                             <div className="upload-icon"><FileUp size={32} /></div>
+                             <div className="upload-text">Upload a File</div>
+                             <div className="upload-subtext">Max size: 5MB</div>
+                             
+                             {doc.file && (
+                                <div className="file-preview-meta">
+                                   <span style={{ fontSize: '0.75rem', color: 'var(--primary-color)', fontWeight: '500', cursor: 'pointer', textDecoration: 'underline' }} 
+                                         onClick={(e) => { e.stopPropagation(); openPreview(doc.file); }}>
+                                     <File size={12} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} /> 
+                                     {doc.file.name}
+                                   </span>
+                                   <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>{formatFileSize(doc.file.size)}</span>
+                                </div>
+                             )}
+
+                             <input type="file" onChange={(e) => {
+                               const file = e.target.files[0];
+                               if (file) updateDocumentFile(idx, file);
+                             }} />
+                           </div>
+                         </div>
+                       </div>
+                    </div>
+                  ))
+                )}
               </>
             )}
 
@@ -842,6 +1027,29 @@ const EmployeeWizard = ({ onClose, onSuccess }) => {
           </button>
         </div>
       </div>
+
+      {previewModal.isOpen && previewModal.file && (
+        <div className="premium-overlay" style={{ zIndex: 9999, backgroundColor: 'rgba(0,0,0,0.85)' }} onClick={closePreview}>
+          <div className="preview-modal-toolbar" onClick={e => e.stopPropagation()} style={{ position: 'absolute', top: '20px', right: '20px', display: 'flex', gap: '1rem' }}>
+             <button onClick={() => setPreviewModal(p => ({ ...p, zoom: p.zoom + 0.25 }))} style={{ background: '#333', color: 'white', border: 'none', padding: '0.5rem', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><ZoomIn size={16} /> Zoom In</button>
+             <button onClick={() => setPreviewModal(p => ({ ...p, zoom: Math.max(0.25, p.zoom - 0.25) }))} style={{ background: '#333', color: 'white', border: 'none', padding: '0.5rem', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><ZoomOut size={16} /> Zoom Out</button>
+             <button onClick={closePreview} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0.5rem', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><X size={16} /> Close</button>
+          </div>
+          
+          <div className="preview-modal-content" onClick={e => e.stopPropagation()} style={{ width: '80%', height: '80%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: 'auto', marginTop: '5%' }}>
+             {previewModal.file.type.startsWith('image/') ? (
+                 <img src={previewModal.url} style={{ transform: `scale(${previewModal.zoom})`, transition: 'transform 0.2s', maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} alt="Preview" />
+             ) : previewModal.file.type === 'application/pdf' ? (
+                 <iframe src={previewModal.url} style={{ width: '100%', height: '100%', border: 'none', transform: `scale(${previewModal.zoom})`, transition: 'transform 0.2s' }} title="PDF Preview" />
+             ) : (
+                 <div style={{ color: 'white', fontSize: '1.1rem', textAlign: 'center' }}>
+                    <File size={64} color="gray" style={{ display: 'block', margin: '0 auto 1rem' }} />
+                    <p>Preview not supported for this file type.</p>
+                 </div>
+             )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

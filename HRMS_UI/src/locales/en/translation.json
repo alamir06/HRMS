@@ -9,10 +9,9 @@
   },
   "forms": {
     "employeeCategory": "Employee Category",
-    "academic": "Academic / Teaching",
+    "academic": "Academic",
     "administrative": "Administrative",
-    "hr": "Human Resources",
-    "outsourced": "Outsourced Contractor",
+    "outsourced": "Outsource",
     "hireDate": "Hire Date",
     "employmentType": "Employment Type",
     "fullTime": "Full Time",

@@ -83,6 +83,22 @@ export class EmployeeController {
     }
   };
 
+  // Delete employee (soft delete via inherited service)
+  delete = async (req, res) => {
+    try {
+      const { id } = req.params;
+      employeeValidationSchema.id.parse({ id });
+      // Call the soft-delete function inherited from CrudService
+      await employeeService.delete(id);
+      res.status(200).json({
+        success: true,
+        message: "Employee deleted successfully"
+      });
+    } catch (error) {
+      this.handleError(res, error, "Delete employee failed");
+    }
+  };
+
   // ========== PROFILE PICTURE OPERATIONS ==========
 
   // Upload profile picture
