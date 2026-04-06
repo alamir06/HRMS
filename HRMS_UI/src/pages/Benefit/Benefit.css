@@ -1,0 +1,295 @@
+.benefit-page {
+  padding: 1rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.benefit-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.benefit-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #111827;
+}
+
+.benefit-header p {
+  margin: 0.25rem 0 0;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.benefit-section {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1rem;
+  display: grid;
+  gap: 0.9rem;
+}
+
+.benefit-section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.benefit-section-head h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  color: #1f2937;
+}
+
+.benefit-btn {
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #1f2937;
+  border-radius: 8px;
+  padding: 0.55rem 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.benefit-btn:hover {
+  background: #f9fafb;
+}
+
+.benefit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.benefit-btn.primary {
+  background: #0b8255;
+  border-color: #0b8255;
+  color: #ffffff;
+}
+
+.benefit-btn.primary:hover {
+  background: #086a45;
+}
+
+.benefit-btn.secondary {
+  background: #f8fafc;
+}
+
+.benefit-btn.ghost {
+  background: transparent;
+}
+
+.benefit-btn.small {
+  padding: 0.35rem 0.55rem;
+  font-size: 0.78rem;
+}
+
+.benefit-btn.danger {
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+
+.benefit-grid-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.benefit-grid-form.compact {
+  margin-top: 0.25rem;
+}
+
+.benefit-grid-form label {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  color: #374151;
+}
+
+.benefit-grid-form input,
+.benefit-grid-form select,
+.benefit-grid-form textarea {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 0.52rem 0.65rem;
+  font-size: 0.9rem;
+  background: #ffffff;
+}
+
+.benefit-grid-form textarea {
+  resize: vertical;
+}
+
+.benefit-grid-form .span-2 {
+  grid-column: span 2;
+}
+
+.benefit-grid-form .check {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.benefit-grid-form .check input {
+  width: 16px;
+  height: 16px;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.benefit-table-wrap {
+  overflow-x: auto;
+}
+
+.benefit-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.benefit-table th,
+.benefit-table td {
+  border-bottom: 1px solid #e5e7eb;
+  padding: 0.6rem 0.55rem;
+  text-align: left;
+  font-size: 0.84rem;
+}
+
+.benefit-table th {
+  color: #374151;
+  font-weight: 600;
+  background: #f8fafc;
+}
+
+.benefit-table .empty {
+  text-align: center;
+  color: #6b7280;
+  padding: 1rem;
+}
+
+.row-actions {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.status-chip {
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.status-chip.ok {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-chip.off {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.benefit-dual {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.inline-filters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.inline-filters label {
+  display: grid;
+  gap: 0.3rem;
+  font-size: 0.82rem;
+}
+
+.inline-filters select {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 0.5rem 0.65rem;
+}
+
+.summary-picker {
+  min-width: 240px;
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+}
+
+.summary-picker select {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 0.5rem 0.65rem;
+}
+
+.summary-empty {
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.88rem;
+}
+
+.summary-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.metric-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 0.7rem;
+  background: #f8fafc;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.metric-card span {
+  font-size: 0.76rem;
+  color: #6b7280;
+}
+
+.metric-card strong {
+  font-size: 1rem;
+  color: #111827;
+}
+
+@media (max-width: 1100px) {
+  .benefit-dual {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 840px) {
+  .benefit-grid-form,
+  .inline-filters,
+  .summary-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .benefit-grid-form .span-2 {
+    grid-column: auto;
+  }
+
+  .benefit-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
