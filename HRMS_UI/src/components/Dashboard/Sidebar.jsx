@@ -47,7 +47,7 @@ const Sidebar = () => {
     { name: t('sidebar.attendance', 'Attendance'), path: '/dashboard/attendance', icon: <Clock size={20} /> },
     { name: t('sidebar.payroll', 'Payroll'), path: '/dashboard/payroll', icon: <Banknote size={20} /> },
     { name: t('sidebar.leave', 'Leave'), path: '/dashboard/leave', icon: <CalendarOff size={20} /> },
-    { name: t('sidebar.benefits', 'Benefits'), path: '/dashboard/benefit', icon: <Gift size={20} /> },
+    { name: t('sidebar.benefits', 'Benefits'), path: '/dashboard/benefits', icon: <Gift size={20} /> },
     { name: t('sidebar.assets', 'Assets'), path: '/dashboard/asset', icon: <Component size={20} /> },
     { name: t('sidebar.recruitment', 'Recruitment'), path: '/dashboard/recruitment', icon: <FileSearch size={20} /> },
     { name: t('sidebar.designations', 'Designations'), path: '/dashboard/designation', icon: <Briefcase size={20} /> },
