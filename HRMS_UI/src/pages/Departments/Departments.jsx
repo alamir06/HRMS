@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Search, Plus, Pencil, Trash2, X, ChevronLeft, ChevronRight, ArrowUpDown, ArrowDown, ArrowUp } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'react-toastify';
 import { departmentService } from '../../services/departmentService';
 import { collegeService } from '../../services/collegeService';
@@ -8,6 +9,7 @@ import ConfirmModal from '../../components/common/ConfirmModal';
 import './Departments.css';
 
 const Departments = () => {
+  const { t, i18n } = useTranslation();
   const [departments, setDepartments] = useState([]);
   const [colleges, setColleges] = useState([]);
   const [parentDepartments, setParentDepartments] = useState([]);
@@ -33,9 +35,22 @@ const Departments = () => {
   // Dynamic form state to track type switching
   const [activeFormType, setActiveFormType] = useState('ACADEMIC');
 
+  // Hierarchy state for dropdowns
+  const [adminHierarchy, setAdminHierarchy] = useState([]);
+  const [adminChildrenOptions, setAdminChildrenOptions] = useState({});
+
   // Delete confirm states
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deptToDelete, setDeptToDelete] = useState(null);
+
+  // Memoize initial form data to prevent unwanted resets inside CommonForm
+  const initialFormData = useMemo(() => {
+    return {
+      departmentType: 'ACADEMIC',
+      departmentStatus: 'ACTIVE',
+      ...editingDept
+    };
+  }, [editingDept]);
 
   // Debounce search input
   useEffect(() => {
@@ -140,12 +155,41 @@ const Departments = () => {
   const handleOpenAdd = () => {
     setEditingDept(null);
     setActiveFormType('ACADEMIC'); // Default fresh form
+    setAdminHierarchy([]);
     setIsFormModalOpen(true);
   };
 
   const handleOpenEdit = (dept) => {
     setEditingDept(dept);
     setActiveFormType(dept.departmentType || 'ACADEMIC');
+    
+    if (dept.departmentType === 'ADMINISTRATIVE' && dept.parentDepartmentId) {
+      const path = [];
+      let curr = dept.parentDepartmentId;
+      let safety = 10;
+      while (curr && safety > 0) {
+        path.unshift(curr);
+        const node = parentDepartments.find(d => d.id === curr);
+        if (node && node.parentDepartmentId) {
+           curr = node.parentDepartmentId;
+        } else {
+           curr = null;
+        }
+        safety--;
+      }
+      setAdminHierarchy(path);
+      path.forEach(async (id) => {
+         if (!adminChildrenOptions[id]) {
+            try {
+              const res = await departmentService.getDepartmentsByParent(id);
+              if (res?.success) setAdminChildrenOptions(prev => ({...prev, [id]: res.data}));
+            } catch(e) {}
+         }
+      });
+    } else {
+      setAdminHierarchy([]);
+    }
+    
     setIsFormModalOpen(true);
   };
 
@@ -159,6 +203,14 @@ const Departments = () => {
       setIsSubmitting(true);
       // Clean up irrelevant payload data based on strict backend schema mapping
       const payload = { ...formData };
+      
+      if (i18n.language === 'am') {
+        payload.departmentName = payload.departmentName || payload.departmentNameAmharic;
+        payload.departmentDescription = payload.departmentDescription || payload.departmentDescriptionAmharic;
+      } else {
+        payload.departmentNameAmharic = payload.departmentNameAmharic || payload.departmentName;
+        payload.departmentDescriptionAmharic = payload.departmentDescriptionAmharic || payload.departmentDescription;
+      }
 
       // Default company mapped generically if omitted by backend, but we'll let EnsureDefaultCompany handle it
       // if it strictly needs it in body, EnsureDefaultCompany will append it!
@@ -167,6 +219,7 @@ const Departments = () => {
         payload.parentDepartmentId = null;
       } else {
         payload.collegeId = null;
+        payload.parentDepartmentId = payload.parentDepartmentId || null;
       }
 
       if (editingDept) {
@@ -221,6 +274,19 @@ const Departments = () => {
 
   // Dynamic Structure mapping
   const getDynamicFields = () => {
+    let textFields = [];
+    if (i18n.language === 'am') {
+       textFields = [
+         { name: 'departmentNameAmharic', label: 'የዲፓርትመንት ስም (Amharic Name)', type: 'text', required: true },
+         { name: 'departmentDescriptionAmharic', label: 'መግለጫ (Amharic Description)', type: 'textarea' }
+       ];
+    } else {
+       textFields = [
+         { name: 'departmentName', label: 'Department Name', type: 'text', required: true },
+         { name: 'departmentDescription', label: 'Description', type: 'textarea' }
+       ];
+    }
+
     const baseFields = [
       {
         name: 'departmentType',
@@ -242,10 +308,7 @@ const Departments = () => {
           { value: 'INACTIVE', label: 'Inactive' }
         ]
       },
-      { name: 'departmentName', label: 'Department Name', type: 'text', required: true },
-      { name: 'departmentNameAmharic', label: 'Name (Amharic)', type: 'text' },
-      { name: 'departmentDescription', label: 'Description', type: 'textarea' },
-      { name: 'departmentDescriptionAmharic', label: 'Description (Amharic)', type: 'textarea' }
+      ...textFields
     ];
 
     // Conditionally splice in the unique relational bindings based on the LIVE monitored form type
@@ -260,10 +323,66 @@ const Departments = () => {
     } else if (activeFormType === 'ADMINISTRATIVE') {
       baseFields.splice(2, 0, {
         name: 'parentDepartmentId',
-        label: 'Parent Department',
-        type: 'select',
-        required: false,
-        options: parentDepartments.map(d => ({ value: d.id, label: d.departmentName }))
+        fullWidth: true,
+        type: 'custom',
+        render: ({ value, onChange }) => {
+           const selects = [];
+           let currentParentId = null;
+
+           for (let i = 0; i <= adminHierarchy.length; i++) {
+             let availableOptions = [];
+             
+             if (currentParentId === null) {
+               availableOptions = parentDepartments.filter(d => !d.parentDepartmentId);
+             } else {
+               availableOptions = adminChildrenOptions[currentParentId];
+             }
+
+             if (!availableOptions || availableOptions.length === 0) break;
+
+             const selectedValue = adminHierarchy[i] || '';
+
+             selects.push(
+               <div className="form-group" key={`admin_dept_${i}`} style={{ marginBottom: i < adminHierarchy.length ? '1rem' : '0' }}>
+                 <label className="form-label" style={{ display: 'block', marginBottom: '0.5rem' }}>Parent Department (Level {i + 1})</label>
+                 <select
+                   className="form-select"
+                   value={selectedValue}
+                   onChange={async (e) => {
+                     const val = e.target.value;
+                     const newHierarchy = adminHierarchy.slice(0, i);
+                     if (val) {
+                       newHierarchy.push(val);
+                       onChange(val);
+                       
+                       try {
+                         if (!adminChildrenOptions[val]) {
+                           const res = await departmentService.getDepartmentsByParent(val);
+                           if (res?.success) {
+                             setAdminChildrenOptions(prev => ({ ...prev, [val]: res.data }));
+                           }
+                         }
+                       } catch (err) {}
+                     } else {
+                       onChange(i > 0 ? newHierarchy[i-1] : null);
+                     }
+                     setAdminHierarchy(newHierarchy);
+                   }}
+                 >
+                   <option value="">-- Select Department --</option>
+                   {availableOptions.filter(d => d.id !== editingDept?.id).map(d => (
+                     <option key={d.id} value={d.id}>{d.departmentName}</option>
+                   ))}
+                 </select>
+               </div>
+             );
+
+             if (!selectedValue) break;
+             currentParentId = selectedValue;
+           }
+
+           return <div>{selects}</div>;
+        }
       });
     }
 
@@ -295,9 +414,15 @@ const Departments = () => {
           <table className="modern-data-table">
             <thead>
               <tr>
-                <th className="sortable-header" onClick={() => handleSort('departmentName')}>
-                  <div className="th-content">Department Name {renderSortIcon('departmentName')}</div>
-                </th>
+                {i18n.language === 'am' ? (
+                  <th className="sortable-header" onClick={() => handleSort('departmentNameAmharic')}>
+                    <div className="th-content">የዲፓርትመንት ስም {renderSortIcon('departmentNameAmharic')}</div>
+                  </th>
+                ) : (
+                  <th className="sortable-header" onClick={() => handleSort('departmentName')}>
+                    <div className="th-content">Department Name {renderSortIcon('departmentName')}</div>
+                  </th>
+                )}
                 <th>Type</th>
                 <th>College / Parent</th>
                 <th>Status</th>
@@ -319,7 +444,11 @@ const Departments = () => {
               ) : (
                 departments.map(dept => (
                   <tr key={dept.id}>
-                    <td className="col-primary-text">{dept.departmentName}</td>
+                    {i18n.language === 'am' ? (
+                       <td className="col-primary-text">{dept.departmentNameAmharic || dept.departmentName}</td>
+                    ) : (
+                       <td className="col-primary-text">{dept.departmentName}</td>
+                    )}
                     <td>
                       <span className={`badge ${dept.departmentType === 'ACADEMIC' ? 'badge-academic' : 'badge-admin'}`}>
                         {dept.departmentType}
@@ -411,11 +540,7 @@ const Departments = () => {
 
             <CommonForm
               fields={getDynamicFields()}
-              initialData={{
-                departmentType: 'ACADEMIC',
-                departmentStatus: 'ACTIVE',
-                ...editingDept
-              }}
+              initialData={initialFormData}
               onChange={(formState) => {
                 // If user changes DepartmentType in real-time, trigger a rerender locally 
                 // so the conditional College vs Parent Parent fields immediately swap out!

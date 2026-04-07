@@ -10,13 +10,10 @@ const EmployeeProfileModal = ({ employeeId, onClose }) => {
   const [employee, setEmployee] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // File Upload states
-  const [isUploading, setIsUploading] = useState(false);
-
   const fetchEmployeeData = async () => {
     try {
       setIsLoading(true);
-      const res = await employeeService.getEmployeeById(employeeId, ['company', 'college', 'department']);
+      const res = await employeeService.getEmployeeById(employeeId, ['company', 'college', 'department', 'documents']);
       if (res.success) {
          setEmployee(res.data);
       } else {
@@ -34,51 +31,6 @@ const EmployeeProfileModal = ({ employeeId, onClose }) => {
   useEffect(() => {
     if (employeeId) fetchEmployeeData();
   }, [employeeId]);
-
-  const handleProfilePicUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    try {
-      setIsUploading(true);
-      toast.info("Uploading picture...");
-      const res = await employeeService.uploadProfilePicture(employeeId, file);
-      if (res.success) {
-        toast.success("Profile picture updated!");
-        fetchEmployeeData();
-      }
-    } catch (error) {
-      toast.error(error?.response?.data?.error || "Failed to upload picture");
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  const handleDocumentUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    
-    // In actual rigorous implementation, you'd prompt for DocumentType, Name etc.
-    // For now we just construct a quick FormData payload based on implicit defaults
-    const formData = new FormData();
-    formData.append('document', file);
-    formData.append('documentName', file.name);
-    formData.append('documentType', 'OTHER');
-
-    try {
-      setIsUploading(true);
-      toast.info("Uploading document...");
-      const res = await employeeService.uploadSingleDocument(employeeId, formData);
-      if (res.success) {
-        toast.success("Document attached!");
-        fetchEmployeeData();
-      }
-    } catch (error) {
-      toast.error(error?.response?.data?.error || "Document upload failed");
-    } finally {
-      setIsUploading(false);
-    }
-  };
 
   if (isLoading) return (
     <div className="employee-profile-overlay">
@@ -109,11 +61,6 @@ const EmployeeProfileModal = ({ employeeId, onClose }) => {
                alt="Profile" 
                onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(employee.firstName + ' ' + employee.lastName)}&background=0B8255&color=fff` }}
             />
-            {/* The hidden file input triggered by throwing the label over it */}
-            <label className="avatar-upload-btn" title="Change Picture">
-              <UploadCloud size={16} />
-              <input type="file" accept="image/*" style={{ display: 'none'}} onChange={handleProfilePicUpload} disabled={isUploading} />
-            </label>
           </div>
         </div>
         
@@ -206,11 +153,6 @@ const EmployeeProfileModal = ({ employeeId, onClose }) => {
         <div className="profile-info-card full-span">
            <div className="card-lbl-header header-spread">
               <div style={{display:'flex', alignItems:'center', gap:'0.5rem'}}><FileText size={18}/> Document Vault</div>
-              
-              <label className="btn-upload-doc">
-                <UploadCloud size={16} /> Upload New
-                <input type="file" style={{ display: 'none'}} onChange={handleDocumentUpload} disabled={isUploading} />
-              </label>
            </div>
            
            <div className="document-list">

@@ -190,6 +190,34 @@ export class EmployeeService extends CrudService {
           outsource.serviceType,
         ]);
       }
+      
+      //Group one 5. Auto-generate leave balances for the current year
+      const currentYear = new Date().getFullYear();
+      const leaveAllocations = [
+        { type: 'ANNUAL', days: 20 },
+        { type: 'SICK', days: 14 },
+        { type: 'MEDICAL', days: 30 },
+        { type: 'PERSONAL', days: 5 },
+        { type: 'MATERNITY', days: 90 },
+        { type: 'PATERNITY', days: 5 },
+        { type: 'ORGANIZATION_LEAVE', days: 0 }
+      ];
+
+      const leaveQuery = `
+        INSERT INTO leaveBalance (
+          employeeId, leaveType, year, totalAllocatedDays, remainingDays
+        ) VALUES (UUID_TO_BIN(?), ?, ?, ?, ?)
+      `;
+      
+      for (const leave of leaveAllocations) {
+        await connection.query(leaveQuery, [
+          employeeUUID, 
+          leave.type, 
+          currentYear, 
+          leave.days, 
+          leave.days
+        ]);
+      }
 
       // If designation exists for this employee, assign as department manager when applicable
       await this.assignAsDepartmentManagerIfNeeded(connection, employeeUUID);

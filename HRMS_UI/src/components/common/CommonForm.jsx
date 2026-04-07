@@ -98,6 +98,15 @@ const CommonForm = ({
             )}
           </div>
         );
+      case 'custom':
+        if (field.render) {
+          return field.render({
+            value: formData[field.name],
+            onChange: (val) => handleChange({ target: { name: field.name, value: val } }),
+            formData
+          });
+        }
+        return null;
       case 'textarea':
         return (
           <textarea

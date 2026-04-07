@@ -10,6 +10,7 @@ import Colleges from './pages/Colleges/Colleges';
 import Departments from './pages/Departments/Departments';
 import Employees from './pages/Employees/Employees';
 import EmployeeProfile from './pages/Employees/EmployeeProfile';
+import OutsourcingCompanies from './pages/OutsourcingCompanies/OutsourcingCompanies';
 import './index.css';
 
 // Protected Route Component
@@ -71,6 +72,7 @@ function App() {
           <Route path="departments" element={<Departments />} />
           <Route path="employees" element={<Employees />} />
           <Route path="employees/:id" element={<EmployeeProfile />} />
+          <Route path="outsourcing" element={<OutsourcingCompanies />} />
           
           {/* Future sub-routes like /dashboard/payroll will go here */}
           {/* Catch-all for unmatched dashboard routes */}

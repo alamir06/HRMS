@@ -266,22 +266,10 @@ CREATE TABLE employeeShift (
 );
 
 -- LEAVE MANAGEMENT
-CREATE TABLE leaveTypes (
-    id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
-    leaveName VARCHAR(100) NOT NULL,
-    leaveNameAmharic VARCHAR(100),
-    leaveDescription TEXT,
-    leaveDescriptionAmharic TEXT,
-    maxDaysPerYear INT NOT NULL,
-    carryForwardDays INT DEFAULT 0,
-    requiresApproval BOOLEAN DEFAULT TRUE,
-    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
 CREATE TABLE leaveBalance (
     id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
     employeeId BINARY(16) NOT NULL,
-    leaveTypeId BINARY(16) NOT NULL,
+    leaveType ENUM('ANNUAL', 'SICK', 'MEDICAL', 'PERSONAL', 'MATERNITY', 'PATERNITY', 'ORGANIZATION_LEAVE') NOT NULL,
     year INT NOT NULL,
     totalAllocatedDays INT NOT NULL,
     usedDays INT DEFAULT 0,
@@ -289,13 +277,13 @@ CREATE TABLE leaveBalance (
     carryForwardDays INT DEFAULT 0,
     createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY uniqueEmployeeLeaveYear (employeeId, leaveTypeId, year)
+    UNIQUE KEY uniqueEmployeeLeaveYear (employeeId, leaveType, year)
 );
 
 CREATE TABLE leaveRequest (
     id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
     employeeId BINARY(16) NOT NULL,
-    leaveTypeId BINARY(16) NOT NULL,
+    leaveType ENUM('ANNUAL', 'SICK', 'MEDICAL', 'PERSONAL', 'MATERNITY', 'PATERNITY', 'ORGANIZATION_LEAVE') NOT NULL,
     startDate DATE NOT NULL,
     endDate DATE NOT NULL,
     totalDays INT NOT NULL,
@@ -611,9 +599,7 @@ ALTER TABLE attendance ADD FOREIGN KEY (employeeId) REFERENCES employee(id) ON D
 ALTER TABLE employeeShift ADD FOREIGN KEY (employeeId) REFERENCES employee(id) ON DELETE CASCADE;
 ALTER TABLE employeeShift ADD FOREIGN KEY (shiftId) REFERENCES shiftSchedule(id) ON DELETE CASCADE;
 ALTER TABLE leaveBalance ADD FOREIGN KEY (employeeId) REFERENCES employee(id) ON DELETE CASCADE;
-ALTER TABLE leaveBalance ADD FOREIGN KEY (leaveTypeId) REFERENCES leaveTypes(id) ON DELETE CASCADE;
 ALTER TABLE leaveRequest ADD FOREIGN KEY (employeeId) REFERENCES employee(id) ON DELETE CASCADE;
-ALTER TABLE leaveRequest ADD FOREIGN KEY (leaveTypeId) REFERENCES leaveTypes(id) ON DELETE CASCADE;
 ALTER TABLE leaveRequest ADD FOREIGN KEY (approvedBy) REFERENCES employee(id) ON DELETE SET NULL;
 ALTER TABLE payroll ADD FOREIGN KEY (employeeId) REFERENCES employee(id) ON DELETE CASCADE;
 ALTER TABLE payroll ADD FOREIGN KEY (generatedBy) REFERENCES users(id) ON DELETE CASCADE;

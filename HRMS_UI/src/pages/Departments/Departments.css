@@ -37,7 +37,7 @@
   border: none;
   background: transparent;
   padding: 0 0.75rem;
-  font-size: 0.95rem;
+  font-size: 0.84rem;
   color: var(--text-primary);
   outline: none;
 }
@@ -100,7 +100,7 @@
 .modern-data-table th {
   padding: 1.25rem 1rem;
   font-weight: 600;
-  font-size: 0.85rem;
+  font-size: 0.74rem;
   color: var(--text-primary);
   white-space: nowrap;
 }
@@ -123,7 +123,7 @@
 
 .modern-data-table td {
   padding: 1rem;
-  font-size: 0.9rem;
+  font-size: 0.79rem;
   color: var(--text-secondary);
   border-bottom: 1px solid var(--border-color);
   vertical-align: middle;
@@ -190,7 +190,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.85rem;
+  font-size: 0.74rem;
   color: var(--text-secondary);
 }
 
@@ -201,14 +201,14 @@
   background-color: var(--bg-primary);
   color: var(--text-primary);
   outline: none;
-  font-size: 0.85rem;
+  font-size: 0.74rem;
 }
 
 .pagination-controls {
   display: flex;
   align-items: center;
   gap: 1rem;
-  font-size: 0.85rem;
+  font-size: 0.74rem;
   color: var(--text-secondary);
 }
 
@@ -270,7 +270,7 @@
 }
 
 .modal-form-header h3 {
-  font-size: 1.4rem;
+  font-size: 1.29rem;
   font-weight: 700;
   color: var(--text-primary);
   margin: 0;
@@ -279,7 +279,7 @@
 .badge {
   padding: 4px 8px;
   border-radius: 12px;
-  font-size: 0.75rem;
+  font-size: 0.64rem;
   font-weight: 600;
   color: white;
 }

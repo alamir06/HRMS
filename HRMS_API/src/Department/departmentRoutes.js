@@ -41,6 +41,45 @@ const validateDepartmentRelations = async (req, res, next) => {
 
 const departmentRouter = express.Router();
 
+const validateDepartmentDeletion = async (req, res, next) => {
+  const { id } = req.params;
+  try {
+    const [childDepartments] = await pool.query('SELECT id FROM department WHERE parentDepartmentId = UUID_TO_BIN(?) LIMIT 1', [id]);
+    if (childDepartments.length > 0) {
+      return res.status(400).json({
+        success: false,
+        error: "Validation failed",
+        message: "Cannot delete this department because it has child departments.",
+        details: [{ field: "id", message: "Cannot delete this department because it has child departments." }]
+      });
+    }
+
+    const [employees] = await pool.query('SELECT id FROM employee WHERE departmentId = UUID_TO_BIN(?) LIMIT 1', [id]);
+    if (employees.length > 0) {
+      return res.status(400).json({
+        success: false,
+        error: "Validation failed",
+        message: "Cannot delete this department because it has employees assigned to it.",
+        details: [{ field: "id", message: "Cannot delete this department because it has employees assigned to it." }]
+      });
+    }
+    
+    const [designations] = await pool.query('SELECT id FROM designations WHERE departmentId = UUID_TO_BIN(?) LIMIT 1', [id]);
+    if (designations.length > 0) {
+      return res.status(400).json({
+        success: false,
+        error: "Validation failed",
+        message: "Cannot delete this department because it has designations associated with it.",
+        details: [{ field: "id", message: "Cannot delete this department because it has designations associated with it." }]
+      });
+    }
+
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
+
 const departmentCrudRouter = createCrudRouter({
   routePath: "/",
   tableName: "DEPARTMENT",
@@ -57,7 +96,7 @@ const departmentCrudRouter = createCrudRouter({
     create: [ensureDefaultCompanyIdInBody(), validateDepartmentRelations],
     read: [],
     update: [validateDepartmentRelations],
-    delete: [],
+    delete: [validateDepartmentDeletion],
     list: [],
     count: [],
   },

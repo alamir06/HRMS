@@ -4,8 +4,39 @@ import { collegeValidationSchema } from './CollegeValidation.js';
 import { authenticateToken, authorize } from '../../middleware/auth.js';
 import collegeCustomController from "./CollegeController.js"
 import { ensureDefaultCompanyIdInBody } from "../Commons/defaultCompany.js";
+import pool from "../../config/database.js";
 
 const collegeRouter = express.Router();
+
+const validateCollegeDeletion = async (req, res, next) => {
+  const { id } = req.params;
+  try {
+    const [departments] = await pool.query('SELECT id FROM department WHERE collegeId = UUID_TO_BIN(?) LIMIT 1', [id]);
+    if (departments.length > 0) {
+      return res.status(400).json({
+        success: false,
+        error: "Validation failed",
+        message: "Cannot delete this college because it is referenced by one or more departments.",
+        details: [{ message: "Cannot delete this college because it is referenced by one or more departments." }]
+      });
+    }
+    
+    const [designations] = await pool.query('SELECT id FROM designations WHERE collegeId = UUID_TO_BIN(?) LIMIT 1', [id]);
+    if (designations.length > 0) {
+      return res.status(400).json({
+        success: false,
+        error: "Validation failed",
+        message: "Cannot delete this college because it is referenced by one or more designations.",
+        details: [{ message: "Cannot delete this college because it is referenced by one or more designations." }]
+      });
+    }
+    
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
+
 const collegeCrudRouter = createCrudRouter({
   routePath: "/",
   tableName: "college",
@@ -22,11 +53,12 @@ const collegeCrudRouter = createCrudRouter({
     create: [ensureDefaultCompanyIdInBody()],
     read: [],
     update: [],
-    delete: [],
+    delete: [validateCollegeDeletion],
     list: [],
     count: [],
   },
 });
+
 
 collegeRouter.use('/', collegeCrudRouter);
 

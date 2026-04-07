@@ -1,75 +1,27 @@
 import express from "express";
-import { createCrudRouter } from "../Commons/CommonRouter.js";
-import { leaveValidationSchema } from "./leaveValidation.js";
-import { leaveController } from "./leaveController.js";
-import { authenticateToken, authorize } from "../../middleware/auth.js";
+import { 
+  requestLeave, 
+  approveLeave, 
+  rejectLeave, 
+  getEmployeeLeaveData, 
+  getAllRequests 
+} from "./LeaveController.js";
+import { validate } from "../../middleware/validationMiddleware.js";
+import { leaveValidation } from "./LeaveValidation.js";
+import { protect, restrictTo } from "../../middleware/authMiddleware.js";
 
-const leaveRouter = express.Router();
+const router = express.Router();
 
-leaveRouter.post(
-  "/requests/apply",
-  authenticateToken,
-  authorize("HRMANAGER", "HROFFICER", "HEAD", "EMPLOYEE"),
-  leaveController.applyForLeave
-);
+router.use(protect);
 
-leaveRouter.post(
-  "/requests/:id/approve",
-  authenticateToken,
-  authorize("HRMANAGER", "HROFFICER"),
-  leaveController.approveLeave
-);
+// Employee accessible routes
+router.get("/employee/:id", getEmployeeLeaveData);
+router.post("/request", validate(leaveValidation.createLeave), requestLeave);
 
-leaveRouter.post(
-  "/requests/:id/reject",
-  authenticateToken,
-  authorize("HRMANAGER", "HROFFICER"),
-  leaveController.rejectLeave
-);
+// Management accessible routes
+router.use(restrictTo("HRMANAGER", "ADMIN")); 
+router.get("/all", getAllRequests);
+router.put("/:id/approve", validate(leaveValidation.approveLeave), approveLeave);
+router.put("/:id/reject", validate(leaveValidation.rejectLeave), rejectLeave);
 
-leaveRouter.get(
-  "/employees/:employeeId/summary",
-  authenticateToken,
-  authorize("HRMANAGER", "HROFFICER", "HEAD", "EMPLOYEE"),
-  leaveController.getEmployeeLeaveSummary
-);
-
-leaveRouter.get(
-  "/employees/:employeeId/history",
-  authenticateToken,
-  authorize("HRMANAGER", "HROFFICER", "HEAD", "EMPLOYEE"),
-  leaveController.getEmployeeLeaveHistory
-);
-
-const leaveTypeRouter = createCrudRouter({
-  routePath: "/",
-  tableName: "leaveTypes",
-  validationSchema: leaveValidationSchema.type,
-  displayNameField: "leaveName",
-  entityLabel: "Leave Type",
-  uuidEnabled: true,
-});
-
-const leaveBalanceRouter = createCrudRouter({
-  routePath: "/",
-  tableName: "leaveBalance",
-  validationSchema: leaveValidationSchema.balance,
-  displayNameField: "year",
-  entityLabel: "Leave Balance",
-  uuidEnabled: true,
-});
-
-const leaveRequestCrudRouter = createCrudRouter({
-  routePath: "/",
-  tableName: "leaveRequest",
-  validationSchema: leaveValidationSchema.request,
-  displayNameField: "startDate",
-  entityLabel: "Leave Request",
-  uuidEnabled: true,
-});
-
-leaveRouter.use("/types", leaveTypeRouter);
-leaveRouter.use("/balances", leaveBalanceRouter);
-leaveRouter.use("/requests", leaveRequestCrudRouter);
-
-export default leaveRouter;
+export default router;
