@@ -37,8 +37,8 @@ const FeaturesSection = () => {
       </div>
 
       {activeFeature && (
-        <div className="wizard-overlay" onClick={() => setActiveFeature(null)} style={{ zIndex: 99999 }}>
-          <div className="wizard-modal" onClick={e => e.stopPropagation()} style={{ width: '500px', height: 'auto', padding: '2rem' }}>
+        <div className="landing-feature-overlay" onClick={() => setActiveFeature(null)}>
+          <div className="landing-feature-modal" onClick={e => e.stopPropagation()} style={{ width: '500px', height: 'auto', padding: '2rem' }}>
              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                 <h3 style={{ margin: 0, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   {activeFeature.icon} {activeFeature.title}

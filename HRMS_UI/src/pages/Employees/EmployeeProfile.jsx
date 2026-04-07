@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, User, Briefcase, GraduationCap, FileText, UploadCloud, Trash, X } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { useTranslation } from 'react-i18next';
 import { employeeService } from '../../services/employeeService';
 import './EmployeeProfile.css';
 
 const EmployeeProfileModal = ({ employeeId, onClose }) => {
+  const { i18n } = useTranslation();
   const [employee, setEmployee] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -79,8 +81,8 @@ const EmployeeProfileModal = ({ employeeId, onClose }) => {
   };
 
   if (isLoading) return (
-    <div className="wizard-overlay">
-      <div className="wizard-modal" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+    <div className="employee-profile-overlay">
+      <div className="employee-profile-modal profile-modal-centered">
          <div className="profile-loading">Loading Comprehensive Profile...</div>
       </div>
     </div>
@@ -89,23 +91,23 @@ const EmployeeProfileModal = ({ employeeId, onClose }) => {
   if (!employee) return null;
 
   return (
-    <div className="wizard-overlay" onClick={onClose}>
-      <div className="wizard-modal" onClick={e => e.stopPropagation()} style={{ width: '1000px', backgroundColor: '#f9fafd' }}>
-        <div className="wizard-header">
+    <div className="employee-profile-overlay" onClick={onClose}>
+      <div className="employee-profile-modal" onClick={e => e.stopPropagation()}>
+        <div className="profile-modal-header">
            <h3>Employee Complete Record</h3>
            <button className="close-btn" onClick={onClose}><X size={20} /></button>
         </div>
         
-        <div className="wizard-body" style={{ padding: '2rem' }}>
+        <div className="wizard-body" style={{ padding: '2rem', overflowY: 'auto', flex: 1 }}>
           <div className="employee-profile-container">
 
       <div className="profile-hero-card">
         <div className="profile-avatar-section">
           <div className="avatar-wrapper-lg">
             <img 
-               src={employee.personal_profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(employee.personal_firstName + ' ' + employee.personal_lastName)}&background=0B8255&color=fff`} 
+               src={employee.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(employee.firstName + ' ' + employee.lastName)}&background=0B8255&color=fff`} 
                alt="Profile" 
-               onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(employee.personal_firstName + ' ' + employee.personal_lastName)}&background=0B8255&color=fff` }}
+               onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(employee.firstName + ' ' + employee.lastName)}&background=0B8255&color=fff` }}
             />
             {/* The hidden file input triggered by throwing the label over it */}
             <label className="avatar-upload-btn" title="Change Picture">
@@ -116,14 +118,19 @@ const EmployeeProfileModal = ({ employeeId, onClose }) => {
         </div>
         
         <div className="profile-hero-info">
-           <h2>{employee.personal_firstName} {employee.personal_middleName || ''} {employee.personal_lastName}</h2>
+           <h2>
+             {i18n.language === 'am' && employee.firstNameAmharic 
+               ? `${employee.firstNameAmharic} ${employee.middleNameAmharic || ''} ${employee.lastNameAmharic || ''}`.trim()
+               : `${employee.firstName} ${employee.middleName || ''} ${employee.lastName || ''}`.trim()
+             }
+           </h2>
            <div className="hero-badges">
              <span className="badge badge-academic">{employee.employeeType || "STAFF"}</span>
              <span className={`badge ${employee.employmentStatus === 'ACTIVE' ? 'badge-active' : 'badge-inactive'}`}>
                {employee.employmentStatus || 'ACTIVE'}
              </span>
            </div>
-           <p className="hero-subtitle">{employee.department_departmentName || "No Linked Department"}</p>
+           <p className="hero-subtitle">{employee.departmentName || "No Linked Department"}</p>
         </div>
       </div>
 
@@ -134,19 +141,19 @@ const EmployeeProfileModal = ({ employeeId, onClose }) => {
            <div className="card-data-grid">
              <div className="data-group">
                <label>Gender</label>
-               <span>{employee.personal_gender || 'Not Specified'}</span>
+               <span>{employee.gender || 'Not Specified'}</span>
              </div>
              <div className="data-group">
                <label>Date of Birth</label>
-               <span>{employee.personal_dateOfBirth ? new Date(employee.personal_dateOfBirth).toLocaleDateString() : 'N/A'}</span>
+               <span>{employee.dateOfBirth ? new Date(employee.dateOfBirth).toLocaleDateString() : 'N/A'}</span>
              </div>
              <div className="data-group">
                <label>Personal Phone</label>
-               <span>{employee.personal_personalPhone || 'N/A'}</span>
+               <span>{employee.personalPhone || 'N/A'}</span>
              </div>
              <div className="data-group">
                <label>Emergency Contact</label>
-               <span>{employee.personal_emergencyContactName || 'N/A'} ({employee.personal_emergencyContactPhone})</span>
+               <span>{employee.emergencyContactName || 'N/A'} ({employee.emergencyContactPhone || 'N/A'})</span>
              </div>
            </div>
         </div>
@@ -165,11 +172,11 @@ const EmployeeProfileModal = ({ employeeId, onClose }) => {
              </div>
              <div className="data-group">
                <label>Official Email</label>
-               <span>{employee.employment_officialEmail || 'N/A'}</span>
+               <span>{employee.officialEmail || 'N/A'}</span>
              </div>
              <div className="data-group">
                <label>Base Salary</label>
-               <span>{employee.employment_salary ? `$${employee.employment_salary}` : 'Confidential'}</span>
+               <span>{employee.salary ? `$${employee.salary}` : 'Confidential'}</span>
              </div>
            </div>
         </div>
@@ -181,15 +188,15 @@ const EmployeeProfileModal = ({ employeeId, onClose }) => {
              <div className="card-data-grid">
                <div className="data-group">
                  <label>College</label>
-                 <span>{employee.college_collegeName || 'N/A'}</span>
+                 <span>{employee.collegeName || 'N/A'}</span>
                </div>
                <div className="data-group">
                  <label>Academic Rank</label>
-                 <span>{employee.academic_academicRank || 'Professor'}</span>
+                 <span>{employee.academicRank || 'Unspecified'}</span>
                </div>
                <div className="data-group">
                  <label>Specialization</label>
-                 <span>{employee.academic_fieldOfSpecialization || 'General'}</span>
+                 <span>{employee.fieldOfSpecialization || 'General'}</span>
                </div>
              </div>
           </div>

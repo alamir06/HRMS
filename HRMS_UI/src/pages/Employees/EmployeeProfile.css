@@ -1,3 +1,73 @@
+.employee-profile-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.employee-profile-modal {
+  background: var(--bg-primary, white);
+  width: 100vw;
+  max-width: 1000px;
+  max-height: 95vh;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: empSlideFadeIn 0.3s ease-out;
+}
+
+.profile-modal-centered {
+  justify-content: center;
+  align-items: center;
+  max-height: 50vh;
+}
+
+.profile-modal-header {
+  padding: 1.5rem 2rem;
+  background-color: var(--bg-primary, white);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+.profile-modal-header h3 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 1.25rem;
+}
+
+.close-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  border-radius: 50%;
+  transition: background 0.2s;
+}
+
+.close-btn:hover {
+  background: var(--bg-secondary);
+}
+
+@keyframes empSlideFadeIn {
+  from { opacity: 0; transform: translateY(20px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
 .employee-profile-container {
   display: flex;
   flex-direction: column;

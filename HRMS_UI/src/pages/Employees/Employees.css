@@ -98,3 +98,14 @@
 [data-theme='dark'] .search-wrapper-emp input {
   color: var(--text-primary);
 }
+
+/* Reduced Font Sizes for Employee Table */
+.employees-table-card .modern-data-table td,
+.employees-table-card .modern-data-table th {
+  font-size: 0.8rem;
+}
+
+.employees-table-card .badge {
+  font-size: 0.65rem;
+  padding: 0.25em 0.5em;
+}

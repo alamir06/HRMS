@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Search, Plus, Pencil, Trash2, Eye, ChevronLeft, ChevronRight, ArrowUpDown, ArrowDown, ArrowUp } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { useTranslation } from 'react-i18next';
 import { employeeService } from '../../services/employeeService';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import EmployeeWizard from './EmployeeWizard';
@@ -8,6 +9,7 @@ import EmployeeProfileModal from './EmployeeProfile';
 import './Employees.css';
 
 const Employees = () => {
+  const { t, i18n } = useTranslation();
   const [employees, setEmployees] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   
@@ -22,6 +24,7 @@ const Employees = () => {
 
   // Multi-step Wizard States
   const [isWizardOpen, setIsWizardOpen] = useState(false);
+  const [editEmployeeId, setEditEmployeeId] = useState(null);
   const [viewEmployeeId, setViewEmployeeId] = useState(null);
   
   // Delete confirm states
@@ -80,11 +83,13 @@ const Employees = () => {
   const confirmDelete = async () => {
     if (!employeeToDelete) return;
     try {
-      // NOTE: Standard CRUD routes map 'delete' to employee controller
-      // We didn't explicitly check if backend has delete logic but standard implementation suggests yes
-      // The instructions said map endpoints, assuming /api/employees/:id DELETE exists.
-      toast.error("Delete endpoint requires backend verification");
-      // Actually we should just ignore it or implement a gentle placeholder.
+      const resp = await employeeService.deleteEmployee(employeeToDelete.id);
+      if (resp.success) {
+        toast.success("Employee deleted successfully.");
+        loadEmployees();
+      } else {
+        toast.error(resp.message || "Failed to delete employee.");
+      }
     } catch (error) {
       toast.error("Failed to delete from server");
     } finally {
@@ -98,8 +103,8 @@ const Employees = () => {
   };
   
   const triggerEdit = (emp) => {
-     toast.info(`Edit interface for ${emp.firstName} is launching...`);
-     // Open wizard in edit mode coming soon. For now we acknowledge the user requested it.
+     setEditEmployeeId(emp.id);
+     setIsWizardOpen(true);
   };
 
   return (
@@ -115,7 +120,7 @@ const Employees = () => {
             onChange={(e) => setSearch(e.target.value)}
           />
         </label>
-        <button className="btn-add-employee" onClick={() => setIsWizardOpen(true)}>
+        <button className="btn-add-employee" onClick={() => { setEditEmployeeId(null); setIsWizardOpen(true); }}>
           <Plus size={18} /> Add Employee
         </button>
       </div>
@@ -160,7 +165,9 @@ const Employees = () => {
                       </div>
                     </td>
                     <td className="col-primary-text">
-                       {emp.firstName} {emp.lastName}
+                       {i18n.language === 'am' && emp.firstNameAmharic 
+                         ? `${emp.firstNameAmharic} ${emp.lastNameAmharic || ''}`
+                         : `${emp.firstName} ${emp.lastName}`}
                        <span style={{display: 'block', fontSize: '0.75rem', color: '#6b7280', fontWeight: 'normal'}}>
                          {emp.officialEmail || emp.personalEmail || "No Email"}
                        </span>
@@ -203,9 +210,13 @@ const Employees = () => {
           <div className="page-limit-selector">
             <span>Show</span>
             <select className="limit-dropdown" value={limit} onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}>
+              <option value={5}>5</option>
               <option value={10}>10</option>
+              <option value={15}>15</option>
               <option value={20}>20</option>
+              <option value={25}>25</option>
               <option value={50}>50</option>
+              <option value={100}>100</option>
             </select>
             <span>entries</span>
           </div>
@@ -220,12 +231,17 @@ const Employees = () => {
         </div>
       </div>
 
-      {/* Multi-step Modal Form for Employee Creation */}
+      {/* Multi-step Modal Form for Employee Creation/Editing */}
       {isWizardOpen && (
         <EmployeeWizard 
-          onClose={() => setIsWizardOpen(false)} 
+          editEmployeeId={editEmployeeId}
+          onClose={() => {
+            setIsWizardOpen(false);
+            setEditEmployeeId(null);
+          }} 
           onSuccess={() => {
             setIsWizardOpen(false);
+            setEditEmployeeId(null);
             loadEmployees();
           }} 
         />

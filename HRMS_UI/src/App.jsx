@@ -7,6 +7,7 @@ import Attendance from './pages/Attendance/Attendance.jsx';
 import AdminLogin from './pages/Admin/Login';
 import DashboardLayout from './layouts/DashboardLayout';
 import DashboardOverview from './pages/Admin/DashboardOverview';
+import Benefits from './pages/Benefits/Benefits';
 import Colleges from './pages/Colleges/Colleges';
 import Departments from './pages/Departments/Departments';
 import Employees from './pages/Employees/Employees';
@@ -64,6 +65,8 @@ function App() {
           }
         >
           <Route index element={<DashboardOverview />} />
+          <Route path="benefits" element={<Benefits />} />
+          <Route path="benefit" element={<Benefits />} />
           <Route path="colleges" element={<Colleges />} />
           <Route path="departments" element={<Departments />} />
           <Route path="employees" element={<Employees />} />

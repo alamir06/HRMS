@@ -1,0 +1,42 @@
+{
+  "wizard": {
+    "title": "Registration",
+    "nextStep": "Next Step",
+    "register": "Register & Upload",
+    "close": "Close",
+    "cancel": "Cancel",
+    "processing": "Processing..."
+  },
+  "forms": {
+    "employeeCategory": "Employee Category",
+    "academic": "Academic",
+    "administrative": "Administrative",
+    "outsourced": "Outsource",
+    "hireDate": "Hire Date",
+    "employmentType": "Employment Type",
+    "fullTime": "Full Time",
+    "partTime": "Part Time",
+    "contract": "Contract",
+    "status": "Status",
+    "active": "Active",
+    "onLeave": "On Leave",
+    "terminated": "Terminated",
+    "resigned": "Resigned"
+  },
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "employees": "Employees",
+    "departments": "Departments",
+    "colleges": "Colleges",
+    "attendance": "Attendance",
+    "payroll": "Payroll",
+    "leave": "Leave",
+    "benefits": "Benefits",
+    "assets": "Assets",
+    "recruitment": "Recruitment",
+    "designations": "Designations",
+    "outsourcing": "Outsourcing",
+    "noticeBoard": "Notice Board",
+    "notifications": "Notifications"
+  }
+}
