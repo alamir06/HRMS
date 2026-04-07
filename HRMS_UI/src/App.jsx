@@ -3,9 +3,11 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import LandingPage from './pages/LandingPage';
+import Attendance from './pages/Attendance/Attendance.jsx';
 import AdminLogin from './pages/Admin/Login';
 import DashboardLayout from './layouts/DashboardLayout';
 import DashboardOverview from './pages/Admin/DashboardOverview';
+import Benefits from './pages/Benefits/Benefits';
 import Colleges from './pages/Colleges/Colleges';
 import Departments from './pages/Departments/Departments';
 import Employees from './pages/Employees/Employees';
@@ -15,19 +17,16 @@ import './index.css';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
-  // Replace with real auth validation logic via context/redux
   const isAuthenticated = localStorage.getItem('adminToken') !== null;
-  
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
   return children;
 };
 
-// Public Route Component (Redirects to dashboard if already logged in)
+// Public Route Component
 const PublicRoute = ({ children }) => {
   const isAuthenticated = localStorage.getItem('adminToken') !== null;
-  
   if (isAuthenticated) {
     return <Navigate to="/dashboard" replace />;
   }
@@ -56,8 +55,8 @@ function App() {
             </PublicRoute>
           } 
         />
-        
-        {/* Protected Dashboard Routes wrapping the new App Shell Layout */}
+
+        {/* Protected Dashboard Routes */}
         <Route 
           path="/dashboard" 
           element={
@@ -66,16 +65,21 @@ function App() {
             </ProtectedRoute>
           }
         >
-          {/* Default Outlet Render when visiting /dashboard */}
           <Route index element={<DashboardOverview />} />
+          <Route path="benefits" element={<Benefits />} />
+          <Route path="benefit" element={<Benefits />} />
           <Route path="colleges" element={<Colleges />} />
           <Route path="departments" element={<Departments />} />
           <Route path="employees" element={<Employees />} />
           <Route path="employees/:id" element={<EmployeeProfile />} />
+<<<<<<< HEAD
           <Route path="outsourcing" element={<OutsourcingCompanies />} />
           
           {/* Future sub-routes like /dashboard/payroll will go here */}
           {/* Catch-all for unmatched dashboard routes */}
+=======
+          <Route path="attendance" element={<Attendance />} />
+>>>>>>> 2ccae2f3c26c787288c336d7a82cb2f2e92c6ee8
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Route>
 
@@ -87,4 +91,3 @@ function App() {
 }
 
 export default App;
-
