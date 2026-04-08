@@ -3,7 +3,7 @@ import { z } from 'zod';
 export const collegeValidationSchema = {
   create: z.object({
     companyId: z.string()
-      .uuid('Invalid company ID format')
+      .uuid('Invalid Company ID format')
       .min(1, 'Company ID is required'),
     collegeName: z.string()
       .min(1, 'College name is required')

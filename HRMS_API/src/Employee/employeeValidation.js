@@ -8,6 +8,7 @@ const phoneSchema = z
 const dateSchema = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format");
+ 
 const documentSchema = z.object({
   documentType: z.enum([
     "IDDOCUMENT",

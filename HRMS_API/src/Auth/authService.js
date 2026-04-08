@@ -3,7 +3,7 @@ import crypto from "crypto";
 import { v4 as uuidv4 } from "uuid";
 import pool from "../../config/database.js";
 
-const SALT_ROUNDS = Number(process.env.BCRYPT_SALT_ROUNDS || 10);
+const SALT_ROUNDS = Number(process.env.BCRYPT_SALT_ROUNDS);
 
 const generatePassword = () => {
   const raw = crypto.randomBytes(8).toString("base64");
@@ -252,9 +252,7 @@ const ensureCompany = async (
     return id;
   }
 
-  // Single-company mode without explicit ID:
-  // - If one company already exists, update it (even if the name changes)
-  // - If none exists, insert the new company
+ 
   if (companyCount === 1) {
     const [rows] = await connection.execute(
       "SELECT BIN_TO_UUID(id) AS id FROM company LIMIT 1"
@@ -381,7 +379,7 @@ export const seedDefaultCompany = async () => {
   }
 };
 
-const ensureSeedEmployee = async (connection, { companyId, firstName, lastName, email }) => {
+const ensureSeedEmployee = async (connection, { companyId, firstName, lastName, email,phone}) => {
   const [existing] = await connection.execute(
     `SELECT BIN_TO_UUID(e.id) AS id
        FROM employee e
@@ -426,15 +424,17 @@ const ensureSeedEmployee = async (connection, { companyId, firstName, lastName, 
        employeeId,
        firstName,
        lastName,
-       personalEmail
+       personalEmail,
+       personalPhone
      ) VALUES (
        UUID_TO_BIN(?),
        UUID_TO_BIN(?),
        ?,
        ?,
+       ?,
        ?
      )`,
-    [uuidv4(), employeeId, firstName, lastName, email]
+    [uuidv4(), employeeId, firstName, lastName, email,phone]
   );
 
   await connection.execute(
@@ -456,6 +456,7 @@ const ensureSeedEmployee = async (connection, { companyId, firstName, lastName, 
 export const seedDefaultHrManager = async () => {
   const username = process.env.SEED_HR_MANAGER_USERNAME;
   const email = process.env.SEED_HR_MANAGER_EMAIL;
+  const phone = process.env.SEED_HR_MANAGER_PHONE;
   const firstName = process.env.SEED_HR_MANAGER_FIRST_NAME;
   const lastName = process.env.SEED_HR_MANAGER_LAST_NAME;
   const companyName = process.env.SEED_COMPANY_NAME;
@@ -508,6 +509,7 @@ export const seedDefaultHrManager = async () => {
       firstName,
       lastName,
       email,
+      phone
     });
 
     if (!employeeId) {

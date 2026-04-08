@@ -29,7 +29,7 @@ export const getDefaultCompanyId = async () => {
       );
 
       if (!rows.length) {
-        throw new Error("SEED_COMPANY_ID was provided but no matching company exists");
+        throw new Error("Seed Company ID was provided but no matching company exists");
       }
 
       cachedDefaultCompanyId = rows[0].id;
@@ -56,7 +56,7 @@ export const getDefaultCompanyId = async () => {
     const companyCount = Number(countRow?.companyCount || 0);
     if (companyCount > 1) {
       throw new Error(
-        "Multiple companies found. Set SEED_COMPANY_ID to pin the intended company or delete extra companies from the database."
+        "Multiple companies found. Set Seed Company ID to pin the intended company or delete extra companies from the database."
       );
     }
 
@@ -67,7 +67,7 @@ export const getDefaultCompanyId = async () => {
 
     if (!rows.length) {
       throw new Error(
-        "No company found. Ensure SEED_COMPANY_NAME is set so startup seeding can create one."
+        "No company found. Ensure Seed Company Name is set so startup seeding can create one."
       );
     }
 
