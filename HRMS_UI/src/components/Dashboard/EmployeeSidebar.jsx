@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import './Sidebar.css';
 
-const EmployeeSidebar = () => {
+const EmployeeSidebar = ({ onOpenProfile }) => {
   const [authUser, setAuthUser] = useState(null);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -77,7 +77,7 @@ const EmployeeSidebar = () => {
       </nav>
 
       <div className="sidebar-footer">
-        <div className="user-profile-widget">
+        <div className="user-profile-widget" onClick={() => onOpenProfile && onOpenProfile()} style={{ cursor: 'pointer' }}>
           <div className="user-avatar" title={isCollapsed ? authUser?.name || 'Employee' : undefined}>
             <img 
               src={

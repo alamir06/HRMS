@@ -46,7 +46,7 @@ const collegeCrudRouter = createCrudRouter({
   entityLabel: "college",
   uuidFields: ["id", "companyId"],
   createRoles: ["HRMANAGER"],
-  readRoles: null,
+  readRoles: ["HRMANAGER","EMPLOYEE","DEAN"],
   updateRoles: ["HRMANAGER"],
   deleteRoles: ["HRMANAGER"],
   middleware: {
@@ -65,42 +65,42 @@ collegeRouter.use('/', collegeCrudRouter);
 
 collegeRouter.get('/company/:companyId',
   authenticateToken,
-  authorize('admin', 'superAdmin', 'HRMANAGER', 'user'),
+  authorize('HRMANAGER'),
   collegeCustomController.getCollegesByCompany
 );
 
 // Statistics
 collegeRouter.get('/stats/dashboard',
   authenticateToken,
-  authorize('admin', 'superAdmin', 'HRMANAGER'),
+  authorize('HRMANAGER'),
   collegeCustomController.getCollegeStats
 );
 
 // Bulk operations
 collegeRouter.post('/bulk/create',
   authenticateToken,
-  authorize('admin', 'superAdmin'),
+  authorize('HRMANAGER'),
   collegeCustomController.bulkCreateColleges
 );
 
 // Search operations
 collegeRouter.get('/search/global',
   authenticateToken,
-  authorize('admin', 'superAdmin', 'HRMANAGER', 'user'),
+  authorize('HRMANAGER'),
   collegeCustomController.searchColleges
 );
 
 // Validation
 collegeRouter.get('/validate/name',
   authenticateToken,
-  authorize('admin', 'superAdmin', 'HRMANAGER'),
+  authorize('HRMANAGER'),
   collegeCustomController.validateCollegeName
 );
 
 // Get college with company details
 collegeRouter.get('/:id/with-company',
-  // authenticateToken,
-  // authorize('admin', 'superAdmin', 'HRMANAGER', 'user'),
+  authenticateToken,
+  authorize('HRMANAGER'),
   collegeCustomController.getCollegeWithCompany
 );
 

@@ -80,7 +80,6 @@ export class EmployeeService extends CrudService {
             }
           }
         } else {
-          // If the employee is ADMINISTRATIVE, HROFFICER, OUTSOURCE, etc., they belong to an ADMINISTRATIVE department
           if (departmentType !== "ADMINISTRATIVE") {
             throw new Error(`Invalid departmentId: ${employeeData.employeeType} employees must belong to an ADMINISTRATIVE department`);
           }
@@ -96,7 +95,6 @@ export class EmployeeService extends CrudService {
       const employeeUUID = uuidv4();
       const shortUUID = employeeUUID.split("-")[0].toUpperCase();
       const generatedEmployeeCode = `HRIMS${shortUUID}EMP`;
-      //Group one 1. Insert into employee table with generated UUID and code
       const employeeQuery = `
         INSERT INTO employee (
           id, employeeCode, companyId, employeeType, employeeRole, departmentId, managerId, hireDate,
@@ -118,7 +116,6 @@ export class EmployeeService extends CrudService {
         employeeData.employmentStatus || "ACTIVE",
         employeeData.terminationDate || null,
       ]);
-      //Group one 2. Insert into employeePersonal using the same UUID
       const personalQuery = `
         INSERT INTO employeePersonal (
           employeeId, firstName, firstNameAmharic, middleName,
@@ -252,7 +249,7 @@ export class EmployeeService extends CrudService {
             const emailHtml = `
               <div style="font-family: 'Inter', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -2px rgba(0, 0, 0, 0.05);">
                 <div style="background-color: #0b8255; padding: 24px; text-align: center;">
-                  <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600;">Welcome to HRMS!</h1>
+                  <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600;">Welcome to INU HRMS!</h1>
                 </div>
                 <div style="padding: 32px; color: #111827;">
                   <p style="font-size: 16px; margin-bottom: 24px;">Hello <b>${personal.firstName}</b>,</p>
@@ -278,7 +275,7 @@ export class EmployeeService extends CrudService {
 
             await sendEmail({
               to: employeeEmail,
-              subject: "Welcome to HRMS - Your Login Credentials",
+              subject: "Welcome to INU HRMS - Your Login Credentials",
               html: emailHtml,
               text: `Hello ${personal.firstName},\n\nYour employee account has been successfully created. You can now log into the HRMS portal (${frontendUrl}/login) using the following credentials:\n\nUsername: ${username}\nPassword: ${rawPassword}\n\nPlease note: You will be required to change your password upon your first login.\n\nBest Regards,\nHR Team`
             });
@@ -288,7 +285,6 @@ export class EmployeeService extends CrudService {
         }
       }
 
-      // If designation exists for this employee, assign as department manager when applicable
       await this.assignAsDepartmentManagerIfNeeded(connection, employeeUUID);
       await connection.commit();
       

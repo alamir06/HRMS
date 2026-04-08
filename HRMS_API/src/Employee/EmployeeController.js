@@ -45,6 +45,11 @@ export class EmployeeController {
   findById = async (req, res) => {
     try {
       const { id } = req.params;
+
+      if (req.user && req.user.role === 'EMPLOYEE' && req.user.employeeId !== id) {
+        return res.status(403).json({ success: false, error: "Access denied. You can only view your own profile." });
+      }
+
       const { include } = req.query;
       const includeArray = include
         ? include.split(",").filter((item) => item.trim() !== "")
@@ -105,6 +110,11 @@ export class EmployeeController {
   uploadProfilePicture = async (req, res) => {
     try {
       const { id } = req.params;
+
+      if (req.user && req.user.role === 'EMPLOYEE' && req.user.employeeId !== id) {
+         if (req.file) await fileUploadService.deleteFile(req.file.filename, "image").catch(console.error);
+         return res.status(403).json({ success: false, error: "Access denied. You can only modify your own picture." });
+      }
 
       if (!req.file) {
         return res.status(400).json({
@@ -281,6 +291,11 @@ export class EmployeeController {
   getDocuments = async (req, res) => {
     try {
       const { id } = req.params;
+
+      if (req.user && req.user.role === 'EMPLOYEE' && req.user.employeeId !== id) {
+        return res.status(403).json({ success: false, error: "Access denied. You can only view your own documents." });
+      }
+
       const { type, page = 1, limit = 10, verifiedOnly } = req.query;
 
       employeeValidationSchema.id.parse({ id });

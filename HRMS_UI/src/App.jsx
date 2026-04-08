@@ -20,6 +20,7 @@ import MyAttendance from './pages/EmployeePortal/MyAttendance/MyAttendance';
 import MyAssetsAndBenefits from './pages/EmployeePortal/MyAssetsAndBenefits/MyAssetsAndBenefits';
 import MyNotices from './pages/EmployeePortal/MyNotices/MyNotices';
 import MyNotifications from './pages/EmployeePortal/MyNotifications/MyNotifications';
+import LeaveRequests from './pages/HRManager/Leaves/LeaveRequests';
 import './index.css';
 
 // Admin Protected Route Component
@@ -121,6 +122,7 @@ function App() {
           <Route path="employees/:id" element={<EmployeeProfile />} />
           <Route path="outsourcing" element={<OutsourcingCompanies />} />
           <Route path="attendance" element={<Attendance />} />
+          <Route path="leave" element={<LeaveRequests />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Route>
 

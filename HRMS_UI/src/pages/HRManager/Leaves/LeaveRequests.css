@@ -1,0 +1,529 @@
+.hr-leave-reqeust-container {
+  padding: 40px;
+  background-color: #f8fafc;
+  min-height: 100vh;
+  font-family: 'Inter', sans-serif;
+  color: #1a202c;
+  animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Header Section */
+.hr-leave-reqeust-header {
+  margin-bottom: 40px;
+}
+
+.hr-leave-reqeust-header h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #1a202c;
+  margin: 0 0 8px 0;
+  letter-spacing: -0.02em;
+}
+
+.hr-leave-reqeust-header p {
+  font-size: 1rem;
+  color: #4a5568;
+  max-width: 600px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Common Section Header */
+.hr-leave-reqeust-section-header {
+  margin-bottom: 24px;
+}
+
+.hr-leave-reqeust-subtitle {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #0B8255;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.hr-leave-reqeust-header-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.hr-leave-reqeust-header-flex h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+  color: #1a202c;
+}
+
+/* Team on Leave Today - Telegram overlapping style */
+.hr-leave-reqeust-team-section {
+  margin-bottom: 48px;
+}
+
+.hr-leave-reqeust-calendar-link {
+  background: none;
+  border: none;
+  color: #0B8255;
+  font-weight: 600;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.hr-leave-reqeust-calendar-link:hover {
+  text-decoration: underline;
+}
+
+.hr-leave-reqeust-stories-container {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  padding: 10px 0;
+  cursor: pointer;
+  transition: gap 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.hr-leave-reqeust-stories-container.overlapped {
+  gap: -20px; /* makes them overlap slightly if negative margin applied to items instead */
+}
+
+.hr-leave-reqeust-story-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: all 0.4s ease;
+  z-index: 1;
+}
+
+.hr-leave-reqeust-stories-container.overlapped .hr-leave-reqeust-story-item + .hr-leave-reqeust-story-item {
+  margin-left: -32px; /* Overlap effect */
+  transform: scale(0.95);
+}
+
+.hr-leave-reqeust-stories-container.overlapped:hover .hr-leave-reqeust-story-item + .hr-leave-reqeust-story-item {
+  margin-left: -16px;
+}
+
+.hr-leave-reqeust-stories-container.dispersed .hr-leave-reqeust-story-item + .hr-leave-reqeust-story-item {
+  margin-left: 0;
+  transform: scale(1);
+}
+
+.hr-leave-reqeust-stories-container.dispersed {
+  gap: 24px;
+}
+
+.hr-leave-reqeust-story-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  padding: 4px;
+  background: #fff;
+  border: 2px solid #0B8255; /* The solid green ring */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+  transition: transform 0.2s ease, border-color 0.2s;
+  cursor: pointer;
+}
+
+.hr-leave-reqeust-stories-container.overlapped .hr-leave-reqeust-story-avatar {
+  box-shadow: -4px 0 10px rgba(0,0,0,0.1); /* Left shadow for overlap depth */
+}
+
+.hr-leave-reqeust-story-avatar:hover {
+  transform: scale(1.05);
+  border-color: #0fb373;
+}
+
+.hr-leave-reqeust-story-avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #cbd5e0;
+}
+
+.hr-leave-reqeust-story-info {
+  text-align: center;
+  transition: opacity 0.3s ease;
+}
+
+.hr-leave-reqeust-stories-container.overlapped .hr-leave-reqeust-story-info {
+  opacity: 0; /* Hide text when overlapped */
+  pointer-events: none;
+}
+
+.hr-leave-reqeust-stories-container.dispersed .hr-leave-reqeust-story-info {
+  opacity: 1;
+}
+
+.hr-leave-reqeust-story-name {
+  display: block;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #1a202c;
+  margin-bottom: 2px;
+}
+
+.hr-leave-reqeust-story-type {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #0B8255;
+}
+
+.hr-leave-reqeust-no-leave {
+  color: #718096;
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+/* Pending Requests Section */
+.hr-leave-reqeust-sort-btn {
+  background: #edf2f7;
+  border: none;
+  border-radius: 20px;
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #4a5568;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.hr-leave-reqeust-sort-btn:hover {
+  background: #e2e8f0;
+}
+
+/* Inheriting .modern-data-table from global styles */
+
+/* Staff Column */
+.hr-leave-reqeust-staff-col {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.hr-leave-reqeust-avatar-initials {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #bbf7d0; /* light green */
+  color: #166534; /* dark green */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.hr-leave-reqeust-staff-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.hr-leave-reqeust-staff-name {
+  font-weight: 600;
+  color: #1a202c;
+  font-size: 0.95rem;
+  margin-bottom: 2px;
+}
+
+.hr-leave-reqeust-staff-role {
+  color: #718096;
+  font-size: 0.8rem;
+}
+
+/* Leave Type Pills */
+.hr-leave-reqeust-type-pill {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: inline-block;
+}
+
+.type-annual {
+  background: #e6fffa;
+  color: #047481;
+}
+
+.type-medical {
+  background: #fff5f5;
+  color: #c53030;
+}
+
+.type-compensatory {
+  background: #edf2f7;
+  color: #4a5568;
+}
+
+.type-other {
+  background: #ebf4ff;
+  color: #3182ce;
+}
+
+/* Date Range Col */
+.hr-leave-reqeust-date-col {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: #2d3748;
+}
+
+.hr-leave-reqeust-date-arrow {
+  color: #a0aec0;
+}
+
+.hr-leave-reqeust-days-count {
+  color: #718096;
+  font-size: 0.8rem;
+  margin-left: 4px;
+}
+
+/* Status Col */
+.hr-leave-reqeust-status-col {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hr-leave-reqeust-status-dot.pending {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ecc94b;
+  box-shadow: 0 0 0 2px #fefcbf;
+}
+
+.hr-leave-reqeust-status-col span {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #2d3748;
+}
+
+/* Actions Col */
+.th-actions {
+  text-align: right;
+}
+
+.hr-leave-reqeust-actions-col {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.hr-leave-reqeust-btn-outline {
+  background: transparent;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 6px 16px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #0B8255;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.hr-leave-reqeust-btn-outline:hover {
+  background: #f0fff4;
+  border-color: #9ae6b4;
+}
+
+.hr-leave-reqeust-btn-ghost {
+  background: transparent;
+  border: none;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #718096;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.hr-leave-reqeust-btn-ghost:hover {
+  color: #e53e3e;
+}
+
+.hr-leave-reqeust-btn-solid {
+  background: #0B8255;
+  border: none;
+  border-radius: 20px;
+  padding: 6px 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  transition: transform 0.2s, background 0.2s;
+}
+
+.hr-leave-reqeust-btn-solid:hover {
+  background: #0a734a;
+  transform: translateY(-1px);
+}
+
+.hr-leave-reqeust-empty-state {
+  text-align: center;
+  color: #718096;
+  padding: 40px !important;
+}
+
+/* Pagination Footer */
+.hr-leave-reqeust-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  border-top: 1px solid #edf2f7;
+  font-size: 0.85rem;
+  color: #718096;
+}
+
+.hr-leave-reqeust-page-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.hr-leave-reqeust-page-controls button {
+  background: transparent;
+  border: none;
+  color: #a0aec0;
+  cursor: default; /* Disabled state UI */
+}
+
+/* Telegram Story Modal - Keep keeping same animation */
+.story-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(8px);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  animation: storyFadeIn 0.3s ease-out;
+}
+
+@keyframes storyFadeIn {
+  from { opacity: 0; backdrop-filter: blur(0px); }
+  to { opacity: 1; backdrop-filter: blur(8px); }
+}
+
+.story-close-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+  z-index: 10000;
+}
+
+.story-close-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.story-modal-content {
+  position: relative;
+  width: 100%;
+  max-width: 450px;
+  height: 80vh;
+  background: #111;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+  display: flex;
+  flex-direction: column;
+  animation: storyZoomIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes storyZoomIn {
+  from { transform: scale(0.8) translateY(20px); opacity: 0; }
+  to { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.story-progress-bar {
+  position: absolute;
+  top: 10px; left: 10px; right: 10px;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+  z-index: 10;
+}
+
+.story-progress-fill {
+  height: 100%;
+  background: white;
+  border-radius: 2px;
+  width: 0%;
+  animation: progressFill 5s linear forwards;
+}
+
+@keyframes progressFill {
+  to { width: 100%; }
+}
+
+.story-user-header {
+  position: absolute;
+  top: 24px; left: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 10;
+  color: white;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+}
+
+.story-small-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid white;
+}
+
+.story-user-header span {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.story-main-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* Add subtle dispersed effect via scale/filter on load */
+  animation: imagePop 0.5s ease-out;
+}
+
+@keyframes imagePop {
+  0% { transform: scale(1.1); filter: blur(4px); }
+  100% { transform: scale(1); filter: blur(0); }
+}

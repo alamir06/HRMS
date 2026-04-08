@@ -17,20 +17,20 @@ export const departmentValidationSchema = {
     departmentName: z
       .string()
       .min(1, "Department name is required")
-      .max(255, "Department name must be less than 255 characters"),
+      .max(150, "Department name must be less than 150 characters"),
     departmentNameAmharic: z
       .string()
-      .max(255, "Amharic department name must be less than 255 characters")
+      .max(150, "Amharic department name must be less than 150 characters")
       .optional()
       .nullable(),
     departmentDescription: z
       .string()
-      .max(1000, "Description must be less than 1000 characters")
+      .max(500, "Description must be less than 500 characters")
       .optional()
       .nullable(),
     departmentDescriptionAmharic: z
       .string()
-      .max(1000, "Amharic description must be less than 1000 characters")
+      .max(500, "Amharic description must be less than 500 characters")
       .optional()
       .nullable(),
     parentDepartmentId: z.string().uuid("Invalid parent department ID format").optional().nullable(),
@@ -83,7 +83,7 @@ export const departmentValidationSchema = {
     departmentName: z
       .string()
       .min(1, "Department name is required")
-      .max(255, "Department name must be less than 255 characters")
+      .max(155, "Department name must be less than 255 characters")
       .optional(),
     departmentNameAmharic: z
       .string()
@@ -92,12 +92,12 @@ export const departmentValidationSchema = {
       .nullable(),
     departmentDescription: z
       .string()
-      .max(1000, "Description must be less than 1000 characters")
+      .max(500, "Description must be less than 1000 characters")
       .optional()
       .nullable(),
     departmentDescriptionAmharic: z
       .string()
-      .max(1000, "Amharic description must be less than 1000 characters")
+      .max(10100, "Amharic description must be less than 1000 characters")
       .optional()
       .nullable(),
     parentDepartmentId: z.string().uuid("Invalid parent department ID format").optional().nullable(),
@@ -132,7 +132,6 @@ export const departmentValidationSchema = {
           message: "collegeId must be omitted for administrative departments",
         });
       }
-      // parentDepartmentId is allowed (nullable for top-level)
     }
   }),
 
@@ -141,8 +140,6 @@ export const departmentValidationSchema = {
   }).strict(),
 };
 
-// Conditional rules enforced at application level to give clear errors before DB triggers
-// Create: require collegeId when departmentType === 'ACADEMIC'; forbid collegeId for non-academic
 departmentValidationSchema.create = departmentValidationSchema.create.superRefine((data, ctx) => {
   const type = data.departmentType;
   const hasCollege = Boolean(data.collegeId);
@@ -166,7 +163,6 @@ departmentValidationSchema.create = departmentValidationSchema.create.superRefin
   }
 });
 
-// Update: enforce consistency only when both fields are present in the payload
 departmentValidationSchema.update = departmentValidationSchema.update.superRefine((data, ctx) => {
   if ("departmentType" in data && data.departmentType === "ACADEMIC") {
     if (!("collegeId" in data) || !data.collegeId) {

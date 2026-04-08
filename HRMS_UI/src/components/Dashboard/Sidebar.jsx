@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import './Sidebar.css';
 
-const Sidebar = () => {
+const Sidebar = ({ onOpenProfile }) => {
   const [authUser, setAuthUser] = useState(null);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -92,7 +92,7 @@ const Sidebar = () => {
 
       {/* Moved from top to bottom fixed footer space */}
       <div className="sidebar-footer">
-        <div className="user-profile-widget">
+        <div className="user-profile-widget" onClick={() => onOpenProfile && onOpenProfile()} style={{ cursor: 'pointer' }}>
           <div className="user-avatar" title={isCollapsed ? authUser?.name || 'Admin User' : undefined}>
             <img 
               src={

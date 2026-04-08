@@ -4,7 +4,7 @@ import { Bell, Settings, Moon, Sun, User, Globe, LogOut } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import './Header.css';
 
-const Header = () => {
+const Header = ({ onOpenProfile }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [isDarkTheme, setIsDarkTheme] = useState(
@@ -94,7 +94,7 @@ const Header = () => {
           
           {dropdownOpen && (
             <div className="settings-dropdown-menu">
-              <button className="dropdown-item">
+              <button className="dropdown-item" onClick={() => { setDropdownOpen(false); onOpenProfile && onOpenProfile(); }}>
                 <User size={16} /> Profile
               </button>
               <button className="dropdown-item" onClick={toggleLanguage}>
