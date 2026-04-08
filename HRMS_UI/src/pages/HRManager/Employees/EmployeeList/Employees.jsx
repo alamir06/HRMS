@@ -2,10 +2,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Search, Plus, Pencil, Trash2, Eye, ChevronLeft, ChevronRight, ArrowUpDown, ArrowDown, ArrowUp } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
-import { employeeService } from '../../services/employeeService';
-import ConfirmModal from '../../components/common/ConfirmModal';
-import EmployeeWizard from './EmployeeWizard';
-import EmployeeProfileModal from './EmployeeProfile';
+import { employeeService } from '../../../../services/employeeService';
+import ConfirmModal from '../../../../components/common/ConfirmModal';
+import EmployeeWizard from '../EmployeeWizard/EmployeeWizard';
+import EmployeeProfileModal from '../EmployeeProfile/EmployeeProfile';
 import './Employees.css';
 
 const Employees = () => {
@@ -115,13 +115,13 @@ const Employees = () => {
           <input 
             id="searchEmployee" 
             type="text" 
-            placeholder="Search employees by name, email, or ID..." 
+            placeholder={i18n.language === 'am' ? 'ሰራተኞችን በስም፣ በኢሜል ወይም በመለያ ያግኙ...' : 'Search employees by name, email, or ID...'} 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </label>
         <button className="btn-add-employee" onClick={() => { setEditEmployeeId(null); setIsWizardOpen(true); }}>
-          <Plus size={18} /> Add Employee
+          <Plus size={18} /> {i18n.language === 'am' ? 'ሰራተኛ አክል' : 'Add Employee'}
         </button>
       </div>
 
@@ -130,27 +130,33 @@ const Employees = () => {
           <table className="modern-data-table">
             <thead>
               <tr>
-                <th>Profile</th>
-                <th className="sortable-header" onClick={() => handleSort('firstName')}>
-                  <div className="th-content">Name {renderSortIcon('firstName')}</div>
-                </th>
-                <th>Employment Type</th>
-                <th>Role/Department</th>
-                <th>Status</th>
+                <th>{i18n.language === 'am' ? 'መገለጫ' : 'Profile'}</th>
+                {i18n.language === 'am' ? (
+                  <th className="sortable-header" onClick={() => handleSort('firstNameAmharic')}>
+                    <div className="th-content">ስም {renderSortIcon('firstNameAmharic')}</div>
+                  </th>
+                ) : (
+                  <th className="sortable-header" onClick={() => handleSort('firstName')}>
+                    <div className="th-content">Name {renderSortIcon('firstName')}</div>
+                  </th>
+                )}
+                <th>{i18n.language === 'am' ? 'የቅጥር ዓይነት' : 'Employment Type'}</th>
+                <th>{i18n.language === 'am' ? 'ሚና/ዲፓርትመንት' : 'Role/Department'}</th>
+                <th>{i18n.language === 'am' ? 'ሁኔታ' : 'Status'}</th>
                 <th className="sortable-header" onClick={() => handleSort('hireDate')}>
-                  <div className="th-content">Hire Date {renderSortIcon('hireDate')}</div>
+                  <div className="th-content">{i18n.language === 'am' ? 'የተቀጠረበት ቀን' : 'Hire Date'} {renderSortIcon('hireDate')}</div>
                 </th>
-                <th>Actions</th>
+                <th>{i18n.language === 'am' ? 'ድርጊቶች' : 'Actions'}</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan="7" style={{ textAlign: 'center' }}>Loading...</td>
+                  <td colSpan="7" style={{ textAlign: 'center' }}>{i18n.language === 'am' ? 'ሰራተኞችን በመጫን ላይ...' : 'Loading...'}</td>
                 </tr>
               ) : employees.length === 0 ? (
                 <tr>
-                  <td colSpan="7" style={{ textAlign: 'center' }}>No employees found.</td>
+                  <td colSpan="7" style={{ textAlign: 'center' }}>{i18n.language === 'am' ? 'ምንም ሰራተኛ አልተገኘም.' : 'No employees found.'}</td>
                 </tr>
               ) : (
                 employees.map(emp => (
@@ -169,7 +175,7 @@ const Employees = () => {
                          ? `${emp.firstNameAmharic} ${emp.lastNameAmharic || ''}`
                          : `${emp.firstName} ${emp.lastName}`}
                        <span style={{display: 'block', fontSize: '0.75rem', color: '#6b7280', fontWeight: 'normal'}}>
-                         {emp.officialEmail || emp.personalEmail || "No Email"}
+                         {emp.officialEmail || emp.personalEmail || (i18n.language === 'am' ? "ኢሜል አልተገኘም" : "No Email")}
                        </span>
                     </td>
                     <td>
@@ -178,23 +184,27 @@ const Employees = () => {
                       </span>
                     </td>
                     <td>
-                      {emp.departmentName || "No Department"}
+                      {emp.departmentName || (i18n.language === 'am' ? "ዲፓርትመንት አልተመደበም" : "No Department")}
                     </td>
                     <td>
                       <span className={`badge ${emp.employmentStatus === 'ACTIVE' ? 'badge-active' : 'badge-inactive'}`}>
-                        {emp.employmentStatus || 'ACTIVE'}
+                        {emp.employmentStatus === 'ACTIVE' 
+                          ? (i18n.language === 'am' ? 'ገባሪ' : 'ACTIVE')
+                          : emp.employmentStatus === 'INACTIVE'
+                            ? (i18n.language === 'am' ? 'የማይሰራ' : 'INACTIVE')
+                            : (emp.employmentStatus || 'ACTIVE')}
                       </span>
                     </td>
-                    <td>{emp.hireDate ? new Date(emp.hireDate).toLocaleDateString() : 'N/A'}</td>
+                    <td>{emp.hireDate ? new Date(emp.hireDate).toLocaleDateString() : (i18n.language === 'am' ? 'አልተገኘም' : 'N/A')}</td>
                     <td>
                       <div className="table-actions">
-                        <button className="action-btn-light" onClick={() => viewDetails(emp.id)} title="View Details">
+                        <button className="action-btn-light" onClick={() => viewDetails(emp.id)} title={i18n.language === 'am' ? 'ዝርዝሮችን ይመልከቱ' : "View Details"}>
                           <Eye size={14} />
                         </button>
-                        <button className="action-btn-light" onClick={() => triggerEdit(emp)} title="Edit">
+                        <button className="action-btn-light" onClick={() => triggerEdit(emp)} title={i18n.language === 'am' ? 'አስተካክል' : "Edit"}>
                           <Pencil size={14} />
                         </button>
-                        <button className="action-btn-light action-btn-danger" onClick={() => triggerDelete(emp)} title="Delete">
+                        <button className="action-btn-light action-btn-danger" onClick={() => triggerDelete(emp)} title={i18n.language === 'am' ? 'ሰርዝ' : "Delete"}>
                           <Trash2 size={14} />
                         </button>
                       </div>
@@ -208,7 +218,7 @@ const Employees = () => {
 
         <div className="table-footer">
           <div className="page-limit-selector">
-            <span>Show</span>
+            <span>{i18n.language === 'am' ? 'አሳይ' : 'Show'}</span>
             <select className="limit-dropdown" value={limit} onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}>
               <option value={5}>5</option>
               <option value={10}>10</option>
@@ -218,11 +228,15 @@ const Employees = () => {
               <option value={50}>50</option>
               <option value={100}>100</option>
             </select>
-            <span>entries</span>
+            <span>{i18n.language === 'am' ? 'ገፆች' : 'entries'}</span>
           </div>
 
           <div className="pagination-controls">
-            <span>Showing {(page - 1) * limit + 1} to {Math.min(page * limit, pagination.total)} of {pagination.total}</span>
+            <span>
+              {i18n.language === 'am' 
+                 ? `ከ ${(page - 1) * limit + 1} እስከ ${Math.min(page * limit, pagination.total)} ከ ${pagination.total} ይታያል`
+                 : `Showing ${(page - 1) * limit + 1} to ${Math.min(page * limit, pagination.total)} of ${pagination.total}`}
+            </span>
             <div style={{ display: 'flex', gap: '0.5rem' }}>
                <button className="page-btn" onClick={() => setPage(page - 1)} disabled={page <= 1}><ChevronLeft size={16} /></button>
                <button className="page-btn" onClick={() => setPage(page + 1)} disabled={page >= pagination.pages}><ChevronRight size={16} /></button>
@@ -257,9 +271,13 @@ const Employees = () => {
 
       <ConfirmModal 
         isOpen={deleteModalOpen}
-        title="Delete Employee"
-        message={`Are you sure you want to permanently delete "${employeeToDelete?.firstName} ${employeeToDelete?.lastName}"? This action cannot be undone.`}
-        confirmText="Confirm Delete"
+        title={i18n.language === 'am' ? "ሰራተኛ ሰርዝ" : "Delete Employee"}
+        message={
+          i18n.language === 'am' 
+            ? `"${employeeToDelete?.firstNameAmharic || employeeToDelete?.firstName} ${employeeToDelete?.lastNameAmharic || employeeToDelete?.lastName}" ን በቋሚነት መሰረዝ እንደሚፈልጉ እርግጠኛ ነዎት? ይህ እርምጃ ሊቀለበስ አይችልም።`
+            : `Are you sure you want to permanently delete "${employeeToDelete?.firstName} ${employeeToDelete?.lastName}"? This action cannot be undone.`
+        }
+        confirmText={i18n.language === 'am' ? "መሰረዙን ያረጋግጡ" : "Confirm Delete"}
         isDestructive={true}
         onConfirm={confirmDelete}
         onCancel={() => setDeleteModalOpen(false)}

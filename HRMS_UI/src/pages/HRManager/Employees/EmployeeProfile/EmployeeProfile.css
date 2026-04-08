@@ -223,14 +223,14 @@
 }
 
 .data-group label {
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .data-group span {
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   color: var(--text-primary);
   font-weight: 500;
 }
@@ -294,12 +294,12 @@
 }
 
 .doc-info strong {
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   color: var(--text-primary);
 }
 
 .doc-info span {
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   color: var(--text-secondary);
 }
 

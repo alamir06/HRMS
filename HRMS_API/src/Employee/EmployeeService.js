@@ -2,10 +2,15 @@ import pool from "../../config/database.js";
 import { CrudService } from "../Commons/CommonServices.js";
 import { fileUploadService } from "../../Commons/FileUploadService.js";
 import { v4 as uuidv4 } from "uuid";
-
+import bcrypt from "bcryptjs";
+import { sendEmail } from "../../utils/emailService.js";
 export class EmployeeService extends CrudService {
   constructor() {
-    super("EMPLOYEE", "id", true);
+    super({
+      tableName: "employee",
+      idField: "id",
+      uuidEnabled: true
+    });
   }
 
   async assignAsDepartmentManagerIfNeeded(connection, employeeId) {
@@ -190,12 +195,112 @@ export class EmployeeService extends CrudService {
           outsource.serviceType,
         ]);
       }
+      
+      //Group one 5. Auto-generate leave balances for the current year
+      const currentYear = new Date().getFullYear();
+      const leaveAllocations = [
+        { type: 'ANNUAL', days: 20 },
+        { type: 'SICK', days: 14 },
+        { type: 'MEDICAL', days: 30 },
+        { type: 'PERSONAL', days: 5 },
+        { type: 'MATERNITY', days: 90 },
+        { type: 'PATERNITY', days: 5 },
+        { type: 'ORGANIZATION_LEAVE', days: 0 }
+      ];
+
+      const leaveQuery = `
+        INSERT INTO leaveBalance (
+          employeeId, leaveType, year, totalAllocatedDays, remainingDays
+        ) VALUES (UUID_TO_BIN(?), ?, ?, ?, ?)
+      `;
+      
+      for (const leave of leaveAllocations) {
+        await connection.query(leaveQuery, [
+          employeeUUID, 
+          leave.type, 
+          currentYear, 
+          leave.days, 
+          leave.days
+        ]);
+      }
+
+      // Auto-generate User Account for ACADEMIC and ADMINISTRATIVE employees
+      let rawPassword = null;
+      if (employeeData.employeeType === "ACADEMIC" || employeeData.employeeType === "ADMINISTRATIVE") {
+        const username = generatedEmployeeCode;
+        const suffix = Math.floor(1000 + Math.random() * 9000);
+        rawPassword = `${username}@${suffix}`;
+        
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(rawPassword, salt);
+
+        const userQuery = `
+          INSERT INTO users (
+            id, employeeId, username, systemRole, passwordHash, mustChangePassword, isActive
+          ) VALUES (UUID_TO_BIN(UUID()), UUID_TO_BIN(?), ?, 'EMPLOYEE', ?, TRUE, TRUE)
+        `;
+        await connection.query(userQuery, [
+          employeeUUID,
+          username,
+          hashedPassword
+        ]);
+
+        const employeeEmail = (personal && personal.personalEmail) || (employment && employment.officialEmail);
+        if (employeeEmail) {
+          try {
+            const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+            const emailHtml = `
+              <div style="font-family: 'Inter', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -2px rgba(0, 0, 0, 0.05);">
+                <div style="background-color: #0b8255; padding: 24px; text-align: center;">
+                  <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600;">Welcome to HRMS!</h1>
+                </div>
+                <div style="padding: 32px; color: #111827;">
+                  <p style="font-size: 16px; margin-bottom: 24px;">Hello <b>${personal.firstName}</b>,</p>
+                  <p style="font-size: 16px; color: #4b5563; line-height: 1.5; margin-bottom: 24px;">
+                    Your employee account has been successfully created. You can now log into the Injibara University HRMS portal using the following credentials:
+                  </p>
+                  <div style="background-color: #f8faf9; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+                    <p style="margin: 0 0 8px 0; font-size: 15px;"><strong>Username:</strong> ${username}</p>
+                    <p style="margin: 0; font-size: 15px;"><strong>Password:</strong> ${rawPassword}</p>
+                  </div>
+                  <p style="font-size: 14px; color: #dc2626; margin-bottom: 32px; font-style: italic;">
+                    * Please note: You will be required to change your password immediately upon your first login.
+                  </p>
+                  <div style="text-align: center;">
+                    <a href="${frontendUrl}/login" style="display: inline-block; background-color: #0b8255; color: #ffffff; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">Login to HRMS</a>
+                  </div>
+                </div>
+                <div style="background-color: #f8faf9; padding: 16px; text-align: center; border-top: 1px solid #e5e7eb;">
+                  <p style="margin: 0; font-size: 13px; color: #6b7280;">Best Regards,<br/><b>HR Team</b><br/>Injibara University</p>
+                </div>
+              </div>
+            `;
+
+            await sendEmail({
+              to: employeeEmail,
+              subject: "Welcome to HRMS - Your Login Credentials",
+              html: emailHtml,
+              text: `Hello ${personal.firstName},\n\nYour employee account has been successfully created. You can now log into the HRMS portal (${frontendUrl}/login) using the following credentials:\n\nUsername: ${username}\nPassword: ${rawPassword}\n\nPlease note: You will be required to change your password upon your first login.\n\nBest Regards,\nHR Team`
+            });
+          } catch (emailErr) {
+            console.error("Failed to send welcome email:", emailErr);
+          }
+        }
+      }
 
       // If designation exists for this employee, assign as department manager when applicable
       await this.assignAsDepartmentManagerIfNeeded(connection, employeeUUID);
       await connection.commit();
+      
       //Group one: Return basic employee data
-      return await this.getEmployeeBasic(employeeUUID);
+      const basicData = await this.getEmployeeBasic(employeeUUID);
+      if (rawPassword) {
+        basicData.credentials = {
+          username: generatedEmployeeCode,
+          password: rawPassword
+        };
+      }
+      return basicData;
     } catch (error) {
       await connection.rollback();
       throw error;

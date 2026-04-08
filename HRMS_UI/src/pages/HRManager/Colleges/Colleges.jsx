@@ -1,12 +1,14 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Search, Plus, Pencil, Trash2, X, ChevronLeft, ChevronRight, ArrowUpDown, ArrowDown, ArrowUp } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'react-toastify';
-import { collegeService } from '../../services/collegeService';
-import CommonForm from '../../components/common/CommonForm';
-import ConfirmModal from '../../components/common/ConfirmModal';
+import { collegeService } from '../../../services/collegeService';
+import CommonForm from '../../../components/common/CommonForm';
+import ConfirmModal from '../../../components/common/ConfirmModal';
 import './Colleges.css';
 
 const Colleges = () => {
+  const { t, i18n } = useTranslation();
   const [colleges, setColleges] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   
@@ -94,8 +96,18 @@ const Colleges = () => {
   const handleFormSubmit = async (formData) => {
     try {
       setIsSubmitting(true);
+      
+      const payload = { ...formData };
+      if (i18n.language === 'am') {
+        payload.collegeName = payload.collegeName || payload.collegeNameAmharic;
+        payload.collegeDescription = payload.collegeDescription || payload.collegeDescriptionAmharic;
+      } else {
+        payload.collegeNameAmharic = payload.collegeNameAmharic || payload.collegeName;
+        payload.collegeDescriptionAmharic = payload.collegeDescriptionAmharic || payload.collegeDescription;
+      }
+
       if (editingCollege) {
-        const res = await collegeService.updateCollege(editingCollege.id, formData);
+        const res = await collegeService.updateCollege(editingCollege.id, payload);
         if (res.success) {
           toast.success("College updated successfully");
           closeFormModal();
@@ -104,7 +116,7 @@ const Colleges = () => {
             toast.error(res.error || "Update failed");
         }
       } else {
-        const res = await collegeService.createCollege(formData);
+        const res = await collegeService.createCollege(payload);
         if (res.success) {
           toast.success("College created successfully");
           closeFormModal();
@@ -143,19 +155,26 @@ const Colleges = () => {
     }
   };
 
-  // CommonForm structure
-  const collegeFormFields = [
-    { name: 'collegeName', label: 'College Name', type: 'text', required: true },
-    { name: 'collegeNameAmharic', label: 'Name (Amharic)', type: 'text' },
-    { name: 'collegeDescription', label: 'Description', type: 'textarea' },
-    { name: 'collegeDescriptionAmharic', label: 'Description (Amharic)', type: 'textarea' }
-  ];
+  // CommonForm structure strictly following language preference
+  const collegeFormFields = useMemo(() => {
+    if (i18n.language === 'am') {
+      return [
+        { name: 'collegeNameAmharic', label: 'የኮሌጅ ስም (Amharic Name)', type: 'text', required: true },
+        { name: 'collegeDescriptionAmharic', label: 'መግለጫ (Amharic Description)', type: 'textarea' }
+      ];
+    }
+    // Default to English
+    return [
+      { name: 'collegeName', label: 'College Name', type: 'text', required: true },
+      { name: 'collegeDescription', label: 'Description', type: 'textarea' }
+    ];
+  }, [i18n.language]);
 
   return (
     <div className="colleges-container">
       {/* Search and Action Toolbar */}
       <div className="colleges-top-toolbar">
-        <label className="search-wrapper" htmlFor="searchCollege">
+        <label className="college-search-wrapper" htmlFor="searchCollege">
           <Search size={18} color="var(--text-secondary)" />
           <input 
             id="searchCollege" 
@@ -172,19 +191,27 @@ const Colleges = () => {
 
       {/* Main Data Table */}
       <div className="colleges-table-card">
-        <div className="table-responsive-wrapper">
-          <table className="modern-data-table">
+        <div className="college-table-responsive-wrapper">
+          <table className="college-modern-data-table">
             <thead>
               <tr>
-                <th className="sortable-header" onClick={() => handleSort('collegeName')}>
-                  <div className="th-content">College Name {renderSortIcon('collegeName')}</div>
-                </th>
-                <th className="sortable-header" onClick={() => handleSort('collegeNameAmharic')}>
-                  <div className="th-content">Name (Amharic) {renderSortIcon('collegeNameAmharic')}</div>
-                </th>
-                <th>Description</th>
-                <th className="sortable-header" onClick={() => handleSort('createdAt')}>
-                  <div className="th-content">Created Date {renderSortIcon('createdAt')}</div>
+                {i18n.language === 'am' ? (
+                  <>
+                    <th className="college-sortable-header" onClick={() => handleSort('collegeNameAmharic')}>
+                      <div className="college-th-content">የኮሌጅ ስም {renderSortIcon('collegeNameAmharic')}</div>
+                    </th>
+                    <th>መግለጫ</th>
+                  </>
+                ) : (
+                  <>
+                    <th className="college-sortable-header" onClick={() => handleSort('collegeName')}>
+                      <div className="college-th-content">College Name {renderSortIcon('collegeName')}</div>
+                    </th>
+                    <th>Description</th>
+                  </>
+                )}
+                <th className="college-sortable-header" onClick={() => handleSort('createdAt')}>
+                  <div className="college-th-content">Created Date {renderSortIcon('createdAt')}</div>
                 </th>
                 <th>Actions</th>
               </tr>
@@ -192,27 +219,37 @@ const Colleges = () => {
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan="5" style={{ textAlign: 'center' }}>Loading...</td>
+                  <td colSpan="4" style={{ textAlign: 'center' }}>Loading...</td>
                 </tr>
               ) : colleges.length === 0 ? (
                 <tr>
-                  <td colSpan="5" style={{ textAlign: 'center' }}>No colleges found.</td>
+                  <td colSpan="4" style={{ textAlign: 'center' }}>No colleges found.</td>
                 </tr>
               ) : (
                 colleges.map(college => (
                   <tr key={college.id}>
-                    <td className="col-primary-text">{college.collegeName}</td>
-                    <td>{college.collegeNameAmharic || '-'}</td>
-                    <td className="col-description" title={college.collegeDescription}>
-                      {college.collegeDescription || '-'}
-                    </td>
+                    {i18n.language === 'am' ? (
+                      <>
+                        <td className="college-primary-text">{college.collegeNameAmharic || college.collegeName}</td>
+                        <td className="college-description" title={college.collegeDescriptionAmharic || college.collegeDescription}>
+                          {college.collegeDescriptionAmharic || college.collegeDescription || '-'}
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        <td className="college-primary-text">{college.collegeName}</td>
+                        <td className="college-description" title={college.collegeDescription}>
+                          {college.collegeDescription || '-'}
+                        </td>
+                      </>
+                    )}
                     <td>{new Date(college.createdAt).toLocaleDateString()}</td>
                     <td>
-                      <div className="table-actions">
-                        <button className="action-btn-light" onClick={() => handleOpenEdit(college)} title="Edit">
+                      <div className="college-table-actions">
+                        <button className="college-action-btn-light" onClick={() => handleOpenEdit(college)} title="Edit">
                           <Pencil size={14} />
                         </button>
-                        <button className="action-btn-light action-btn-danger" onClick={() => triggerDelete(college)} title="Delete">
+                        <button className="college-action-btn-light college-action-btn-danger" onClick={() => triggerDelete(college)} title="Delete">
                           <Trash2 size={14} />
                         </button>
                       </div>
@@ -225,11 +262,11 @@ const Colleges = () => {
         </div>
 
         {/* Footer Toolbar: Page Limit & Pagination */}
-        <div className="table-footer">
-          <div className="page-limit-selector">
+        <div className="college-table-footer">
+          <div className="college-page-limit-selector">
             <span>Show</span>
             <select 
-              className="limit-dropdown" 
+              className="college-limit-dropdown" 
               value={limit} 
               onChange={(e) => {
                 setLimit(Number(e.target.value));
@@ -243,18 +280,18 @@ const Colleges = () => {
             <span>entries</span>
           </div>
 
-          <div className="pagination-controls">
+          <div className="college-pagination-controls">
             <span>Showing {(page - 1) * limit + 1} to {Math.min(page * limit, pagination.total)} of {pagination.total}</span>
             <div style={{ display: 'flex', gap: '0.5rem' }}>
                <button 
-                className="page-btn" 
+                className="college-page-btn" 
                 onClick={() => setPage(page - 1)} 
                 disabled={page <= 1}
               >
                 <ChevronLeft size={16} />
               </button>
               <button 
-                className="page-btn" 
+                className="college-page-btn" 
                 onClick={() => setPage(page + 1)} 
                 disabled={page >= pagination.pages}
               >
@@ -268,10 +305,10 @@ const Colleges = () => {
       {/* Form Modal manually overlaid with backdrop */}
       {isFormModalOpen && (
         <div className="modal-overlay" onClick={closeFormModal}>
-          <div className="modal-form-wrapper" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-form-header">
+          <div className="college-modal-form-wrapper" onClick={(e) => e.stopPropagation()}>
+            <div className="college-modal-form-header">
               <h3>{editingCollege ? 'Edit College' : 'Add New College'}</h3>
-              <button className="close-btn" onClick={closeFormModal}><X size={20} /></button>
+              <button className="college-close-btn" onClick={closeFormModal}><X size={20} /></button>
             </div>
             
              <CommonForm 

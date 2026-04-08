@@ -13,10 +13,10 @@ import {
   ArrowUp,
   BarChart3
 } from 'lucide-react';
-import { employeeService } from '../../services/employeeService';
-import { benefitService } from '../../services/benefitService';
-import CommonForm from '../../components/common/CommonForm';
-import ConfirmModal from '../../components/common/ConfirmModal';
+import { employeeService } from '../../../services/employeeService';
+import { benefitService } from '../../../services/benefitService';
+import CommonForm from '../../../components/common/CommonForm';
+import ConfirmModal from '../../../components/common/ConfirmModal';
 import './Benefits.css';
 
 const BENEFIT_TYPES = ['Health', 'Retirement', 'Insurance', 'Wellness', 'Other'];

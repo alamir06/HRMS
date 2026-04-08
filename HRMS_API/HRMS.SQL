@@ -266,22 +266,10 @@ CREATE TABLE employeeShift (
 );
 
 -- LEAVE MANAGEMENT
-CREATE TABLE leaveTypes (
-    id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
-    leaveName VARCHAR(100) NOT NULL,
-    leaveNameAmharic VARCHAR(100),
-    leaveDescription TEXT,
-    leaveDescriptionAmharic TEXT,
-    maxDaysPerYear INT NOT NULL,
-    carryForwardDays INT DEFAULT 0,
-    requiresApproval BOOLEAN DEFAULT TRUE,
-    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
 CREATE TABLE leaveBalance (
     id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
     employeeId BINARY(16) NOT NULL,
-    leaveTypeId BINARY(16) NOT NULL,
+    leaveType ENUM('ANNUAL', 'SICK', 'MEDICAL', 'PERSONAL', 'MATERNITY', 'PATERNITY', 'ORGANIZATION_LEAVE') NOT NULL,
     year INT NOT NULL,
     totalAllocatedDays INT NOT NULL,
     usedDays INT DEFAULT 0,
@@ -289,18 +277,19 @@ CREATE TABLE leaveBalance (
     carryForwardDays INT DEFAULT 0,
     createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY uniqueEmployeeLeaveYear (employeeId, leaveTypeId, year)
+    UNIQUE KEY uniqueEmployeeLeaveYear (employeeId, leaveType, year)
 );
 
 CREATE TABLE leaveRequest (
     id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
     employeeId BINARY(16) NOT NULL,
-    leaveTypeId BINARY(16) NOT NULL,
+    leaveType ENUM('ANNUAL', 'SICK', 'MEDICAL', 'PERSONAL', 'MATERNITY', 'PATERNITY', 'ORGANIZATION_LEAVE') NOT NULL,
     startDate DATE NOT NULL,
     endDate DATE NOT NULL,
     totalDays INT NOT NULL,
     reason TEXT,
     reasonAmharic TEXT,
+    supportDocument VARCHAR(255) NULL,
     status ENUM('PENDING', 'APPROVED', 'REJECTED') DEFAULT 'PENDING',
     approvedBy BINARY(16),
     approvedAt TIMESTAMP NULL,
@@ -602,7 +591,6 @@ ALTER TABLE employeePersonal ADD FOREIGN KEY (employeeId) REFERENCES employee(id
 ALTER TABLE employeeEmployment ADD FOREIGN KEY (employeeId) REFERENCES employee(id) ON DELETE CASCADE;
 ALTER TABLE employeeAcademic ADD FOREIGN KEY (employeeId) REFERENCES employee(id) ON DELETE CASCADE;
 ALTER TABLE employeeAcademic ADD FOREIGN KEY (collegeId) REFERENCES college(id) ON DELETE SET NULL;
-ALTER TABLE employeeHr ADD FOREIGN KEY (employeeId) REFERENCES employee(id) ON DELETE CASCADE;
 ALTER TABLE employeeOutsource ADD FOREIGN KEY (employeeId) REFERENCES employee(id) ON DELETE CASCADE;
 ALTER TABLE employeeOutsource ADD FOREIGN KEY (outsourcingCompanyId) REFERENCES outsourcingCompanies(id) ON DELETE CASCADE;
 ALTER TABLE outsourcingCompanies ADD FOREIGN KEY (companyId) REFERENCES company(id) ON DELETE CASCADE;
@@ -611,9 +599,7 @@ ALTER TABLE attendance ADD FOREIGN KEY (employeeId) REFERENCES employee(id) ON D
 ALTER TABLE employeeShift ADD FOREIGN KEY (employeeId) REFERENCES employee(id) ON DELETE CASCADE;
 ALTER TABLE employeeShift ADD FOREIGN KEY (shiftId) REFERENCES shiftSchedule(id) ON DELETE CASCADE;
 ALTER TABLE leaveBalance ADD FOREIGN KEY (employeeId) REFERENCES employee(id) ON DELETE CASCADE;
-ALTER TABLE leaveBalance ADD FOREIGN KEY (leaveTypeId) REFERENCES leaveTypes(id) ON DELETE CASCADE;
 ALTER TABLE leaveRequest ADD FOREIGN KEY (employeeId) REFERENCES employee(id) ON DELETE CASCADE;
-ALTER TABLE leaveRequest ADD FOREIGN KEY (leaveTypeId) REFERENCES leaveTypes(id) ON DELETE CASCADE;
 ALTER TABLE leaveRequest ADD FOREIGN KEY (approvedBy) REFERENCES employee(id) ON DELETE SET NULL;
 ALTER TABLE payroll ADD FOREIGN KEY (employeeId) REFERENCES employee(id) ON DELETE CASCADE;
 ALTER TABLE payroll ADD FOREIGN KEY (generatedBy) REFERENCES users(id) ON DELETE CASCADE;
@@ -664,7 +650,6 @@ CREATE INDEX idxNotificationsUserRead ON notifications(userId, isRead);
 CREATE INDEX idxEmployeePersonalEmployee ON employeePersonal(employeeId);
 CREATE INDEX idxEmployeeEmploymentEmployee ON employeeEmployment(employeeId);
 CREATE INDEX idxEmployeeAcademicEmployee ON employeeAcademic(employeeId);
-CREATE INDEX idxEmployeeHrEmployee ON employeeHr(employeeId);
 CREATE INDEX idxEmployeeOutsourceEmployee ON employeeOutsource(employeeId);
 CREATE INDEX idxDepartmentType ON department(departmentType);
 CREATE INDEX idxDesignationType ON designations(designationType);
@@ -674,7 +659,6 @@ CREATE INDEX idxDepartmentCollege ON department(collegeId);
 ALTER TABLE employeePersonal ADD UNIQUE KEY uniqueEmployeePersonal (employeeId);
 ALTER TABLE employeeEmployment ADD UNIQUE KEY uniqueEmployeeEmployment (employeeId);
 ALTER TABLE employeeAcademic ADD UNIQUE KEY uniqueEmployeeAcademic (employeeId);
-ALTER TABLE employeeHr ADD UNIQUE KEY uniqueEmployeeHr (employeeId);
 ALTER TABLE employeeOutsource ADD UNIQUE KEY uniqueEmployeeOutsource (employeeId);
 ALTER TABLE company ADD CONSTRAINT uniqueCompanyEmail UNIQUE (companyEmail);
 ALTER TABLE company ADD CONSTRAINT uniqueCompanyPhone UNIQUE (companyPhone);
