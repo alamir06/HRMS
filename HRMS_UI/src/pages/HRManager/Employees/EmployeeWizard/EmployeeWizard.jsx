@@ -5,11 +5,11 @@ import {
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
-import Stepper from '../../components/common/Stepper';
-import { employeeService } from '../../services/employeeService';
-import { departmentService } from '../../services/departmentService';
-import { collegeService } from '../../services/collegeService';
-import { outsourceCompanyService } from '../../services/outsourceCompanyService';
+import Stepper from '../../../../components/common/Stepper';
+import { employeeService } from '../../../../services/employeeService';
+import { departmentService } from '../../../../services/departmentService';
+import { collegeService } from '../../../../services/collegeService';
+import { outsourceCompanyService } from '../../../../services/outsourceCompanyService';
 import './EmployeeWizard.css';
 
 const steps = [

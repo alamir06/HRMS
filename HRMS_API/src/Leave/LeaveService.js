@@ -35,7 +35,7 @@ export class LeaveService extends CrudService {
     try {
       await connection.beginTransaction();
 
-      const { employeeId, leaveType, startDate, endDate, reason, reasonAmharic } = payload;
+      const { employeeId, leaveType, startDate, endDate, reason, reasonAmharic, supportDocument } = payload;
       const totalDays = calculateWorkingDays(startDate, endDate);
       const year = new Date(startDate).getFullYear();
 
@@ -53,12 +53,12 @@ export class LeaveService extends CrudService {
         );
 
         if (!balanceCheck || balanceCheck.length === 0) {
-          throw new Error(\`No balance record found for \${leaveType} in year \${year}.\`);
+          throw new Error(`No balance record found for ${leaveType} in year ${year}.`);
         }
 
         if (balanceCheck[0].remainingDays < totalDays) {
           throw new Error(
-            \`Insufficient balance. Requested: \${totalDays} days, Remaining: \${balanceCheck[0].remainingDays} days.\`
+            `Insufficient balance. Requested: ${totalDays} days, Remaining: ${balanceCheck[0].remainingDays} days.`
           );
         }
       }
@@ -66,12 +66,12 @@ export class LeaveService extends CrudService {
       // Create Leave Request
       const insertQuery = `
         INSERT INTO leaveRequest (
-          id, employeeId, leaveType, startDate, endDate, totalDays, reason, reasonAmharic, status
-        ) VALUES (UUID_TO_BIN(UUID()), UUID_TO_BIN(?), ?, ?, ?, ?, ?, ?, 'PENDING')
+          id, employeeId, leaveType, startDate, endDate, totalDays, reason, reasonAmharic, supportDocument, status
+        ) VALUES (UUID_TO_BIN(UUID()), UUID_TO_BIN(?), ?, ?, ?, ?, ?, ?, ?, 'PENDING')
       `;
       
       await connection.query(insertQuery, [
-        employeeId, leaveType, startDate, endDate, totalDays, reason || null, reasonAmharic || null
+        employeeId, leaveType, startDate, endDate, totalDays, reason || null, reasonAmharic || null, supportDocument || null
       ]);
 
       await connection.commit();
@@ -100,7 +100,7 @@ export class LeaveService extends CrudService {
       
       const reqDetails = requestRows[0];
       if (reqDetails.status !== "PENDING") {
-        throw new Error(\`Cannot approve request. Status is already \${reqDetails.status}\`);
+        throw new Error(`Cannot approve request. Status is already ${reqDetails.status}`);
       }
 
       const { employeeId, leaveType, startDate, totalDays } = reqDetails;
@@ -160,7 +160,7 @@ export class LeaveService extends CrudService {
 
       if (!requestRows.length) throw new Error("Leave request not found");
       if (requestRows[0].status !== "PENDING") {
-        throw new Error(\`Cannot reject request. Status is already \${requestRows[0].status}\`);
+        throw new Error(`Cannot reject request. Status is already ${requestRows[0].status}`);
       }
 
       const { comments, commentsAmharic } = payload;
@@ -211,7 +211,7 @@ export class LeaveService extends CrudService {
     const { page = 1, limit = 10, status, search } = filters;
     const offset = (page - 1) * limit;
     
-    let query = \`
+    let query = `
       SELECT 
         BIN_TO_UUID(lr.id) as id,
         BIN_TO_UUID(lr.employeeId) as employeeId,
@@ -228,28 +228,28 @@ export class LeaveService extends CrudService {
       FROM leaveRequest lr
       LEFT JOIN employeePersonal ep ON lr.employeeId = ep.employeeId
       WHERE 1=1
-    \`;
-    let countQuery = \`SELECT COUNT(*) as total FROM leaveRequest lr LEFT JOIN employeePersonal ep ON lr.employeeId = ep.employeeId WHERE 1=1\`;
+    `;
+    let countQuery = `SELECT COUNT(*) as total FROM leaveRequest lr LEFT JOIN employeePersonal ep ON lr.employeeId = ep.employeeId WHERE 1=1`;
     const params = [];
     const countParams = [];
 
     if (status) {
-      query += \` AND lr.status = ?\`;
-      countQuery += \` AND lr.status = ?\`;
+      query += ` AND lr.status = ?`;
+      countQuery += ` AND lr.status = ?`;
       params.push(status);
       countParams.push(status);
     }
     
     if (search) {
-      const s = \`%\${search}%\`;
-      const searchClause = \` AND (ep.firstName LIKE ? OR ep.lastName LIKE ? OR lr.leaveType LIKE ?)\`;
+      const s = `%${search}%`;
+      const searchClause = ` AND (ep.firstName LIKE ? OR ep.lastName LIKE ? OR lr.leaveType LIKE ?)`;
       query += searchClause;
       countQuery += searchClause;
       params.push(s, s, s);
       countParams.push(s, s, s);
     }
 
-    query += \` ORDER BY lr.createdAt DESC LIMIT ? OFFSET ?\`;
+    query += ` ORDER BY lr.createdAt DESC LIMIT ? OFFSET ?`;
     params.push(parseInt(limit), offset);
 
     const [data] = await pool.query(query, params);

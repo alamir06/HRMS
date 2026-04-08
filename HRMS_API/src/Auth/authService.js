@@ -22,6 +22,7 @@ export const findUserByIdentifier = async (identifier) => {
        u.mustChangePassword,
        u.passwordChangedAt,
        e.employeeRole,
+       e.employeeCode,
        e.employmentStatus,
        ep.personalEmail,
        ep.personalPhone,

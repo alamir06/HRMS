@@ -2,9 +2,9 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Search, Plus, Pencil, Trash2, X, ChevronLeft, ChevronRight, ArrowUpDown, ArrowDown, ArrowUp } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'react-toastify';
-import { outsourceCompanyService } from '../../services/outsourceCompanyService';
-import CommonForm from '../../components/common/CommonForm';
-import ConfirmModal from '../../components/common/ConfirmModal';
+import { outsourceCompanyService } from '../../../services/outsourceCompanyService';
+import CommonForm from '../../../components/common/CommonForm';
+import ConfirmModal from '../../../components/common/ConfirmModal';
 import './OutsourcingCompanies.css';
 
 const OutsourcingCompanies = () => {

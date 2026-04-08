@@ -2,10 +2,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Search, Plus, Pencil, Trash2, Eye, ChevronLeft, ChevronRight, ArrowUpDown, ArrowDown, ArrowUp } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
-import { employeeService } from '../../services/employeeService';
-import ConfirmModal from '../../components/common/ConfirmModal';
-import EmployeeWizard from './EmployeeWizard';
-import EmployeeProfileModal from './EmployeeProfile';
+import { employeeService } from '../../../../services/employeeService';
+import ConfirmModal from '../../../../components/common/ConfirmModal';
+import EmployeeWizard from '../EmployeeWizard/EmployeeWizard';
+import EmployeeProfileModal from '../EmployeeProfile/EmployeeProfile';
 import './Employees.css';
 
 const Employees = () => {

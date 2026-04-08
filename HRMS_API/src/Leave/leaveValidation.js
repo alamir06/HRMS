@@ -1,32 +1,31 @@
-import Joi from "joi";
+import { z } from "zod";
 
 export const leaveValidation = {
-  createLeave: Joi.object({
-    employeeId: Joi.string().required(),
-    leaveType: Joi.string()
-      .valid(
-        "ANNUAL",
-        "SICK",
-        "MEDICAL",
-        "PERSONAL",
-        "MATERNITY",
-        "PATERNITY",
-        "ORGANIZATION_LEAVE"
-      )
-      .required(),
-    startDate: Joi.date().iso().required(),
-    endDate: Joi.date().iso().min(Joi.ref('startDate')).required(),
-    reason: Joi.string().allow("", null),
-    reasonAmharic: Joi.string().allow("", null),
+  createLeave: z.object({
+    employeeId: z.string().min(1, "employeeId is required"),
+    leaveType: z.enum([
+      "ANNUAL",
+      "SICK",
+      "MEDICAL",
+      "PERSONAL",
+      "MATERNITY",
+      "PATERNITY",
+      "ORGANIZATION_LEAVE"
+    ]),
+    startDate: z.string(),
+    endDate: z.string(),
+    reason: z.string().nullable().optional(),
+    reasonAmharic: z.string().nullable().optional(),
+    supportDocument: z.string().nullable().optional(),
   }),
 
-  approveLeave: Joi.object({
-    comments: Joi.string().allow("", null),
-    commentsAmharic: Joi.string().allow("", null),
+  approveLeave: z.object({
+    comments: z.string().nullable().optional(),
+    commentsAmharic: z.string().nullable().optional(),
   }),
 
-  rejectLeave: Joi.object({
-    comments: Joi.string().required(),
-    commentsAmharic: Joi.string().allow("", null),
+  rejectLeave: z.object({
+    comments: z.string().min(1, "Comments are required for rejection"),
+    commentsAmharic: z.string().nullable().optional(),
   }),
 };

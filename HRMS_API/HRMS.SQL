@@ -289,6 +289,7 @@ CREATE TABLE leaveRequest (
     totalDays INT NOT NULL,
     reason TEXT,
     reasonAmharic TEXT,
+    supportDocument VARCHAR(255) NULL,
     status ENUM('PENDING', 'APPROVED', 'REJECTED') DEFAULT 'PENDING',
     approvedBy BINARY(16),
     approvedAt TIMESTAMP NULL,
@@ -590,7 +591,6 @@ ALTER TABLE employeePersonal ADD FOREIGN KEY (employeeId) REFERENCES employee(id
 ALTER TABLE employeeEmployment ADD FOREIGN KEY (employeeId) REFERENCES employee(id) ON DELETE CASCADE;
 ALTER TABLE employeeAcademic ADD FOREIGN KEY (employeeId) REFERENCES employee(id) ON DELETE CASCADE;
 ALTER TABLE employeeAcademic ADD FOREIGN KEY (collegeId) REFERENCES college(id) ON DELETE SET NULL;
-ALTER TABLE employeeHr ADD FOREIGN KEY (employeeId) REFERENCES employee(id) ON DELETE CASCADE;
 ALTER TABLE employeeOutsource ADD FOREIGN KEY (employeeId) REFERENCES employee(id) ON DELETE CASCADE;
 ALTER TABLE employeeOutsource ADD FOREIGN KEY (outsourcingCompanyId) REFERENCES outsourcingCompanies(id) ON DELETE CASCADE;
 ALTER TABLE outsourcingCompanies ADD FOREIGN KEY (companyId) REFERENCES company(id) ON DELETE CASCADE;
@@ -650,7 +650,6 @@ CREATE INDEX idxNotificationsUserRead ON notifications(userId, isRead);
 CREATE INDEX idxEmployeePersonalEmployee ON employeePersonal(employeeId);
 CREATE INDEX idxEmployeeEmploymentEmployee ON employeeEmployment(employeeId);
 CREATE INDEX idxEmployeeAcademicEmployee ON employeeAcademic(employeeId);
-CREATE INDEX idxEmployeeHrEmployee ON employeeHr(employeeId);
 CREATE INDEX idxEmployeeOutsourceEmployee ON employeeOutsource(employeeId);
 CREATE INDEX idxDepartmentType ON department(departmentType);
 CREATE INDEX idxDesignationType ON designations(designationType);
@@ -660,7 +659,6 @@ CREATE INDEX idxDepartmentCollege ON department(collegeId);
 ALTER TABLE employeePersonal ADD UNIQUE KEY uniqueEmployeePersonal (employeeId);
 ALTER TABLE employeeEmployment ADD UNIQUE KEY uniqueEmployeeEmployment (employeeId);
 ALTER TABLE employeeAcademic ADD UNIQUE KEY uniqueEmployeeAcademic (employeeId);
-ALTER TABLE employeeHr ADD UNIQUE KEY uniqueEmployeeHr (employeeId);
 ALTER TABLE employeeOutsource ADD UNIQUE KEY uniqueEmployeeOutsource (employeeId);
 ALTER TABLE company ADD CONSTRAINT uniqueCompanyEmail UNIQUE (companyEmail);
 ALTER TABLE company ADD CONSTRAINT uniqueCompanyPhone UNIQUE (companyPhone);

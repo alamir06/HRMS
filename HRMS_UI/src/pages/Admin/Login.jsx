@@ -32,7 +32,12 @@ const AdminLogin = () => {
         localStorage.setItem('adminToken', response.data.token);
         localStorage.setItem('user', JSON.stringify(response.data.user));
         toast.success("Login successful!");
-        navigate('/dashboard');
+        const role = response.data.user?.role;
+        if (role === 'EMPLOYEE') {
+          navigate('/employee-portal');
+        } else {
+          navigate('/dashboard');
+        }
       } else {
         toast.error("Login failed. Please try again.");
       }

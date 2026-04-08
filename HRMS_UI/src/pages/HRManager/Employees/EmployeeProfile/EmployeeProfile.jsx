@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft, User, Briefcase, GraduationCap, FileText, UploadCloud, Trash, X } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
-import { employeeService } from '../../services/employeeService';
+import { employeeService } from '../../../../services/employeeService';
 import './EmployeeProfile.css';
 
 const EmployeeProfileModal = ({ employeeId, onClose }) => {
