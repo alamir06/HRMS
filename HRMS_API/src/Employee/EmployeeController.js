@@ -35,6 +35,7 @@ export class EmployeeController {
         success: true,
         data: result.data,
         pagination: result.pagination,
+        summary: result.summary,
       });
     } catch (error) {
       this.handleError(res, error, "Find employees failed");
