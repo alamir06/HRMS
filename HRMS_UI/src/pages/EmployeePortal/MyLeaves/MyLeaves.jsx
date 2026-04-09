@@ -60,7 +60,7 @@ const MyLeaves = () => {
   };
 
   const handleApplyLeave = async () => {
-    if (!newRequest.startDate || !newRequest.endDate || !newRequest.reason) {
+    if (!newRequest.startDate || (!newRequest.endDate && newRequest.leaveType !== 'ORGANIZATION_LEAVE') || !newRequest.reason) {
       toast.error("Please fill in all required fields.");
       return;
     }
@@ -73,7 +73,7 @@ const MyLeaves = () => {
         payload = new FormData();
         payload.append("leaveType", newRequest.leaveType);
         payload.append("startDate", newRequest.startDate);
-        payload.append("endDate", newRequest.endDate);
+        payload.append("endDate", newRequest.leaveType === 'ORGANIZATION_LEAVE' ? newRequest.startDate : newRequest.endDate);
         payload.append("reason", newRequest.reason);
         payload.append("employeeId", user.employeeId);
         payload.append("supportDocument", newRequest.supportDocument);
@@ -81,7 +81,7 @@ const MyLeaves = () => {
         payload = {
           leaveType: newRequest.leaveType,
           startDate: newRequest.startDate,
-          endDate: newRequest.endDate,
+          endDate: newRequest.leaveType === 'ORGANIZATION_LEAVE' ? newRequest.startDate : newRequest.endDate,
           reason: newRequest.reason,
           employeeId: user.employeeId
         };
@@ -124,14 +124,14 @@ const MyLeaves = () => {
     : 'Create Request';
 
   return (
-    <div className="leave-ledger-container">
-      <div className="leave-ledger-header">
-        <div className="leave-title-sec">
+    <div className="my-leave-request-ledger-container">
+      <div className="my-leave-request-ledger-header">
+        <div className="my-leave-request-title-sec">
           <h1>Leave Overview</h1>
           <p>Manage your professional time off and track your ledger balances.</p>
         </div>
-        <div className="leave-action-sec">
-          <button className="leave-btn-new-request" onClick={() => setIsFormOpen(true)}>
+        <div className="my-leave-request-action-sec">
+          <button className="my-leave-request-btn-new-request" onClick={() => setIsFormOpen(true)}>
             <Plus size={18} strokeWidth={2.5} /> New Request
           </button>
         </div>
@@ -141,7 +141,7 @@ const MyLeaves = () => {
         <div className="loading-state">Loading leave data...</div>
       ) : (
         <>
-          <div className="leave-cards-grid">
+          <div className="my-leave-request-cards-grid">
             {leaveData?.balances?.map(balance => {
               const { color, Icon, subtitle } = getLeaveCardStyle(balance.leaveType);
               const percent = balance.totalAllocatedDays > 0 
@@ -149,43 +149,43 @@ const MyLeaves = () => {
                 : 0;
 
               return (
-                <div key={balance.id} className="leave-card">
-                  <div className="leave-card-watermark"><Icon size={56} opacity={0.15} strokeWidth={1} /></div>
-                  <div className="leave-card-header">
-                    <span className="leave-card-title" style={{ color }}>{balance.leaveType.replace('_', ' ')}</span>
+                <div key={balance.id} className="my-leave-request-card">
+                  <div className="my-leave-request-card-watermark"><Icon size={56} opacity={0.15} strokeWidth={1} /></div>
+                  <div className="my-leave-request-card-header">
+                    <span className="my-leave-request-card-title" style={{ color }}>{balance.leaveType.replace('_', ' ')}</span>
                   </div>
-                  <div className="leave-card-body">
-                    <span className="leave-card-remaining" style={{ color }}>{String(balance.remainingDays).padStart(2, '0')}</span>
-                    <span className="leave-card-total">/ {String(balance.totalAllocatedDays).padStart(2, '0')} days</span>
+                  <div className="my-leave-request-card-body">
+                    <span className="my-leave-request-card-remaining" style={{ color }}>{String(balance.remainingDays).padStart(2, '0')}</span>
+                    <span className="my-leave-request-card-total">/ {String(balance.totalAllocatedDays).padStart(2, '0')} days</span>
                   </div>
-                  <div className="leave-progress-track">
-                    <div className="leave-progress-fill" style={{ width: `${percent}%`, backgroundColor: color }}></div>
+                  <div className="my-leave-request-progress-track">
+                    <div className="my-leave-request-progress-fill" style={{ width: `${percent}%`, backgroundColor: color }}></div>
                   </div>
-                  <div className="leave-card-footer-note">{subtitle}</div>
+                  <div className="my-leave-request-card-footer-note">{subtitle}</div>
                 </div>
               );
             })}
           </div>
 
-          <div className="leave-transactions-section">
-            <div className="leave-trans-header-row">
-              <h2 className="leave-trans-title">Recent Transactions</h2>
-              <div className="leave-trans-actions">
-                <button className="leave-btn-secondary"><Filter size={14} /> Filter</button>
-                <button className="leave-btn-secondary"><Download size={14} /> Export</button>
+          <div className="my-leave-request-transactions-section">
+            <div className="my-leave-request-trans-header-row">
+              <h2 className="my-leave-request-trans-title">Recent Transactions</h2>
+              <div className="my-leave-request-trans-actions">
+                <button className="my-leave-request-btn-secondary"><Filter size={14} /> Filter</button>
+                <button className="my-leave-request-btn-secondary"><Download size={14} /> Export</button>
               </div>
             </div>
 
-            <div className="leave-table-card">
-              <div className="leave-table-responsive-wrapper">
-                <table className="leave-modern-data-table">
+            <div className="my-leave-request-table-card">
+              <div className="my-leave-request-table-responsive-wrapper">
+                <table className="my-leave-request-modern-data-table">
                   <thead>
                     <tr>
-                      <th><div className="leave-th-content">Date Range</div></th>
-                      <th><div className="leave-th-content">Leave Type</div></th>
-                      <th><div className="leave-th-content">Duration</div></th>
-                      <th><div className="leave-th-content">Status</div></th>
-                      <th><div className="leave-th-content">Actions</div></th>
+                      <th><div className="my-leave-request-th-content">Date Range</div></th>
+                      <th><div className="my-leave-request-th-content">Leave Type</div></th>
+                      <th><div className="my-leave-request-th-content">Duration</div></th>
+                      <th><div className="my-leave-request-th-content">Status</div></th>
+                      <th><div className="my-leave-request-th-content">Actions</div></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -198,10 +198,10 @@ const MyLeaves = () => {
                     ) : (
                       paginatedRequests.map(req => {
                         const { color } = getLeaveCardStyle(req.leaveType);
-                        let statusClass = 'leave-pill-pending';
+                        let statusClass = 'my-leave-request-pill-pending';
                         let statusLabel = 'Pending Review';
-                        if (req.status === 'APPROVED') { statusClass = 'leave-pill-approved'; statusLabel = 'Approved'; }
-                        else if (req.status === 'REJECTED') { statusClass = 'leave-pill-declined'; statusLabel = 'Declined'; }
+                        if (req.status === 'APPROVED') { statusClass = 'my-leave-request-pill-approved'; statusLabel = 'Approved'; }
+                        else if (req.status === 'REJECTED') { statusClass = 'my-leave-request-pill-declined'; statusLabel = 'Declined'; }
 
                         const sDate = new Date(req.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
                         const eDate = new Date(req.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -210,26 +210,26 @@ const MyLeaves = () => {
                           <tr key={req.id}>
                             <td>{sDate} – {eDate}</td>
                             <td>
-                              <div className="leave-type-indicator">
-                                <span className="leave-dot" style={{ backgroundColor: color }}></span>
+                              <div className="my-leave-request-type-indicator">
+                                <span className="my-leave-request-dot" style={{ backgroundColor: color }}></span>
                                 {req.leaveType.replace('_', ' ').toLowerCase().replace(/\b\w/g, c => c.toUpperCase())}
                               </div>
                             </td>
                             <td>{req.requestedDays} {req.requestedDays === 1 ? 'Day' : 'Days'}</td>
                             <td><span className={statusClass}>{statusLabel}</span></td>
                             <td>
-                              <div className="leave-table-actions">
+                              <div className="my-leave-request-table-actions">
                                 {req.status === 'PENDING' ? (
                                   <>
-                                    <button className="leave-action-btn-light" title="Edit">
+                                    <button className="my-leave-request-action-btn-light" title="Edit">
                                       <Edit2 size={14} />
                                     </button>
-                                    <button className="leave-action-btn-light leave-action-btn-danger" title="Cancel">
+                                    <button className="my-leave-request-action-btn-light my-leave-request-action-btn-danger" title="Cancel">
                                       <XCircle size={14} />
                                     </button>
                                   </>
                                 ) : (
-                                  <button className="leave-action-btn-light" title="Details">
+                                  <button className="my-leave-request-action-btn-light" title="Details">
                                     {req.status === 'REJECTED' ? <Info size={14} /> : <Eye size={14} />}
                                   </button>
                                 )}
@@ -243,11 +243,11 @@ const MyLeaves = () => {
                 </table>
               </div>
 
-              <div className="leave-table-footer">
-                <div className="leave-page-limit-selector">
+              <div className="my-leave-request-table-footer">
+                <div className="my-leave-request-page-limit-selector">
                   <span>Show</span>
                   <select
-                    className="leave-limit-dropdown"
+                    className="my-leave-request-limit-dropdown"
                     value={limit}
                     onChange={(e) => {
                       setLimit(Number(e.target.value));
@@ -262,20 +262,20 @@ const MyLeaves = () => {
                   <span>entries</span>
                 </div>
 
-                <div className="leave-pagination-controls">
+                <div className="my-leave-request-pagination-controls">
                   <span>
                     Showing {totalRequests === 0 ? 0 : (page - 1) * limit + 1} to {Math.min(page * limit, totalRequests)} of {totalRequests}
                   </span>
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
                     <button
-                      className="leave-page-btn"
+                      className="my-leave-request-page-btn"
                       onClick={() => setPage(page - 1)}
                       disabled={page <= 1}
                     >
                       <ChevronLeft size={16} />
                     </button>
                     <button
-                      className="leave-page-btn"
+                      className="my-leave-request-page-btn"
                       onClick={() => setPage(page + 1)}
                       disabled={page >= totalPages}
                     >
@@ -291,38 +291,38 @@ const MyLeaves = () => {
 
       {/* MODAL VIEW */}
       {isFormOpen && (
-        <div className="leave-modal-overlay" onClick={() => setIsFormOpen(false)}>
-          <div className="leave-modal-container" onClick={e => e.stopPropagation()}>
+        <div className="my-leave-request-modal-overlay" onClick={() => setIsFormOpen(false)}>
+          <div className="my-leave-request-modal-container" onClick={e => e.stopPropagation()}>
             
-            <div className="leave-req-header-row">
-              <div className="leave-req-title-col">
+            <div className="my-leave-request-req-header-row">
+              <div className="my-leave-request-req-title-col">
                 <h1>{headerTitle}</h1>
                 <p>Please fill in the formal request details below. All fields marked with an asterisk are required for processing.</p>
               </div>
-              <button className="leave-req-return-btn" onClick={() => setIsFormOpen(false)} title="Close Modal">
+              <button className="my-leave-request-req-return-btn" onClick={() => setIsFormOpen(false)} title="Close Modal">
                 <X size={16} />
               </button>
             </div>
 
             {/* Employee Info */}
-            <div className="leave-req-card">
-              <div className="leave-req-section-title">
+            <div className="my-leave-request-req-card">
+              <div className="my-leave-request-req-section-title">
                 <UserCircle size={16} color="#059669" /> Employee Information
               </div>
-              <div className="leave-req-info-grid">
-                <div className="leave-info-item">
+              <div className="my-leave-request-req-info-grid">
+                <div className="my-leave-request-info-item">
                   <label>Full Name</label>
                   <span>{user?.firstName} {user?.lastName}</span>
                 </div>
-                <div className="leave-info-item">
+                <div className="my-leave-request-info-item">
                   <label>Employee Code</label>
                   <span>{user?.employeeCode || 'N/A'}</span>
                 </div>
-                <div className="leave-info-item">
+                <div className="my-leave-request-info-item">
                   <label>Department</label>
                   <span>{user?.department || 'Faculty of Humanities'}</span>
                 </div>
-                <div className="leave-info-item">
+                <div className="my-leave-request-info-item">
                   <label>Position</label>
                   <span>{user?.position || 'Senior Lecturer'}</span>
                 </div>
@@ -331,10 +331,10 @@ const MyLeaves = () => {
 
             {/* Leave Type Selection dynamically mapped from balance records */}
             <div style={{ marginBottom: '1rem' }}>
-              <div className="leave-req-section-title">
+              <div className="my-leave-request-req-section-title">
                 <Grid size={16} color="#059669" /> Leave Type Selection
               </div>
-              <div className="leave-type-grid">
+              <div className="my-leave-request-type-grid">
                 {leaveData?.balances && leaveData.balances.length > 0 ? leaveData.balances.map(balance => {
                   const { color, Icon, subtitle } = getLeaveCardStyle(balance.leaveType);
                   const typeId = balance.leaveType;
@@ -343,10 +343,10 @@ const MyLeaves = () => {
                   return (
                     <div 
                       key={balance.id} 
-                      className={`leave-type-box ${newRequest.leaveType === typeId ? 'selected' : ''}`}
+                      className={`my-leave-request-type-box ${newRequest.leaveType === typeId ? 'selected' : ''}`}
                       onClick={() => setNewRequest({...newRequest, leaveType: typeId})}
                     >
-                      <div className="leave-type-icon" style={{ backgroundColor: `${color}15`, color: color }}>
+                      <div className="my-leave-request-type-icon" style={{ backgroundColor: `${color}15`, color: color }}>
                         <Icon size={16} />
                       </div>
                       <h4>{typeTitle}</h4>
@@ -360,49 +360,53 @@ const MyLeaves = () => {
             </div>
 
             {/* Schedule & Duration */}
-            <div className="leave-schedule-wrapper">
-              <div className="leave-schedule-card">
-                <div className="leave-req-section-title">
+            <div className="my-leave-request-schedule-wrapper">
+              <div className="my-leave-request-schedule-card" style={newRequest.leaveType === 'ORGANIZATION_LEAVE' ? { flex: 1 } : {}}>
+                <div className="my-leave-request-req-section-title">
                   <CalendarIcon size={16} color="#059669" /> Schedule
                 </div>
-                <div className="leave-form-inputs">
-                  <div className="leave-input-group">
-                    <label>Start Date *</label>
+                <div className="my-leave-request-form-inputs">
+                  <div className="my-leave-request-input-group">
+                    <label>{newRequest.leaveType === 'ORGANIZATION_LEAVE' ? 'Effective Date *' : 'Start Date *'}</label>
                     <input 
                       type="date" 
                       value={newRequest.startDate} 
                       onChange={e => setNewRequest({...newRequest, startDate: e.target.value})} 
                     />
                   </div>
-                  <div className="leave-input-group">
-                    <label>End Date *</label>
-                    <input 
-                      type="date" 
-                      value={newRequest.endDate} 
-                      onChange={e => setNewRequest({...newRequest, endDate: e.target.value})} 
-                    />
-                  </div>
+                  {newRequest.leaveType !== 'ORGANIZATION_LEAVE' && (
+                    <div className="my-leave-request-input-group">
+                      <label>End Date *</label>
+                      <input 
+                        type="date" 
+                        value={newRequest.endDate} 
+                        onChange={e => setNewRequest({...newRequest, endDate: e.target.value})} 
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
               
-              <div className="leave-duration-card">
-                <div className="leave-duration-label">Calculated Duration</div>
-                <div className="leave-duration-val">
-                  {calculateDuration()} <span>Days</span>
+              {newRequest.leaveType !== 'ORGANIZATION_LEAVE' && (
+                <div className="my-leave-request-duration-card">
+                  <div className="my-leave-request-duration-label">Calculated Duration</div>
+                  <div className="my-leave-request-duration-val">
+                    {calculateDuration()} <span>Days</span>
+                  </div>
+                  <div className="my-leave-request-duration-note">
+                    Excludes Weekends & Holidays
+                  </div>
                 </div>
-                <div className="leave-duration-note">
-                  Excludes Weekends & Holidays
-                </div>
-              </div>
+              )}
             </div>
 
             {/* Reasons & Remarks */}
-            <div className="leave-req-card">
-              <div className="leave-req-section-title">
+            <div className="my-leave-request-req-card">
+              <div className="my-leave-request-req-section-title">
                 <AlignLeft size={16} color="#059669" /> Reasons & Remarks
               </div>
               <textarea 
-                className="leave-textarea"
+                className="my-leave-request-textarea"
                 placeholder="State the reason for your leave request in detail..."
                 value={newRequest.reason}
                 onChange={e => setNewRequest({...newRequest, reason: e.target.value})}
@@ -411,11 +415,11 @@ const MyLeaves = () => {
 
             {/* Supporting Documents */}
             <div style={{ marginBottom: '1rem', display: 'flex', gap: '1.5rem', alignItems: 'flex-start' }}>
-              <div className="leave-upload-instructions">
-                <div className="leave-req-section-title" style={{marginBottom: '0.3rem'}}>Supporting Documents</div>
+              <div className="my-leave-request-upload-instructions">
+                <div className="my-leave-request-req-section-title" style={{marginBottom: '0.3rem'}}>Supporting Documents</div>
                 <p>Optional: Upload relevant certificates or medical reports. (JPG, PNG - Max 5MB)</p>
               </div>
-              <div className="leave-upload-box">
+              <div className="my-leave-request-upload-box">
                 <div style={{ display: 'inline-flex', padding: '0.5rem', borderRadius: '50%', backgroundColor: 'white', border: '1px solid #e5e7eb', marginBottom: '0.75rem' }}>
                    <CloudUpload size={18} color="#059669" />
                 </div>
@@ -437,9 +441,9 @@ const MyLeaves = () => {
             </div>
 
             {/* Footer */}
-            <div className="leave-form-footer">
-              <button className="leave-draft-btn" onClick={() => setIsFormOpen(false)}>Cancel Request</button>
-              <button className="leave-submit-btn" onClick={handleApplyLeave} disabled={isSubmitting}>
+            <div className="my-leave-request-form-footer">
+              <button className="my-leave-request-draft-btn" onClick={() => setIsFormOpen(false)}>Cancel Request</button>
+              <button className="my-leave-request-submit-btn" onClick={handleApplyLeave} disabled={isSubmitting}>
                 {isSubmitting ? 'Submitting...' : 'Submit Leave Request'}
               </button>
             </div>

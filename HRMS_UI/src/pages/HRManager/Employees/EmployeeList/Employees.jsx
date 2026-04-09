@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Search, Plus, Pencil, Trash2, Eye, ChevronLeft, ChevronRight, ArrowUpDown, ArrowDown, ArrowUp } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Search, Plus, Pencil, Trash2, Eye, ChevronLeft, ChevronRight, ArrowUpDown, ArrowDown, ArrowUp, Download, ChevronDown, Users, GraduationCap, BriefcaseBusiness, Building2 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
 import { employeeService } from '../../../../services/employeeService';
@@ -9,7 +9,7 @@ import EmployeeProfileModal from '../EmployeeProfile/EmployeeProfile';
 import './Employees.css';
 
 const Employees = () => {
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
   const [employees, setEmployees] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   
@@ -21,6 +21,15 @@ const Employees = () => {
   const [pagination, setPagination] = useState({ total: 0, pages: 1 });
   const [sortBy, setSortBy] = useState('createdAt');
   const [sortOrder, setSortOrder] = useState('DESC');
+  const [summary, setSummary] = useState({
+    activeNow: 0,
+    academic: 0,
+    administrative: 0,
+    outsource: 0,
+  });
+  const [period, setPeriod] = useState('DAILY');
+  const [isPeriodMenuOpen, setIsPeriodMenuOpen] = useState(false);
+  const periodMenuRef = useRef(null);
 
   // Multi-step Wizard States
   const [isWizardOpen, setIsWizardOpen] = useState(false);
@@ -39,13 +48,34 @@ const Employees = () => {
     return () => clearTimeout(timer);
   }, [search]);
 
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (periodMenuRef.current && !periodMenuRef.current.contains(event.target)) {
+        setIsPeriodMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   const loadEmployees = useCallback(async () => {
     try {
       setIsLoading(true);
-      const res = await employeeService.getAllEmployees(page, limit, debouncedSearch, sortBy, sortOrder);
+      const res = await employeeService.getAllEmployees(
+        page,
+        limit,
+        debouncedSearch,
+        sortBy,
+        sortOrder,
+        { period }
+      );
       if (res.success) {
         setEmployees(res.data || []);
         setPagination(res.pagination || { total: 0, pages: 1 });
+        setSummary(res.summary || { activeNow: 0, academic: 0, administrative: 0, outsource: 0 });
       } else {
         toast.error("Failed to load employees");
       }
@@ -54,7 +84,7 @@ const Employees = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [page, limit, debouncedSearch, sortBy, sortOrder]);
+  }, [page, limit, debouncedSearch, sortBy, sortOrder, period]);
 
   useEffect(() => {
     loadEmployees();
@@ -107,8 +137,146 @@ const Employees = () => {
      setIsWizardOpen(true);
   };
 
+  const handleExportPdf = () => {
+    const printContent = document.getElementById('employees-table-card-container');
+    if (!printContent) return;
+
+    const printWindow = window.open('', '_blank', 'width=1000,height=800');
+    if (!printWindow) return;
+
+    let styles = '';
+    document.querySelectorAll('style, link[rel="stylesheet"]').forEach((el) => {
+      styles += el.outerHTML;
+    });
+
+    const dateStr = new Date().toLocaleDateString();
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Employee Directory Report</title>
+          ${styles}
+          <style>
+            body { padding: 40px; background: white; font-family: Inter, sans-serif; }
+            .table-actions, .table-footer { display: none !important; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            th, td { border: 1px solid #e2e8f0; padding: 12px; text-align: left; }
+            th { border-bottom: 2px solid #cbd5e1; }
+            h1 { color: #2d3748; margin-bottom: 10px; }
+            .report-header { margin-bottom: 24px; }
+          </style>
+        </head>
+        <body>
+          <div class="report-header">
+            <h1>Employee Directory Report</h1>
+            <p>Generated on: ${dateStr}</p>
+          </div>
+          ${printContent.innerHTML}
+        </body>
+      </html>
+    `);
+
+    printWindow.document.close();
+    printWindow.focus();
+
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 500);
+  };
+
+  const periodOptions = [
+    { value: 'DAILY', label: i18n.language === 'am' ? 'ዕለታዊ' : 'Daily' },
+    { value: 'WEEKLY', label: i18n.language === 'am' ? 'ሳምንታዊ' : 'Weekly' },
+    { value: 'MONTHLY', label: i18n.language === 'am' ? 'ወርሃዊ' : 'Monthly' },
+    { value: 'YEARLY', label: i18n.language === 'am' ? 'አመታዊ' : 'Yearly' },
+  ];
+
+  const selectedPeriodLabel = periodOptions.find((item) => item.value === period)?.label || (i18n.language === 'am' ? 'ዕለታዊ' : 'Daily');
+
   return (
     <div className="employees-container">
+      <div className="employees-directory-header">
+        <div className="employees-directory-title-block">
+          <h2>{i18n.language === 'am' ? 'የሰራተኞች ማውጫ' : 'Employee Directory'}</h2>
+          <p>{i18n.language === 'am' ? 'የድርጅቱ ሰራተኞችን ይቆጣጠሩ እና ያስተዳድሩ' : 'Monitor and manage your organization workforce'}</p>
+        </div>
+
+        <div className="employees-directory-actions">
+          <div className="employees-period-filter-wrap" ref={periodMenuRef}>
+            <button
+              type="button"
+              className={`employees-period-filter-trigger ${isPeriodMenuOpen ? 'open' : ''}`}
+              onClick={() => setIsPeriodMenuOpen((prev) => !prev)}
+            >
+              <span>{selectedPeriodLabel}</span>
+              <ChevronDown size={16} className="employees-period-filter-chevron" />
+            </button>
+
+            {isPeriodMenuOpen && (
+              <div className="employees-period-filter-menu">
+                {periodOptions.map((item) => (
+                  <button
+                    key={item.value}
+                    type="button"
+                    className={`employees-period-filter-option ${period === item.value ? 'active' : ''}`}
+                    onClick={() => {
+                      setPeriod(item.value);
+                      setPage(1);
+                      setIsPeriodMenuOpen(false);
+                    }}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <button className="btn-add-employee" onClick={() => { setEditEmployeeId(null); setIsWizardOpen(true); }}>
+            <Plus size={18} /> {i18n.language === 'am' ? 'ሰራተኛ አክል' : 'Add Employee'}
+          </button>
+        </div>
+      </div>
+
+      <div className="employees-summary-grid">
+        <div className="employees-summary-card">
+          <div className="employees-summary-icon"><Users size={18} /></div>
+          <div className="employees-summary-content">
+            <span className="employees-summary-kicker">{i18n.language === 'am' ? 'አሁን ገባሪ' : 'ACTIVE NOW'}</span>
+            <div className="employees-summary-value">{summary.activeNow}</div>
+            <span className="employees-summary-label">{i18n.language === 'am' ? 'ጠቅላላ ሰራተኞች' : 'Total Employees'}</span>
+          </div>
+        </div>
+
+        <div className="employees-summary-card">
+          <div className="employees-summary-icon"><GraduationCap size={18} /></div>
+          <div className="employees-summary-content">
+            <span className="employees-summary-kicker">{i18n.language === 'am' ? 'አካዳሚክ' : 'TENURED'}</span>
+            <div className="employees-summary-value">{summary.academic}</div>
+            <span className="employees-summary-label">{i18n.language === 'am' ? 'ጠቅላላ አካዳሚክ' : 'Total Academic'}</span>
+          </div>
+        </div>
+
+        <div className="employees-summary-card">
+          <div className="employees-summary-icon"><BriefcaseBusiness size={18} /></div>
+          <div className="employees-summary-content">
+            <span className="employees-summary-kicker">{i18n.language === 'am' ? 'ኦፕሬሽናል' : 'OPERATIONAL'}</span>
+            <div className="employees-summary-value">{summary.administrative}</div>
+            <span className="employees-summary-label">{i18n.language === 'am' ? 'ጠቅላላ አስተዳደራዊ' : 'Total Administrative'}</span>
+          </div>
+        </div>
+
+        <div className="employees-summary-card">
+          <div className="employees-summary-icon"><Building2 size={18} /></div>
+          <div className="employees-summary-content">
+            <span className="employees-summary-kicker">{i18n.language === 'am' ? 'ውጭ ኮንትራክት' : 'CONTRACTUAL'}</span>
+            <div className="employees-summary-value">{summary.outsource}</div>
+            <span className="employees-summary-label">{i18n.language === 'am' ? 'ጠቅላላ ውጭ ሰራተኛ' : 'Total Outsource'}</span>
+          </div>
+        </div>
+      </div>
+
       <div className="employees-top-toolbar">
         <label className="search-wrapper-emp" htmlFor="searchEmployee">
           <Search size={18} color="var(--text-secondary)" />
@@ -120,12 +288,12 @@ const Employees = () => {
             onChange={(e) => setSearch(e.target.value)}
           />
         </label>
-        <button className="btn-add-employee" onClick={() => { setEditEmployeeId(null); setIsWizardOpen(true); }}>
-          <Plus size={18} /> {i18n.language === 'am' ? 'ሰራተኛ አክል' : 'Add Employee'}
+        <button className="employees-export-btn" onClick={handleExportPdf}>
+          <Download size={18} /> {i18n.language === 'am' ? 'ወደ ፒዲኤፍ ላክ' : 'Export as PDF'}
         </button>
       </div>
 
-      <div className="employees-table-card">
+      <div className="employees-table-card" id="employees-table-card-container">
         <div className="table-responsive-wrapper">
           <table className="modern-data-table">
             <thead>

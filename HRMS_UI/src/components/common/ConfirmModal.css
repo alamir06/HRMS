@@ -47,6 +47,12 @@
   line-height: 1.5;
 }
 
+.modal-content-slot {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
 .modal-actions {
   display: flex;
   justify-content: flex-end;
@@ -81,6 +87,11 @@
 
 .btn-confirm:hover {
   opacity: 0.9;
+}
+
+.btn-confirm:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .btn-confirm.destructive {

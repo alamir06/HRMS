@@ -733,6 +733,9 @@ export class EmployeeService extends CrudService {
       employeeType,
       employmentStatus,
       employmentType,
+      period = "DAILY",
+      sortBy = "createdAt",
+      sortOrder = "DESC",
     } = filters;
     const offset = (page - 1) * limit;
     const defaultIncludes = ["personal", "company", "DEPARTMENT", "EMPLOYMENT"];
@@ -790,9 +793,18 @@ export class EmployeeService extends CrudService {
       query += ` LEFT JOIN employeeEmployment ee ON e.id = ee.employeeId`;
       countQuery += ` LEFT JOIN employeeEmployment ee ON e.id = ee.employeeId`;
     }
-    const whereConditions = [
-      "(e.employeeRole != 'HRMANAGER' OR e.employeeRole IS NULL)"
-    ];
+    const whereConditions = ["(e.employeeRole != 'HRMANAGER' OR e.employeeRole IS NULL)"];
+
+    const normalizedPeriod = String(period || "DAILY").toUpperCase();
+    if (normalizedPeriod === "DAILY") {
+      whereConditions.push(`DATE(e.hireDate) = CURDATE()`);
+    } else if (normalizedPeriod === "WEEKLY") {
+      whereConditions.push(`YEARWEEK(e.hireDate, 1) = YEARWEEK(CURDATE(), 1)`);
+    } else if (normalizedPeriod === "MONTHLY") {
+      whereConditions.push(`YEAR(e.hireDate) = YEAR(CURDATE()) AND MONTH(e.hireDate) = MONTH(CURDATE())`);
+    } else if (normalizedPeriod === "YEARLY") {
+      whereConditions.push(`YEAR(e.hireDate) = YEAR(CURDATE())`);
+    }
 
     if (search) {
       whereConditions.push(`(
@@ -859,12 +871,79 @@ export class EmployeeService extends CrudService {
       countQuery += whereClause;
     }
 
+    const sortFieldMap = {
+      createdAt: "e.createdAt",
+      hireDate: "e.hireDate",
+      firstName: "ep.firstName",
+      firstNameAmharic: "ep.firstNameAmharic",
+      employeeCode: "e.employeeCode",
+      employmentStatus: "e.employmentStatus",
+      employmentType: "e.employmentType",
+    };
+    const resolvedSortBy = sortFieldMap[sortBy] || "e.createdAt";
+    const resolvedSortOrder = String(sortOrder).toUpperCase() === "ASC" ? "ASC" : "DESC";
+
     // Add sorting and pagination
-    query += ` ORDER BY e.createdAt DESC LIMIT ? OFFSET ?`;
+    query += ` ORDER BY ${resolvedSortBy} ${resolvedSortOrder} LIMIT ? OFFSET ?`;
     params.push(parseInt(limit), offset);
 
     const [employees] = await pool.query(query, params);
     const [countResult] = await pool.query(countQuery, countParams);
+
+    // Summary cards should reflect the selected period and structural filters,
+    // but not the free-text search input.
+    const summaryWhereConditions = [
+      "(e.employeeRole != 'HRMANAGER' OR e.employeeRole IS NULL)",
+    ];
+    const summaryParams = [];
+
+    if (normalizedPeriod === "DAILY") {
+      summaryWhereConditions.push(`DATE(e.hireDate) = CURDATE()`);
+    } else if (normalizedPeriod === "WEEKLY") {
+      summaryWhereConditions.push(`YEARWEEK(e.hireDate, 1) = YEARWEEK(CURDATE(), 1)`);
+    } else if (normalizedPeriod === "MONTHLY") {
+      summaryWhereConditions.push(`YEAR(e.hireDate) = YEAR(CURDATE()) AND MONTH(e.hireDate) = MONTH(CURDATE())`);
+    } else if (normalizedPeriod === "YEARLY") {
+      summaryWhereConditions.push(`YEAR(e.hireDate) = YEAR(CURDATE())`);
+    }
+
+    if (companyId) {
+      summaryWhereConditions.push(`e.companyId = UUID_TO_BIN(?)`);
+      summaryParams.push(companyId);
+    }
+
+    if (departmentId) {
+      summaryWhereConditions.push(`e.departmentId = UUID_TO_BIN(?)`);
+      summaryParams.push(departmentId);
+    }
+
+    if (employeeType) {
+      summaryWhereConditions.push(`e.employeeType = ?`);
+      summaryParams.push(employeeType);
+    }
+
+    if (employmentStatus) {
+      summaryWhereConditions.push(`e.employmentStatus = ?`);
+      summaryParams.push(employmentStatus);
+    }
+
+    if (employmentType) {
+      summaryWhereConditions.push(`e.employmentType = ?`);
+      summaryParams.push(employmentType);
+    }
+
+    const summaryQuery = `
+      SELECT
+        SUM(CASE WHEN e.employmentStatus = 'ACTIVE' THEN 1 ELSE 0 END) AS activeNow,
+        SUM(CASE WHEN e.employeeType = 'ACADEMIC' THEN 1 ELSE 0 END) AS academic,
+        SUM(CASE WHEN e.employeeType = 'ADMINISTRATIVE' THEN 1 ELSE 0 END) AS administrative,
+        SUM(CASE WHEN e.employeeType = 'OUTSOURCE' THEN 1 ELSE 0 END) AS outsource
+      FROM employee e
+      ${summaryWhereConditions.length ? `WHERE ${summaryWhereConditions.join(" AND ")}` : ""}
+    `;
+
+    const [summaryResult] = await pool.query(summaryQuery, summaryParams);
+    const summaryRow = summaryResult?.[0] || {};
 
     return {
       data: employees,
@@ -873,6 +952,12 @@ export class EmployeeService extends CrudService {
         limit: parseInt(limit),
         total: countResult[0].total,
         pages: Math.ceil(countResult[0].total / limit),
+      },
+      summary: {
+        activeNow: Number(summaryRow.activeNow || 0),
+        academic: Number(summaryRow.academic || 0),
+        administrative: Number(summaryRow.administrative || 0),
+        outsource: Number(summaryRow.outsource || 0),
       },
     };
   }

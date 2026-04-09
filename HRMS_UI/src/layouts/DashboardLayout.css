@@ -4,6 +4,7 @@
   width: 100vw;
   overflow: hidden;
   background-color: var(--bg-primary);
+  position: relative;
 }
 
 .dashboard-main-content {
@@ -28,4 +29,35 @@
   padding: 2rem;
   flex: 1;
   /* Let this blank zone wait for specific content */
+}
+
+.dashboard-sidebar-backdrop {
+  display: none;
+}
+
+@media (max-width: 1024px) {
+  .dashboard-outlet-wrapper {
+    padding: 1.25rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-main-content {
+    width: 100%;
+  }
+
+  .dashboard-outlet-wrapper {
+    padding: 1rem;
+  }
+
+  .dashboard-layout-container.sidebar-open .dashboard-sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    border: none;
+    background: rgba(17, 24, 39, 0.45);
+    backdrop-filter: blur(1px);
+    z-index: 70;
+    cursor: pointer;
+  }
 }

@@ -17,11 +17,13 @@ const ConfirmModal = ({
   isOpen,
   title = "Confirm Action",
   message = "Are you sure you want to proceed?",
+  content = null,
   onConfirm,
   onCancel,
   confirmText = "OK",
   cancelText = "Cancel",
-  isDestructive = false
+  isDestructive = false,
+  confirmDisabled = false
 }) => {
 
   // Prevent background scrolling when modal is open
@@ -50,7 +52,11 @@ const ConfirmModal = ({
           <h3 className="modal-title">{title}</h3>
         </div>
         
-        <p className="modal-message">{message}</p>
+        {content ? (
+          <div className="modal-content-slot">{content}</div>
+        ) : (
+          <p className="modal-message">{message}</p>
+        )}
         
         <div className="modal-actions">
           <button className="btn-cancel" onClick={onCancel}>
@@ -59,6 +65,7 @@ const ConfirmModal = ({
           <button 
             className={`btn-confirm ${isDestructive ? 'destructive' : ''}`} 
             onClick={onConfirm}
+            disabled={confirmDisabled}
           >
             {confirmText}
           </button>
