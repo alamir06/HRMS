@@ -5,6 +5,160 @@
   height: 100%;
 }
 
+.employees-directory-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.employees-directory-title-block h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.employees-directory-title-block p {
+  margin: 0.35rem 0 0;
+  font-size: 0.84rem;
+  color: var(--text-secondary);
+}
+
+.employees-directory-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.employees-period-filter-wrap {
+  position: relative;
+}
+
+.employees-period-filter-trigger {
+  width: 160px;
+  height: 44px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: #fff;
+  color: var(--text-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0.85rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.employees-period-filter-trigger:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(11, 130, 85, 0.12);
+}
+
+.employees-period-filter-chevron {
+  transition: transform 0.2s ease;
+}
+
+.employees-period-filter-trigger.open .employees-period-filter-chevron {
+  transform: rotate(180deg);
+}
+
+.employees-period-filter-menu {
+  position: absolute;
+  top: calc(100% + 0.45rem);
+  left: 0;
+  width: 100%;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+  z-index: 25;
+  overflow: hidden;
+}
+
+.employees-period-filter-option {
+  width: 100%;
+  border: none;
+  background: transparent;
+  text-align: left;
+  padding: 0.62rem 0.75rem;
+  font-size: 0.8rem;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.employees-period-filter-option:hover {
+  background: rgba(11, 130, 85, 0.12);
+  color: var(--primary-color);
+}
+
+.employees-period-filter-option.active {
+  background: rgba(11, 130, 85, 0.18);
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.employees-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.employees-summary-card {
+  background: #fff;
+  border: 1px solid rgba(11, 130, 85, 0.12);
+  border-radius: 14px;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.04);
+}
+
+.employees-summary-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 11px;
+  background: rgba(11, 130, 85, 0.12);
+  color: var(--primary-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.employees-summary-content {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.employees-summary-kicker {
+  font-size: 0.66rem;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+  color: #6b7280;
+}
+
+.employees-summary-value {
+  font-size: 1.85rem;
+  line-height: 1.1;
+  font-weight: 700;
+  color: #111827;
+  margin-top: 0.4rem;
+}
+
+.employees-summary-label {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  margin-top: 0.2rem;
+}
+
 .employees-top-toolbar {
   display: flex;
   align-items: center;
@@ -49,7 +203,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  height: 48px;
+  height: 44px;
   padding: 0 1.5rem;
   background-color: var(--primary-color);
   color: #ffffff;
@@ -67,6 +221,29 @@
 
 .btn-add-employee:active {
   transform: scale(0.98);
+}
+
+.employees-export-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  height: 48px;
+  padding: 0 1.2rem;
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease;
+}
+
+.employees-export-btn:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  background-color: rgba(11, 130, 85, 0.08);
 }
 
 .employees-table-card {
@@ -100,6 +277,14 @@
   border: 1px solid var(--border-color);
 }
 
+[data-theme='dark'] .employees-summary-card,
+[data-theme='dark'] .employees-period-filter-trigger,
+[data-theme='dark'] .employees-period-filter-menu,
+[data-theme='dark'] .employees-export-btn {
+  background-color: var(--bg-primary);
+  border-color: var(--border-color);
+}
+
 [data-theme='dark'] .search-wrapper-emp {
   background-color: var(--bg-secondary);
 }
@@ -119,7 +304,34 @@
   padding: 0.25em 0.5em;
 }
 
+@media (max-width: 1200px) {
+  .employees-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 768px) {
+  .employees-directory-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .employees-directory-actions {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .employees-period-filter-wrap,
+  .employees-period-filter-trigger,
+  .btn-add-employee {
+    width: 100%;
+  }
+
+  .employees-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
   .employees-top-toolbar {
     flex-direction: column;
     align-items: stretch;
@@ -139,5 +351,10 @@
     flex: 0 0 auto;
     width: 100%;
     justify-content: center;
+  }
+
+  .employees-export-btn {
+    width: 100%;
+    height: 46px;
   }
 }
