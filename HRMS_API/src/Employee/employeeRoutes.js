@@ -15,10 +15,12 @@ import {
 const employeeRouter = express.Router();
 
 // ========== EMPLOYEE CRUD ROUTES ==========
+console.log(authenticateToken);
+
 employeeRouter.post(
   "/",
   authenticateToken,
-  authorize("HRMANAGER", "HROFFICER"),
+  authorize("HRMANAGER", "RECRUITER"),
   ensureDefaultCompanyIdInBody(),
   validateEmployee(createEmployeeSchema),
   employeeController.create
@@ -27,13 +29,13 @@ employeeRouter.post(
 employeeRouter.get(
   "/", 
     authenticateToken,
-    authorize("HRMANAGER", "HROFFICER"),
+    authorize("HRMANAGER", "HROFFICER","RECRUITER"),
   employeeController.findAll);
 
 employeeRouter.get(
   "/:id",
   authenticateToken,
-  authorize("HRMANAGER", "HROFFICER"),
+  authorize("HRMANAGER", "HROFFICER","RECRUITER", "EMPLOYEE"),
   validateEmployee(employeeIdSchema),
   employeeController.findById
 );
@@ -41,7 +43,7 @@ employeeRouter.get(
 employeeRouter.put(
   "/:id",
   authenticateToken,
-  authorize("HRMANAGER", "HROFFICER"),
+  authorize("HRMANAGER"),
   validateEmployee(employeeIdSchema),
   validateEmployee(updateEmployeeSchema),
   employeeController.update
@@ -98,7 +100,7 @@ employeeRouter.post(
 employeeRouter.get(
   "/:id/documents",
   authenticateToken,
-  authorize("HRMANAGER", "HROFFICER"),
+  authorize("HRMANAGER", "HROFFICER", "EMPLOYEE"),
   validateEmployee(employeeIdSchema),
   employeeController.getDocuments
 );

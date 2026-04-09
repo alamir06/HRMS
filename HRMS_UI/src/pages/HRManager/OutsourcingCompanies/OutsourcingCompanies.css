@@ -1,4 +1,4 @@
-.colleges-container {
+.outsourcing-container {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -6,8 +6,7 @@
   animation: fadeIn 0.3s ease-in-out;
 }
 
-/* Updated Top Toolbar Mapping to Image */
-.colleges-top-toolbar {
+.outsourcing-top-toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -38,7 +37,7 @@
   border: none;
   background: transparent;
   padding: 0 0.75rem;
-  font-size: 0.95rem;
+  font-size: 0.84rem;
   color: var(--text-primary);
   outline: none;
 }
@@ -47,7 +46,7 @@
   color: var(--text-secondary);
 }
 
-.btn-add-college {
+.btn-add-company {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -63,16 +62,15 @@
   white-space: nowrap;
 }
 
-.btn-add-college:hover {
+.btn-add-company:hover {
   background-color: #059669;
 }
 
-.btn-add-college:active {
+.btn-add-company:active {
   transform: scale(0.98);
 }
 
-/* Main Table Container */
-.colleges-table-card {
+.outsourcing-table-card {
   background-color: var(--bg-secondary);
   border-radius: var(--radius-md);
   box-shadow: var(--card-shadow);
@@ -102,7 +100,7 @@
 .modern-data-table th {
   padding: 1.25rem 1rem;
   font-weight: 600;
-  font-size: 0.85rem;
+  font-size: 0.74rem;
   color: var(--text-primary);
   white-space: nowrap;
 }
@@ -125,7 +123,7 @@
 
 .modern-data-table td {
   padding: 1rem;
-  font-size: 0.9rem;
+  font-size: 0.79rem;
   color: var(--text-secondary);
   border-bottom: 1px solid var(--border-color);
   vertical-align: middle;
@@ -141,13 +139,12 @@
 }
 
 .col-description {
-  max-width: 250px;
+  max-width: 200px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* Action Buttons inside Table */
 .table-actions {
   display: flex;
   gap: 0.5rem;
@@ -181,7 +178,6 @@
   color: white;
 }
 
-/* Footer / Pagination */
 .table-footer {
   display: flex;
   align-items: center;
@@ -190,12 +186,11 @@
   background-color: var(--bg-secondary);
 }
 
-/* Requested: "left bottom dropdown to select number of page" */
 .page-limit-selector {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.85rem;
+  font-size: 0.74rem;
   color: var(--text-secondary);
 }
 
@@ -206,14 +201,14 @@
   background-color: var(--bg-primary);
   color: var(--text-primary);
   outline: none;
-  font-size: 0.85rem;
+  font-size: 0.74rem;
 }
 
 .pagination-controls {
   display: flex;
   align-items: center;
   gap: 1rem;
-  font-size: 0.85rem;
+  font-size: 0.74rem;
   color: var(--text-secondary);
 }
 
@@ -240,14 +235,15 @@
   cursor: not-allowed;
 }
 
-/* Modal Internal Form Styling Overrides */
 .modal-form-wrapper {
   background-color: var(--bg-secondary);
   border-radius: var(--radius-md);
   padding: 1.5rem;
   position: relative;
   width: 100%;
-  max-width: 500px;
+  max-width: 900px;
+  max-height: 90vh;
+  overflow-y: auto;
   box-shadow: var(--card-shadow);
   animation: scaleIn 0.2s ease-out;
 }
@@ -260,7 +256,7 @@
 }
 
 .modal-form-header h3 {
-  font-size: 1.25rem;
+  font-size: 1.14rem;
   font-weight: 600;
   color: var(--text-primary);
   margin: 0;
@@ -275,7 +271,7 @@
 }
 
 @media (max-width: 768px) {
-  .colleges-top-toolbar {
+  .outsourcing-top-toolbar {
     flex-direction: column;
     align-items: stretch;
   }

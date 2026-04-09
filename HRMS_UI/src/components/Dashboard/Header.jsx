@@ -4,7 +4,7 @@ import { Bell, Settings, Moon, Sun, User, Globe, LogOut } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import './Header.css';
 
-const Header = () => {
+const Header = ({ onOpenProfile }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [isDarkTheme, setIsDarkTheme] = useState(
@@ -26,7 +26,17 @@ const Header = () => {
     return rawModule.charAt(0).toUpperCase() + rawModule.slice(1);
   };
 
+  const getPageSubtitle = (path) => {
+    if (path === '/dashboard') return "Welcome back, here's what's happening today";
+    if (path.includes('/employees')) return "Manage your workforce and view employee directories";
+    if (path.includes('/departments')) return "Organize and manage institutional departments";
+    if (path.includes('/colleges')) return "Manage academic colleges and faculties";
+    if (path.includes('/attendance')) return "Track employee presence and timesheets";
+    return "Manage your HR operations";
+  };
+
   const title = getPageTitle(location.pathname);
+  const subtitle = getPageSubtitle(location.pathname);
 
   // Toggle global theme exactly like in Login.jsx
   const toggleTheme = () => {
@@ -57,7 +67,7 @@ const Header = () => {
     <header className="dashboard-header">
       <div className="header-left">
         <h1 className="header-title">{title}</h1>
-        <p className="header-subtitle">Welcome back, here's what's happening today</p>
+        <p className="header-subtitle">{subtitle}</p>
       </div>
 
       <div className="header-right">
@@ -84,7 +94,7 @@ const Header = () => {
           
           {dropdownOpen && (
             <div className="settings-dropdown-menu">
-              <button className="dropdown-item">
+              <button className="dropdown-item" onClick={() => { setDropdownOpen(false); onOpenProfile && onOpenProfile(); }}>
                 <User size={16} /> Profile
               </button>
               <button className="dropdown-item" onClick={toggleLanguage}>

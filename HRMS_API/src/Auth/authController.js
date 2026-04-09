@@ -50,6 +50,7 @@ export const login = async (req, res, next) => {
         user: {
           id: user.id,
           employeeId: user.employeeId,
+          employeeCode: user.employeeCode,
           username: user.username,
           role: user.systemRole || user.employeeRole,
           employmentStatus: user.employmentStatus,

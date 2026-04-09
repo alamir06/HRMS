@@ -1,75 +1,53 @@
 import express from "express";
-import { createCrudRouter } from "../Commons/CommonRouter.js";
-import { leaveValidationSchema } from "./leaveValidation.js";
-import { leaveController } from "./leaveController.js";
+import { 
+  requestLeave, 
+  approveLeave, 
+  rejectLeave, 
+  getEmployeeLeaveData, 
+  getMyLeaves,
+  getAllRequests 
+} from "./leaveController.js";
+import { leaveValidation } from "./leaveValidation.js";
 import { authenticateToken, authorize } from "../../middleware/auth.js";
+import { fileUploadService } from "../../Commons/FileUploadService.js";
 
-const leaveRouter = express.Router();
+const router = express.Router();
 
-leaveRouter.post(
-  "/requests/apply",
-  authenticateToken,
-  authorize("HRMANAGER", "HROFFICER", "HEAD", "EMPLOYEE"),
-  leaveController.applyForLeave
+const validateBody = (schema) => (req, res, next) => {
+  try {
+    req.body = schema.parse(req.body);
+    next();
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      error: "Validation error",
+      details: error.errors
+    });
+  }
+};
+
+router.use(authenticateToken);
+
+// Employee accessible routes
+router.get("/mine", getMyLeaves);
+router.get("/employee/:id", getEmployeeLeaveData);
+router.post(
+  "/request", 
+  fileUploadService.uploadSingleDocument("supportDocument"),
+  (req, res, next) => {
+    if (req.file) {
+      req.body.supportDocument = req.file.path;
+    }
+    next();
+  },
+  validateBody(leaveValidation.createLeave), 
+  requestLeave
 );
 
-leaveRouter.post(
-  "/requests/:id/approve",
-  authenticateToken,
-  authorize("HRMANAGER", "HROFFICER"),
-  leaveController.approveLeave
-);
+// Management accessible routes
+router.use(authorize("HRMANAGER", "admin", "superAdmin")); 
+router.get("/all", getAllRequests);
+router.put("/:id/approve", validateBody(leaveValidation.approveLeave), approveLeave);
+router.put("/:id/reject", validateBody(leaveValidation.rejectLeave), rejectLeave);
 
-leaveRouter.post(
-  "/requests/:id/reject",
-  authenticateToken,
-  authorize("HRMANAGER", "HROFFICER"),
-  leaveController.rejectLeave
-);
-
-leaveRouter.get(
-  "/employees/:employeeId/summary",
-  authenticateToken,
-  authorize("HRMANAGER", "HROFFICER", "HEAD", "EMPLOYEE"),
-  leaveController.getEmployeeLeaveSummary
-);
-
-leaveRouter.get(
-  "/employees/:employeeId/history",
-  authenticateToken,
-  authorize("HRMANAGER", "HROFFICER", "HEAD", "EMPLOYEE"),
-  leaveController.getEmployeeLeaveHistory
-);
-
-const leaveTypeRouter = createCrudRouter({
-  routePath: "/",
-  tableName: "leaveTypes",
-  validationSchema: leaveValidationSchema.type,
-  displayNameField: "leaveName",
-  entityLabel: "Leave Type",
-  uuidEnabled: true,
-});
-
-const leaveBalanceRouter = createCrudRouter({
-  routePath: "/",
-  tableName: "leaveBalance",
-  validationSchema: leaveValidationSchema.balance,
-  displayNameField: "year",
-  entityLabel: "Leave Balance",
-  uuidEnabled: true,
-});
-
-const leaveRequestCrudRouter = createCrudRouter({
-  routePath: "/",
-  tableName: "leaveRequest",
-  validationSchema: leaveValidationSchema.request,
-  displayNameField: "startDate",
-  entityLabel: "Leave Request",
-  uuidEnabled: true,
-});
-
-leaveRouter.use("/types", leaveTypeRouter);
-leaveRouter.use("/balances", leaveBalanceRouter);
-leaveRouter.use("/requests", leaveRequestCrudRouter);
-
-export default leaveRouter;
+export default router;

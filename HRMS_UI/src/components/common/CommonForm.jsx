@@ -58,7 +58,7 @@ const CommonForm = ({
       case 'select':
         return (
           <select
-            className="form-select"
+            className="common-form-select"
             name={field.name}
             value={formData[field.name] || ''}
             onChange={handleChange}
@@ -76,32 +76,41 @@ const CommonForm = ({
         const defaultText = isVideo ? 'Upload a Video' : (field.accept?.includes('image') ? 'Upload an Image' : 'Upload a File');
 
         return (
-          <div className="file-upload-wrapper">
-            <div className="file-upload-zone">
+          <div className="common-file-upload-wrapper">
+            <div className="common-file-upload-zone">
               <input
                 type="file"
-                className="file-upload-input"
+                className="common-file-upload-input"
                 name={field.name}
                 id={field.name}
                 onChange={handleChange}
                 required={field.required && !formData[field.name]}
                 accept={field.accept || "*/*"}
               />
-              <div className="file-upload-content">
+              <div className="common-file-upload-content">
                 <IconComponent size={32} color="var(--text-primary)" />
-                <span className="file-upload-text">{field.label || defaultText}</span>
-                <span className="file-upload-subtext">Max size: {field.maxSize || (isVideo ? '10MB' : '5MB')}</span>
+                <span className="common-file-upload-text">{field.label || defaultText}</span>
+                <span className="common-file-upload-subtext">Max size: {field.maxSize || (isVideo ? '10MB' : '5MB')}</span>
               </div>
             </div>
             {formData[field.name] && formData[field.name].name && (
-              <div className="file-name-preview">{formData[field.name].name}</div>
+              <div className="common-file-name-preview">{formData[field.name].name}</div>
             )}
           </div>
         );
+      case 'custom':
+        if (field.render) {
+          return field.render({
+            value: formData[field.name],
+            onChange: (val) => handleChange({ target: { name: field.name, value: val } }),
+            formData
+          });
+        }
+        return null;
       case 'textarea':
         return (
           <textarea
-            className="form-input"
+            className="common-form-input"
             name={field.name}
             value={formData[field.name] || ''}
             onChange={handleChange}
@@ -114,7 +123,7 @@ const CommonForm = ({
         // text, email, password, date, number, tel
         return (
           <input
-            className="form-input"
+            className="common-form-input"
             type={field.type || 'text'}
             name={field.name}
             value={formData[field.name] || ''}
@@ -130,12 +139,12 @@ const CommonForm = ({
 
   return (
     <form className="common-form" onSubmit={handleSubmit}>
-      <div className={`form-grid ${twoColumns ? 'two-cols' : ''}`}>
+      <div className={`common-form-grid ${twoColumns ? 'common-two-cols' : ''}`}>
         {fields.map((field) => (
-          <div key={field.name} className={`form-group ${field.type === 'file' || field.fullWidth ? 'full-width' : ''}`}>
+          <div key={field.name} className={`common-form-group ${field.type === 'file' || field.fullWidth ? 'common-full-width' : ''}`}>
             {field.type !== 'file' && (
-              <label className="form-label" htmlFor={field.name}>
-                {field.label} {field.required && <span className="required-star">*</span>}
+              <label className="common-form-label" htmlFor={field.name}>
+                {field.label} {field.required && <span className="common-required-star">*</span>}
               </label>
             )}
             {renderField(field)}
@@ -143,13 +152,13 @@ const CommonForm = ({
         ))}
       </div>
       
-      <div className={`form-actions ${onCancel ? 'has-cancel' : ''}`}>
+      <div className={`common-form-actions ${onCancel ? 'common-has-cancel' : ''}`}>
         {onCancel && (
-          <button type="button" className="btn-cancel-form" onClick={onCancel} disabled={isLoading}>
+          <button type="button" className="common-btn-cancel-form" onClick={onCancel} disabled={isLoading}>
             {cancelText}
           </button>
         )}
-        <button type="submit" className="btn-submit" disabled={isLoading}>
+        <button type="submit" className="common-btn-submit" disabled={isLoading}>
           {isLoading ? "Processing..." : submitText}
         </button>
       </div>

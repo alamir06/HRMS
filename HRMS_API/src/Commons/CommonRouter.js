@@ -114,7 +114,7 @@ export const createCrudRouter = (config) => {
 
   // Apply role-based authorization
   const applyAuthorization = (roles) => {
-    if (!roles) return []; // No authorization required
+    if (!roles) return [];
     return [authorize(...roles)];
   };
 

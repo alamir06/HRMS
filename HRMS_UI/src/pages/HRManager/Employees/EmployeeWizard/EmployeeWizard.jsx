@@ -5,11 +5,11 @@ import {
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
-import Stepper from '../../components/common/Stepper';
-import { employeeService } from '../../services/employeeService';
-import { departmentService } from '../../services/departmentService';
-import { collegeService } from '../../services/collegeService';
-import { outsourceCompanyService } from '../../services/outsourceCompanyService';
+import Stepper from '../../../../components/common/Stepper';
+import { employeeService } from '../../../../services/employeeService';
+import { departmentService } from '../../../../services/departmentService';
+import { collegeService } from '../../../../services/collegeService';
+import { outsourceCompanyService } from '../../../../services/outsourceCompanyService';
 import './EmployeeWizard.css';
 
 const steps = [
@@ -287,7 +287,35 @@ const EmployeeWizard = ({ onClose, onSuccess, editEmployeeId }) => {
       const documentsToUpload = payload.documents;
       delete payload.documents;
       
-      const submitPayload = { ...payload };
+      const submitPayload = { 
+        ...payload,
+        personal: { ...payload.personal },
+        employment: { ...payload.employment }
+      };
+      if (submitPayload.academic) submitPayload.academic = { ...submitPayload.academic };
+      
+      // Ensure language sync
+      if (i18n.language === 'am') {
+        submitPayload.personal.firstName = submitPayload.personal.firstName || submitPayload.personal.firstNameAmharic;
+        submitPayload.personal.middleName = submitPayload.personal.middleName || submitPayload.personal.middleNameAmharic;
+        submitPayload.personal.lastName = submitPayload.personal.lastName || submitPayload.personal.lastNameAmharic;
+        submitPayload.personal.emergencyContactName = submitPayload.personal.emergencyContactName || submitPayload.personal.emergencyContactNameAmharic;
+        submitPayload.employment.qualification = submitPayload.employment.qualification || submitPayload.employment.qualificationAmharic;
+        if (submitPayload.academic) {
+          submitPayload.academic.academicRank = submitPayload.academic.academicRank || submitPayload.academic.academicRankAmharic;
+          submitPayload.academic.fieldOfSpecialization = submitPayload.academic.fieldOfSpecialization || submitPayload.academic.fieldOfSpecializationAmharic;
+        }
+      } else {
+        submitPayload.personal.firstNameAmharic = submitPayload.personal.firstNameAmharic || submitPayload.personal.firstName;
+        submitPayload.personal.middleNameAmharic = submitPayload.personal.middleNameAmharic || submitPayload.personal.middleName;
+        submitPayload.personal.lastNameAmharic = submitPayload.personal.lastNameAmharic || submitPayload.personal.lastName;
+        submitPayload.personal.emergencyContactNameAmharic = submitPayload.personal.emergencyContactNameAmharic || submitPayload.personal.emergencyContactName;
+        submitPayload.employment.qualificationAmharic = submitPayload.employment.qualificationAmharic || submitPayload.employment.qualification;
+        if (submitPayload.academic) {
+          submitPayload.academic.academicRankAmharic = submitPayload.academic.academicRankAmharic || submitPayload.academic.academicRank;
+          submitPayload.academic.fieldOfSpecializationAmharic = submitPayload.academic.fieldOfSpecializationAmharic || submitPayload.academic.fieldOfSpecialization;
+        }
+      }
       
       // Map UI values to strictly match Database ENUMs
       if (submitPayload.employmentType === 'FULL_TIME') {

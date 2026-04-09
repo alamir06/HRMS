@@ -40,6 +40,22 @@ const assignManagerForDesignation = async (connection, designationId) => {
       [employeeId, deptId]
     );
   }
+
+  // Auto-assign System Role based on designation title
+  let systemRole = 'EMPLOYEE';
+  if (t.includes("dean")) systemRole = 'DEAN';
+  else if (t.includes("head")) systemRole = 'HEAD';
+  else if (t.includes("hr manager") || t.includes("hrmanager")) systemRole = 'HRMANAGER';
+  else if (t.includes("hr officer") || t.includes("hrofficer")) systemRole = 'HROFFICER';
+  else if (t.includes("recruiter")) systemRole = 'RECRUITER';
+  else if (t.includes("payroll")) systemRole = 'PAYROLLOFFICER';
+
+  if (systemRole !== 'EMPLOYEE') {
+    await connection.query(
+      `UPDATE users SET systemRole = ? WHERE employeeId = UUID_TO_BIN(?)`,
+      [systemRole, employeeId]
+    );
+  }
 };
 
 const designationRouter = express.Router();
