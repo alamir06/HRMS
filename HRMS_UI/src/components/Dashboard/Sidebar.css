@@ -238,3 +238,64 @@
 [data-theme='dark'] .user-role {
   color: rgba(255, 255, 255, 0.7);
 }
+
+@media (max-width: 1024px) {
+  .dashboard-sidebar {
+    width: 240px;
+  }
+
+  .dashboard-sidebar.collapsed {
+    width: 76px;
+  }
+
+  .sidebar-brand {
+    padding: 0 1rem;
+  }
+
+  .sidebar-footer {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-sidebar,
+  .dashboard-sidebar.collapsed {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: min(290px, 84vw);
+    height: 100dvh;
+    transform: translateX(-102%);
+    transition: transform 0.25s ease;
+    z-index: 80;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.28);
+  }
+
+  .dashboard-sidebar.mobile-open {
+    transform: translateX(0);
+  }
+
+  .dashboard-sidebar.collapsed .brand-logo-wrapper,
+  .dashboard-sidebar.collapsed .nav-link {
+    margin-top: 0;
+    justify-content: flex-start;
+    padding: 0.75rem 1rem;
+  }
+
+  .dashboard-sidebar.collapsed .brand-text,
+  .dashboard-sidebar.collapsed .nav-text,
+  .dashboard-sidebar.collapsed .user-info {
+    display: initial;
+  }
+
+  .dashboard-sidebar.collapsed .sidebar-brand {
+    padding: 0 1rem;
+    justify-content: space-between;
+    flex-direction: row;
+    gap: 0;
+  }
+
+  .collapse-btn {
+    display: none;
+  }
+}

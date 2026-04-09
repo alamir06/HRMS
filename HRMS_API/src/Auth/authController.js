@@ -31,6 +31,13 @@ export const login = async (req, res, next) => {
       return res.status(401).json({ success: false, error: "User not found with the provided identifier" });
     }
 
+    if (["RESIGNED", "TERMINATED"].includes(user.employmentStatus)) {
+      return res.status(403).json({
+        success: false,
+        error: "Access denied. Employee is no longer active in the organization",
+      });
+    }
+
     if (!user.isActive) {
       return res.status(401).json({ success: false, error: "User account is inactive" });
     }

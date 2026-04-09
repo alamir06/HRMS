@@ -65,7 +65,8 @@ export const getAllRequests = async (req, res) => {
       success: true,
       message: "Leave requests fetched successfully",
       data: result.data,
-      pagination: result.pagination
+      pagination: result.pagination,
+      summary: result.summary
     });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });

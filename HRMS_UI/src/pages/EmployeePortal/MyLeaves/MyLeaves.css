@@ -1,42 +1,41 @@
 /* Ledger Overview Styles */
-@import url('https://fonts.googleapis.com/css2?family=Georgia&family=Inter:wght@400;500;600;700&display=swap');
 
-.leave-ledger-container {
+.my-leave-request-ledger-container {
   padding: 0.5rem 1rem;
   background-color: #fafafa;
   min-height: 100vh;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   color: #1f2937;
 }
 
-.leave-ledger-header {
+.my-leave-request-ledger-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
   margin-bottom: 1.5rem;
 }
 
-.leave-title-sec h1 {
+.my-leave-request-title-sec h1 {
   font-size: 1.8rem;
   font-weight: 700;
   color: #111827;
   margin-bottom: 0.25rem;
-  font-family: "Georgia", serif;
+  font-family: var(--font-family);
 }
 
-.leave-title-sec p {
+.my-leave-request-title-sec p {
   color: #6b7280;
   font-size: 0.85rem;
 }
 
-.leave-action-sec {
+.my-leave-request-action-sec {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   gap: 0.5rem;
 }
 
-.leave-btn-new-request {
+.my-leave-request-btn-new-request {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -52,23 +51,23 @@
   white-space: nowrap;
 }
 
-.leave-btn-new-request:hover {
+.my-leave-request-btn-new-request:hover {
   background-color: #047857;
 }
 
-.leave-btn-new-request:active {
+.my-leave-request-btn-new-request:active {
   transform: scale(0.98);
 }
 
 /* CARDS Grid: Show at least 4 cards side by side */
-.leave-cards-grid {
+.my-leave-request-cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1.25rem;
   margin-bottom: 2rem;
 }
 
-.leave-card {
+.my-leave-request-card {
   background-color: white;
   border-radius: 12px;
   padding: 1rem 1.25rem;
@@ -79,53 +78,53 @@
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.leave-card:hover {
+.my-leave-request-card:hover {
   transform: translateY(-3px);
   box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
 }
 
-.leave-card-header {
+.my-leave-request-card-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 1rem;
 }
 
-.leave-card-title {
+.my-leave-request-card-title {
   font-size: 0.65rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
-.leave-card-watermark {
+.my-leave-request-card-watermark {
   color: #e5e7eb;
   position: absolute;
   top: 1rem;
   right: 1rem;
 }
 
-.leave-card-body {
+.my-leave-request-card-body {
   display: flex;
   align-items: baseline;
   gap: 0.4rem;
   margin-bottom: 1rem;
 }
 
-.leave-card-remaining {
+.my-leave-request-card-remaining {
   font-size: 2.2rem;
   font-weight: 700;
   line-height: 1;
-  font-family: "Georgia", serif;
+  font-family: var(--font-family);
 }
 
-.leave-card-total {
+.my-leave-request-card-total {
   color: #6b7280;
   font-size: 0.8rem;
   font-weight: 500;
 }
 
-.leave-progress-track {
+.my-leave-request-progress-track {
   width: 100%;
   height: 4px;
   background-color: #f3f4f6;
@@ -134,44 +133,44 @@
   margin-bottom: 0.5rem;
 }
 
-.leave-progress-fill {
+.my-leave-request-progress-fill {
   height: 100%;
   border-radius: 99px;
   transition: width 1s ease-out;
 }
 
-.leave-card-footer-note {
+.my-leave-request-card-footer-note {
   font-size: 0.65rem;
   color: #6b7280;
   font-style: italic;
 }
 
 /* TRANSACTIONS TABLE - Mapped to Department style */
-.leave-transactions-section {
+.my-leave-request-transactions-section {
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
 
-.leave-trans-header-row {
+.my-leave-request-trans-header-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.leave-trans-title {
+.my-leave-request-trans-title {
   font-size: 1.1rem;
   font-weight: 700;
-  font-family: "Georgia", serif;
+  font-family: var(--font-family);
   color: #111827;
 }
 
-.leave-trans-actions {
+.my-leave-request-trans-actions {
   display: flex;
   gap: 0.5rem;
 }
 
-.leave-btn-secondary {
+.my-leave-request-btn-secondary {
   display: flex;
   align-items: center;
   gap: 0.4rem;
@@ -186,11 +185,11 @@
   transition: background-color 0.2s;
 }
 
-.leave-btn-secondary:hover {
+.my-leave-request-btn-secondary:hover {
   background-color: #f9fafb;
 }
 
-.leave-table-card {
+.my-leave-request-table-card {
   background-color: white;
   border-radius: 12px;
   box-shadow: 0 4px 20px -5px rgba(0,0,0,0.03);
@@ -200,24 +199,24 @@
   flex-direction: column;
 }
 
-.leave-table-responsive-wrapper {
+.my-leave-request-table-responsive-wrapper {
   width: 100%;
   overflow-x: auto;
 }
 
-.leave-modern-data-table {
+.my-leave-request-modern-data-table {
   width: 100%;
   border-collapse: collapse;
   text-align: left;
   min-width: 800px;
 }
 
-.leave-modern-data-table thead {
+.my-leave-request-modern-data-table thead {
   background-color: rgba(0, 0, 0, 0.02);
   border-bottom: 1px solid #e5e7eb;
 }
 
-.leave-modern-data-table th {
+.my-leave-request-modern-data-table th {
   padding: 1.25rem 1rem;
   font-weight: 600;
   font-size: 0.74rem;
@@ -225,13 +224,13 @@
   white-space: nowrap;
 }
 
-.leave-th-content {
+.my-leave-request-th-content {
   display: flex;
   align-items: center;
   gap: 0.4rem;
 }
 
-.leave-modern-data-table td {
+.my-leave-request-modern-data-table td {
   padding: 1rem;
   font-size: 0.79rem;
   color: #374151;
@@ -239,11 +238,11 @@
   vertical-align: middle;
 }
 
-.leave-modern-data-table tr:hover td {
+.my-leave-request-modern-data-table tr:hover td {
   background-color: rgba(11, 130, 85, 0.02);
 }
 
-.leave-table-footer {
+.my-leave-request-table-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -251,7 +250,7 @@
   background-color: white;
 }
 
-.leave-page-limit-selector {
+.my-leave-request-page-limit-selector {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -259,7 +258,7 @@
   color: #6b7280;
 }
 
-.leave-limit-dropdown {
+.my-leave-request-limit-dropdown {
   padding: 0.4rem 0.5rem;
   border: 1px solid #e5e7eb;
   border-radius: 4px;
@@ -269,7 +268,7 @@
   font-size: 0.74rem;
 }
 
-.leave-pagination-controls {
+.my-leave-request-pagination-controls {
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -277,7 +276,7 @@
   color: #6b7280;
 }
 
-.leave-page-btn {
+.my-leave-request-page-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -291,23 +290,23 @@
   cursor: pointer;
 }
 
-.leave-page-btn:hover:not(:disabled) {
+.my-leave-request-page-btn:hover:not(:disabled) {
   border-color: #059669;
   color: #059669;
 }
 
-.leave-page-btn:disabled {
+.my-leave-request-page-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.leave-table-actions {
+.my-leave-request-table-actions {
   display: flex;
   gap: 0.5rem;
   align-items: center;
 }
 
-.leave-action-btn-light {
+.my-leave-request-action-btn-light {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -321,26 +320,26 @@
   cursor: pointer;
 }
 
-.leave-action-btn-light:hover {
+.my-leave-request-action-btn-light:hover {
   background-color: #059669;
   color: white;
 }
 
-.leave-action-btn-danger {
+.my-leave-request-action-btn-danger {
   background-color: rgba(239, 68, 68, 0.1);
   color: #ef4444;
 }
 
-.leave-action-btn-danger:hover {
+.my-leave-request-action-btn-danger:hover {
   background-color: #ef4444;
   color: white;
 }
 
-.leave-pill-approved { background-color: #d1fae5; color: #065f46; padding: 4px 8px; border-radius: 12px; font-size: 0.64rem; font-weight: 600; }
-.leave-pill-pending { background-color: #f3f4f6; color: #374151; padding: 4px 8px; border-radius: 12px; font-size: 0.64rem; font-weight: 600; }
-.leave-pill-declined { background-color: #fee2e2; color: #ef4444; padding: 4px 8px; border-radius: 12px; font-size: 0.64rem; font-weight: 600; }
+.my-leave-request-pill-approved { background-color: #d1fae5; color: #065f46; padding: 4px 8px; border-radius: 12px; font-size: 0.64rem; font-weight: 600; }
+.my-leave-request-pill-pending { background-color: #f3f4f6; color: #374151; padding: 4px 8px; border-radius: 12px; font-size: 0.64rem; font-weight: 600; }
+.my-leave-request-pill-declined { background-color: #fee2e2; color: #ef4444; padding: 4px 8px; border-radius: 12px; font-size: 0.64rem; font-weight: 600; }
 
-.leave-type-indicator {
+.my-leave-request-type-indicator {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
@@ -348,7 +347,7 @@
   color: #4b5563;
 }
 
-.leave-dot {
+.my-leave-request-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
@@ -358,18 +357,18 @@
    MODAL OVERLAY & CONTAINER
    ========================================= */
 
-.leave-modal-overlay {
+.my-leave-request-modal-overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
   background-color: rgba(17, 24, 39, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 9999;
+  z-index: 1000;
   padding: 0.5rem;
 }
 
-.leave-modal-container {
+.my-leave-request-modal-container {
   background-color: #f9fafb;
   border-radius: 16px;
   width: 100%;
@@ -388,24 +387,24 @@
   to { opacity: 1; transform: scale(1); }
 }
 
-.leave-req-header-row {
+.my-leave-request-req-header-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1.5rem;
 }
-.leave-req-title-col h1 {
-  font-family: "Georgia", serif;
+.my-leave-request-req-title-col h1 {
+  font-family: var(--font-family);
   font-size: 1.6rem;
   font-weight: 700;
   color: #111827;
   margin-bottom: 0.2rem;
 }
-.leave-req-title-col p {
+.my-leave-request-req-title-col p {
   font-size: 0.75rem;
   color: #6b7280;
 }
-.leave-req-return-btn {
+.my-leave-request-req-return-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -418,13 +417,13 @@
   cursor: pointer;
   transition: all 0.2s;
 }
-.leave-req-return-btn:hover {
+.my-leave-request-req-return-btn:hover {
   background-color: #fee2e2;
   color: #ef4444;
   border-color: #fca5a5;
 }
 
-.leave-req-card {
+.my-leave-request-req-card {
   background: white;
   border-radius: 10px;
   padding: 1.25rem 1.5rem;
@@ -434,27 +433,27 @@
   border-left: 3px solid white;
   transition: border-left-color 0.2s;
 }
-.leave-req-card:hover {
+.my-leave-request-req-card:hover {
   border-left-color: #059669;
 }
 
-.leave-req-section-title {
+.my-leave-request-req-section-title {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-family: "Georgia", serif;
+  font-family: var(--font-family);
   font-weight: 700;
   color: #111827;
   font-size: 0.95rem;
   margin-bottom: 1rem;
 }
 
-.leave-req-info-grid {
+.my-leave-request-req-info-grid {
   display: flex;
   gap: 2rem;
   flex-wrap: wrap;
 }
-.leave-info-item label {
+.my-leave-request-info-item label {
   display: block;
   font-size: 0.55rem;
   font-weight: 700;
@@ -463,18 +462,18 @@
   letter-spacing: 0.5px;
   margin-bottom: 0.2rem;
 }
-.leave-info-item span {
+.my-leave-request-info-item span {
   font-size: 0.8rem;
   font-weight: 600;
   color: #374151;
 }
 
-.leave-type-grid {
+.my-leave-request-type-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
   gap: 0.75rem;
 }
-.leave-type-box {
+.my-leave-request-type-box {
   border: 1px solid #e5e7eb;
   border-radius: 10px;
   padding: 1rem;
@@ -482,33 +481,33 @@
   transition: all 0.2s;
   background: white;
 }
-.leave-type-box.selected {
+.my-leave-request-type-box.selected {
   border-color: #059669;
   background-color: #ecfdf5;
   box-shadow: inset 0 0 0 1px #059669;
 }
-.leave-type-icon {
+.my-leave-request-type-icon {
   margin-bottom: 0.5rem;
   display: inline-flex;
   padding: 0.3rem;
   border-radius: 6px;
 }
-.leave-type-box h4 {
+.my-leave-request-type-box h4 {
   font-size: 0.75rem;
   font-weight: 700;
   color: #111827;
   margin-bottom: 0.15rem;
 }
-.leave-type-box p {
+.my-leave-request-type-box p {
   font-size: 0.55rem;
   color: #6b7280;
 }
 
-.leave-schedule-wrapper {
+.my-leave-request-schedule-wrapper {
   display: flex;
   gap: 1rem;
 }
-.leave-schedule-card {
+.my-leave-request-schedule-card {
   flex: 2.2;
   background: white;
   border-radius: 10px;
@@ -517,7 +516,7 @@
   border: 1px solid #f3f4f6;
   margin-bottom: 1rem;
 }
-.leave-duration-card {
+.my-leave-request-duration-card {
   flex: 1;
   background-color: #047857;
   border-radius: 10px;
@@ -531,14 +530,14 @@
   box-shadow: 0 10px 20px -5px rgba(4, 120, 87, 0.4);
 }
 
-.leave-form-inputs {
+.my-leave-request-form-inputs {
   display: flex;
   gap: 1rem;
 }
-.leave-input-group {
+.my-leave-request-input-group {
   flex: 1;
 }
-.leave-input-group label {
+.my-leave-request-input-group label {
   display: block;
   font-size: 0.55rem;
   font-weight: 700;
@@ -546,7 +545,7 @@
   color: #9ca3af;
   margin-bottom: 0.3rem;
 }
-.leave-input-group input, .leave-textarea {
+.my-leave-request-input-group input, .my-leave-request-textarea {
   width: 100%;
   padding: 0.6rem 0.75rem;
   border-radius: 6px;
@@ -559,16 +558,16 @@
   font-family: inherit;
   transition: border-color 0.2s, background-color 0.2s;
 }
-.leave-input-group input:focus, .leave-textarea:focus {
+.my-leave-request-input-group input:focus, .my-leave-request-textarea:focus {
   border-color: #059669;
   background-color: white;
 }
-.leave-textarea {
+.my-leave-request-textarea {
   min-height: 80px;
   resize: vertical;
 }
 
-.leave-duration-label {
+.my-leave-request-duration-label {
   font-size: 0.55rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -576,21 +575,21 @@
   color: #a7f3d0;
   margin-bottom: 0.3rem;
 }
-.leave-duration-val {
+.my-leave-request-duration-val {
   font-size: 2.2rem;
   font-weight: 700;
-  font-family: "Georgia", serif;
+  font-family: var(--font-family);
   line-height: 1;
   margin-bottom: 0.4rem;
 }
-.leave-duration-val span {
+.my-leave-request-duration-val span {
   font-size: 0.85rem;
   font-weight: 500;
-  font-family: "Inter", sans-serif;
+  font-family: var(--font-family);
   color: #d1fae5;
   margin-left: 0.2rem;
 }
-.leave-duration-note {
+.my-leave-request-duration-note {
   font-size: 0.55rem;
   background: rgba(255,255,255,0.15);
   padding: 0.2rem 0.5rem;
@@ -598,7 +597,7 @@
   font-weight: 500;
 }
 
-.leave-upload-box {
+.my-leave-request-upload-box {
   position: relative;
   border: 1px dashed #d1d5db;
   border-radius: 10px;
@@ -609,24 +608,24 @@
   transition: all 0.2s;
   flex: 1;
 }
-.leave-upload-box:hover {
+.my-leave-request-upload-box:hover {
   background-color: #f3f4f6;
   border-color: #9ca3af;
 }
-.leave-upload-instructions {
+.my-leave-request-upload-instructions {
   font-size: 0.65rem;
   color: #6b7280;
   flex-basis: 30%;
 }
 
-.leave-form-footer {
+.my-leave-request-form-footer {
   display: flex;
   justify-content: flex-end;
   align-items: center;
   gap: 1rem;
   margin-top: 1rem;
 }
-.leave-draft-btn {
+.my-leave-request-draft-btn {
   background: transparent;
   border: none;
   color: #6b7280;
@@ -635,10 +634,10 @@
   cursor: pointer;
   transition: color 0.2s;
 }
-.leave-draft-btn:hover {
+.my-leave-request-draft-btn:hover {
   color: #374151;
 }
-.leave-submit-btn {
+.my-leave-request-submit-btn {
   background-color: #047857;
   color: white;
   border: none;
@@ -650,9 +649,9 @@
   box-shadow: 0 4px 10px rgba(4,120,87,0.3);
   transition: background-color 0.2s, transform 0.1s;
 }
-.leave-submit-btn:hover {
+.my-leave-request-submit-btn:hover {
   background-color: #065f46;
 }
-.leave-submit-btn:active {
+.my-leave-request-submit-btn:active {
   transform: scale(0.98);
 }
