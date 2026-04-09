@@ -15,9 +15,10 @@ import {
 } from 'lucide-react';
 import './Sidebar.css';
 
-const EmployeeSidebar = ({ onOpenProfile }) => {
+const EmployeeSidebar = ({ onOpenProfile, mobileOpen = false, onCloseMobile }) => {
   const [authUser, setAuthUser] = useState(null);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMobileViewport, setIsMobileViewport] = useState(window.innerWidth <= 768);
 
   useEffect(() => {
     try {
@@ -28,6 +29,12 @@ const EmployeeSidebar = ({ onOpenProfile }) => {
     } catch (e) {
       console.error("Failed to parse user data", e);
     }
+  }, []);
+
+  useEffect(() => {
+    const onResize = () => setIsMobileViewport(window.innerWidth <= 768);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
   }, []);
 
   const { t } = useTranslation();
@@ -42,12 +49,14 @@ const EmployeeSidebar = ({ onOpenProfile }) => {
     { name: t('sidebar.notifications', 'Notifications'), path: '/employee-portal/notifications', icon: <Bell size={20} /> },
   ];
 
+  const shouldCollapse = isMobileViewport ? false : isCollapsed;
+
   return (
-    <aside className={`dashboard-sidebar ${isCollapsed ? 'collapsed' : ''}`}>
+    <aside className={`dashboard-sidebar ${shouldCollapse ? 'collapsed' : ''} ${mobileOpen ? 'mobile-open' : ''}`}>
       <div className="sidebar-brand">
         <div className="brand-logo-wrapper">
           <img src={injLogo} alt="INJ Logo" className="brand-logo-img" />
-          {!isCollapsed && <span className="brand-text">My Portal</span>}
+          {!shouldCollapse && <span className="brand-text">My Portal</span>}
         </div>
         <button 
           className="collapse-btn" 
@@ -66,10 +75,11 @@ const EmployeeSidebar = ({ onOpenProfile }) => {
                 to={item.path} 
                 end={item.path === '/employee-portal'} 
                 className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}
-                title={isCollapsed ? item.name : undefined}
+                title={shouldCollapse ? item.name : undefined}
+                onClick={() => onCloseMobile && onCloseMobile()}
               >
                 <div className="nav-icon-wrapper">{item.icon}</div>
-                {!isCollapsed && <span className="nav-text">{item.name}</span>}
+                {!shouldCollapse && <span className="nav-text">{item.name}</span>}
               </NavLink>
             </li>
           ))}
@@ -78,7 +88,7 @@ const EmployeeSidebar = ({ onOpenProfile }) => {
 
       <div className="sidebar-footer">
         <div className="user-profile-widget" onClick={() => onOpenProfile && onOpenProfile()} style={{ cursor: 'pointer' }}>
-          <div className="user-avatar" title={isCollapsed ? authUser?.name || 'Employee' : undefined}>
+          <div className="user-avatar" title={shouldCollapse ? authUser?.name || 'Employee' : undefined}>
             <img 
               src={
                 authUser?.profilePicture 
@@ -93,7 +103,7 @@ const EmployeeSidebar = ({ onOpenProfile }) => {
               alt="User Profile" 
             />
           </div>
-          {!isCollapsed && (
+          {!shouldCollapse && (
             <div className="user-info">
               <span className="user-name">{authUser?.name || 'Employee'}</span>
               <span className="user-role">Self Service</span>

@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { Bell, Settings, Moon, Sun, User, Globe, LogOut } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
+import { Bell, Settings, Moon, Sun, User, Globe, LogOut, Menu, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import './Header.css';
 
-const Header = ({ onOpenProfile }) => {
+const Header = ({ onOpenProfile, onToggleSidebar, isSidebarOpen = false }) => {
   const location = useLocation();
-  const navigate = useNavigate();
   const [isDarkTheme, setIsDarkTheme] = useState(
     document.documentElement.getAttribute('data-theme') === 'dark'
   );
@@ -66,8 +65,18 @@ const Header = ({ onOpenProfile }) => {
   return (
     <header className="dashboard-header">
       <div className="header-left">
-        <h1 className="header-title">{title}</h1>
-        <p className="header-subtitle">{subtitle}</p>
+        <button
+          type="button"
+          className="mobile-menu-btn"
+          onClick={onToggleSidebar}
+          aria-label={isSidebarOpen ? 'Close navigation menu' : 'Open navigation menu'}
+        >
+          {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
+        </button>
+        <div className="header-title-group">
+          <h1 className="header-title">{title}</h1>
+          <p className="header-subtitle">{subtitle}</p>
+        </div>
       </div>
 
       <div className="header-right">

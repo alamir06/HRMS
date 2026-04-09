@@ -39,7 +39,7 @@ export class LeaveService extends CrudService {
       const totalDays = calculateWorkingDays(startDate, endDate);
       const year = new Date(startDate).getFullYear();
 
-      if (totalDays <= 0) {
+      if (totalDays <= 0 && leaveType !== "ORGANIZATION_LEAVE") {
         throw new Error("Invalid leave duration. Must include at least one working day.");
       }
 
@@ -108,12 +108,20 @@ export class LeaveService extends CrudService {
 
       // Handle Logic based on Type
       if (leaveType === "ORGANIZATION_LEAVE") {
-        // Trigger generic soft delete/resignation
+        // Trigger soft offboarding: keep records but disable access.
         await connection.query(
           `UPDATE employee 
            SET employmentStatus = 'RESIGNED', terminationDate = ? 
            WHERE id = UUID_TO_BIN(?)`,
           [startDate, employeeId]
+        );
+
+        await connection.query(
+          `UPDATE users
+           SET isActive = FALSE,
+               updatedAt = NOW()
+           WHERE employeeId = UUID_TO_BIN(?)`,
+          [employeeId]
         );
       } else {
         // Deduct from standard balance
@@ -208,7 +216,7 @@ export class LeaveService extends CrudService {
   }
 
   async getAllRequests(filters = {}) {
-    const { page = 1, limit = 10, status, search } = filters;
+    const { page = 1, limit = 10, status, search, period } = filters;
     const offset = (page - 1) * limit;
     
     let query = `
@@ -222,6 +230,7 @@ export class LeaveService extends CrudService {
         lr.reason,
         lr.status,
         lr.createdAt,
+        lr.supportDocument,
         ep.firstName,
         ep.lastName,
         ep.profilePicture
@@ -230,14 +239,26 @@ export class LeaveService extends CrudService {
       WHERE 1=1
     `;
     let countQuery = `SELECT COUNT(*) as total FROM leaveRequest lr LEFT JOIN employeePersonal ep ON lr.employeeId = ep.employeeId WHERE 1=1`;
+    let summaryQuery = `
+      SELECT
+        SUM(lr.status = 'PENDING') AS pending,
+        SUM(lr.status = 'APPROVED') AS approved,
+        SUM(lr.status = 'REJECTED') AS rejected
+      FROM leaveRequest lr
+      LEFT JOIN employeePersonal ep ON lr.employeeId = ep.employeeId
+      WHERE 1=1
+    `;
     const params = [];
     const countParams = [];
+    const summaryParams = [];
 
     if (status) {
       query += ` AND lr.status = ?`;
       countQuery += ` AND lr.status = ?`;
+      summaryQuery += ` AND lr.status = ?`;
       params.push(status);
       countParams.push(status);
+      summaryParams.push(status);
     }
     
     if (search) {
@@ -245,8 +266,31 @@ export class LeaveService extends CrudService {
       const searchClause = ` AND (ep.firstName LIKE ? OR ep.lastName LIKE ? OR lr.leaveType LIKE ?)`;
       query += searchClause;
       countQuery += searchClause;
+      summaryQuery += searchClause;
       params.push(s, s, s);
       countParams.push(s, s, s);
+      summaryParams.push(s, s, s);
+    }
+
+    if (period) {
+      const normalizedPeriod = String(period).toUpperCase();
+      let periodClause = "";
+
+      if (normalizedPeriod === "DAILY") {
+        periodClause = ` AND DATE(lr.createdAt) = CURDATE()`;
+      } else if (normalizedPeriod === "WEEKLY") {
+        periodClause = ` AND YEARWEEK(lr.createdAt, 1) = YEARWEEK(CURDATE(), 1)`;
+      } else if (normalizedPeriod === "MONTHLY") {
+        periodClause = ` AND YEAR(lr.createdAt) = YEAR(CURDATE()) AND MONTH(lr.createdAt) = MONTH(CURDATE())`;
+      } else if (normalizedPeriod === "YEARLY") {
+        periodClause = ` AND YEAR(lr.createdAt) = YEAR(CURDATE())`;
+      }
+
+      if (periodClause) {
+        query += periodClause;
+        countQuery += periodClause;
+        summaryQuery += periodClause;
+      }
     }
 
     query += ` ORDER BY lr.createdAt DESC LIMIT ? OFFSET ?`;
@@ -254,6 +298,8 @@ export class LeaveService extends CrudService {
 
     const [data] = await pool.query(query, params);
     const [countResult] = await pool.query(countQuery, countParams);
+    const [summaryResult] = await pool.query(summaryQuery, summaryParams);
+    const summaryRow = summaryResult?.[0] || {};
 
     return {
       data,
@@ -262,6 +308,11 @@ export class LeaveService extends CrudService {
         limit: parseInt(limit),
         total: countResult[0].total,
         pages: Math.ceil(countResult[0].total / limit)
+      },
+      summary: {
+        pending: Number(summaryRow.pending || 0),
+        approved: Number(summaryRow.approved || 0),
+        rejected: Number(summaryRow.rejected || 0)
       }
     };
   }
