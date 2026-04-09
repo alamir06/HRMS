@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Filter, Download, Eye, Edit2, XCircle, Info, Umbrella, BriefcaseMedical, Heart, ChevronLeft, ChevronRight, UserCircle, Grid, Calendar as CalendarIcon, AlignLeft, X, CloudUpload } from 'lucide-react';
+import { Plus, Filter, Download, Eye, Edit2, XCircle, Info, Umbrella, BriefcaseMedical, Heart, ChevronLeft, ChevronRight, UserCircle, Grid, Calendar as CalendarIcon, AlignLeft, X, CloudUpload, Printer } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { leaveService } from '../../../services/leaveService';
 import { toast } from 'react-toastify';
+import EthiopianDateInput from '../../../components/common/EthiopianDateInput';
+import injLogo from '../../../assets/inj-logo.jpg';
+import stampImg from '../../../assets/stamp.svg';
+import { formatEthiopianDate, formatEthiopianDateTime } from '../../../utils/dateTime';
 import '../EmployeePortal.css';
 import './MyLeaves.css';
 
 const MyLeaves = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [leaveData, setLeaveData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -17,8 +21,9 @@ const MyLeaves = () => {
   // Pagination states
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
+  const [viewedRequest, setViewedRequest] = useState(null);
 
-  // New Request Form State
+// New Request Form State
   const [newRequest, setNewRequest] = useState({
     leaveType: 'ANNUAL',
     startDate: '',
@@ -26,6 +31,21 @@ const MyLeaves = () => {
     reason: '',
     supportDocument: null 
   });
+
+  // Calculate generic keys for documents
+  const isAcademic = !!user?.collegeName;
+  let jobProcessDisplay = user?.position || '';
+  if (isAcademic && user?.role === 'EMPLOYEE') {
+    jobProcessDisplay = 'Lecturer';
+  } else if (!isAcademic) {
+    jobProcessDisplay = user?.department ? user.department + ' Manager' : 'Manager';
+  }
+  const caseTeamDisplay = user?.department || 'N/A';
+
+  const displayEthDate = (ethValue, gregValue) => {
+    if (ethValue) return ethValue;
+    return formatEthiopianDate(gregValue);
+  };
 
   useEffect(() => {
     const userStr = localStorage.getItem('user');
@@ -118,6 +138,11 @@ const MyLeaves = () => {
   const totalPages = Math.ceil(totalRequests / limit) || 1;
   const paginatedRequests = allRequests.slice((page - 1) * limit, page * limit);
 
+  // Computed Viewed Balance
+  const viewedBalance = viewedRequest 
+    ? leaveData?.balances?.find(b => b.leaveType === viewedRequest.leaveType)
+    : null;
+
   // Dynamic header computation
   const headerTitle = newRequest.leaveType 
     ? `Create ${newRequest.leaveType.replace('_', ' ').toLowerCase().replace(/\b\w/g, c => c.toUpperCase())} Request`
@@ -203,8 +228,8 @@ const MyLeaves = () => {
                         if (req.status === 'APPROVED') { statusClass = 'my-leave-request-pill-approved'; statusLabel = 'Approved'; }
                         else if (req.status === 'REJECTED') { statusClass = 'my-leave-request-pill-declined'; statusLabel = 'Declined'; }
 
-                        const sDate = new Date(req.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-                        const eDate = new Date(req.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                        const sDate = displayEthDate(req.startDateEth, req.startDate);
+                        const eDate = displayEthDate(req.endDateEth, req.endDate);
 
                         return (
                           <tr key={req.id}>
@@ -229,7 +254,7 @@ const MyLeaves = () => {
                                     </button>
                                   </>
                                 ) : (
-                                  <button className="my-leave-request-action-btn-light" title="Details">
+                                  <button className="my-leave-request-action-btn-light" title="Details" onClick={() => { if (req.status === 'APPROVED') setViewedRequest(req); }}>
                                     {req.status === 'REJECTED' ? <Info size={14} /> : <Eye size={14} />}
                                   </button>
                                 )}
@@ -368,19 +393,21 @@ const MyLeaves = () => {
                 <div className="my-leave-request-form-inputs">
                   <div className="my-leave-request-input-group">
                     <label>{newRequest.leaveType === 'ORGANIZATION_LEAVE' ? 'Effective Date *' : 'Start Date *'}</label>
-                    <input 
-                      type="date" 
-                      value={newRequest.startDate} 
-                      onChange={e => setNewRequest({...newRequest, startDate: e.target.value})} 
+                    <EthiopianDateInput
+                      value={newRequest.startDate}
+                      onChange={(gregDate) => setNewRequest({ ...newRequest, startDate: gregDate })}
+                      language={i18n.language}
+                      required
                     />
                   </div>
                   {newRequest.leaveType !== 'ORGANIZATION_LEAVE' && (
                     <div className="my-leave-request-input-group">
                       <label>End Date *</label>
-                      <input 
-                        type="date" 
-                        value={newRequest.endDate} 
-                        onChange={e => setNewRequest({...newRequest, endDate: e.target.value})} 
+                      <EthiopianDateInput
+                        value={newRequest.endDate}
+                        onChange={(gregDate) => setNewRequest({ ...newRequest, endDate: gregDate })}
+                        language={i18n.language}
+                        required
                       />
                     </div>
                   )}
@@ -448,6 +475,203 @@ const MyLeaves = () => {
               </button>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* DOCUMENT VIEW MODAL */}
+      {viewedRequest && (
+        <div className="my-leave-request-modal-overlay" onClick={() => setViewedRequest(null)}>
+          <div className="my-leave-request-modal-container" style={{maxWidth: '800px'}} onClick={e => e.stopPropagation()}>
+            <div className="my-leave-request-req-header-row" style={{borderBottom: 'none', paddingBottom: 0}}>
+              <button style={{marginLeft: 'auto'}} className="my-leave-request-req-return-btn" onClick={() => setViewedRequest(null)}>
+                <X size={16} />
+              </button>
+              <button style={{marginLeft: '10px', backgroundColor: '#004488', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px'}} onClick={() => {
+                const printContent = document.getElementById('print-area').innerHTML;
+                const originalContent = document.body.innerHTML;
+                document.body.innerHTML = printContent;
+                window.print();
+                document.body.innerHTML = originalContent;
+                window.location.reload(); 
+              }}>
+                <Printer size={16} /> Print
+              </button>
+            </div>
+            
+            <div id="print-area" style={{padding: '30px', fontFamily: 'Arial, sans-serif', color: '#111', lineHeight: '1.5', fontSize: '13px', background: '#fff', border: '1px solid #ddd', maxWidth: '800px', margin: '0 auto'}}>
+                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #000', padding: '10px', marginBottom: '20px'}}>
+                  <div style={{flex: 1, fontWeight: 'bold', fontSize: '12px'}}>
+                    <div style={{marginBottom: '3px'}}>በኢትዮጵያ ፌዴራላዊ ዲሞክራሲያዊ ሪፐብሊክ</div>
+                    <div style={{marginBottom: '3px'}}>የትምህርት ሚኒስቴር</div>
+                    <div style={{marginBottom: '3px'}}>የእንጅባራ ዩኒቨርሲቲ</div>
+                    <div>የብቃትና የሰው ሀብት አስተዳደር ሥራ አስፈፃሚ</div>
+                  </div>
+                  <div style={{flex: 1, textAlign: 'center', fontWeight: 'bold', fontSize: '12px'}}>
+                    <div style={{marginBottom: '3px'}}>እንጅባራ ዩኒቨርሲቲ</div>
+                    <div style={{marginBottom: '3px'}}>INJIBARA UNIVERSITY</div>
+                    <div style={{textAlign: 'center', margin: '5px 0'}}>
+                       <img src={injLogo} alt="Injibara University Logo" style={{maxWidth: '80px', height: 'auto'}} onError={(e) => e.target.style.display='none'} />
+                    </div>
+                    <div style={{border: '1px solid #000', padding: '4px 10px', display: 'inline-block', fontFamily: 'serif', borderRadius: '15px', fontSize: '14px', fontStyle: 'italic'}}>Leave form</div>
+                  </div>
+                  <div style={{flex: 1, textAlign: 'right', fontWeight: 'bold', fontSize: '12px'}}>
+                    <div style={{marginBottom: '3px'}}>The Federal Democratic Republic of Ethiopia</div>
+                    <div style={{marginBottom: '3px'}}>Ministry of Education</div>
+                    <div style={{marginBottom: '3px'}}>Injibara University</div>
+                    <div>Competency & Human Resource Management Executive</div>
+                  </div>
+                </div>
+
+                {viewedRequest.leaveType === 'ORGANIZATION_LEAVE' ? (
+                  <>
+                    <div style={{textAlign: 'right', fontWeight: 'bold'}}>
+                      ቀን: {formatEthiopianDate(new Date())}
+                    </div>
+                    <div style={{textAlign: 'center', fontSize: '20px', fontWeight: 'bold', margin: '30px 0', textDecoration: 'underline'}}>የመለቀቂያ ቅፅ</div>
+                    
+                    <div style={{marginBottom: '20px', lineHeight: '1.8'}}>
+                      <strong>ለአቶ/ወይዘሮ/ዶ/ር: <u>{user?.firstName} {user?.lastName}</u></strong><br/>
+                      <strong>እንጅባራ ዩኒቨርሲቲ!</strong>
+                    </div>
+
+                    <div style={{marginTop: '20px', marginBottom: '20px'}}>
+                      <strong>ጉዳዩ:- <u>የሥራ መልቀቂያ ማረጋገጫ ስለመስጠት</u></strong>
+                    </div>
+
+                    <p style={{textIndent: '40px', marginTop: '20px', textAlign: 'justify'}}>
+                       በእንጅባራ ዩኒቨርሲቲ በ <strong>{user?.collegeName || '_______________'}</strong> ኮሌጅ ስር በሚገኘው የ <strong>{user?.department || '_______________'}</strong> ት/ክፍል ወስጥ በ <strong>{user?.position || '_______________'}</strong> የሥራ መደብ ላይ በ <strong>{user?.salary || '_______________'}</strong> ደመወዝ ተቀጥረው ሲያገለግሉ የነበረ ሲሆን እስከ <strong>{displayEthDate(viewedRequest.startDateEth, viewedRequest.startDate)}</strong> ድረስ በማገልገል በገዛ ፈቃዳቸው የለቀቁ ስለሆነ የሥራ መልቀቂያ ማረጋገጫ ተሰጥቷቸዋል።
+                    </p>
+                    
+                    <ol style={{lineHeight: 2.2, marginTop: '20px'}}>
+                      <li>የሠራተኛው ስም: <strong>{user?.firstName} {user?.lastName}</strong></li>
+                      <li>የመታወቂያ ቁጥር: <strong>{user?.employeeCode || '_______________'}</strong></li>
+                      <li>የቅጥር ሁኔታ: <strong>Full Time</strong></li>
+                      <li>የስራ ክፍል: <strong>{user?.department || '_______________'}</strong></li>
+                      <li>የስራ መደቡ: <strong>{user?.position || '_______________'}</strong></li>
+                      <li>የወርሃዊ ደመወዝ: <strong>{user?.salary ? user.salary + ' ETB' : '_______________'}</strong></li>
+                      <li>የተቀጠሩበት ቀን: <strong>{user?.hireDate ? formatEthiopianDate(user.hireDate) : '_______________'}</strong></li>
+                      <li>ለመጨረሻ ጊዜ የተከፈለዎ የወርሃዊ ደመወዝ እስከ: <strong>{displayEthDate(viewedRequest.startDateEth, viewedRequest.startDate)}</strong></li>
+                      <li>ምክንያት: <strong>{viewedRequest.reason || 'በገዛ ፈቃዳቸው (Resignation)'}</strong></li>
+                    </ol>
+
+                    <p style={{marginTop: '20px'}}>የዩኒቨርሲቲውን ንብረት አስረክበው እና ከእዳ ነፃ መሆናቸውን አረጋግጠናል።</p>
+
+                    <div style={{textAlign: 'center', fontWeight: 'bold', marginTop: '40px', fontSize: '18px'}}>ከሠላምታ ጋር</div>
+                    <div style={{textAlign: 'center', marginTop: '10px'}}>
+                      <img src={stampImg} alt="HR Stamp" style={{maxWidth: '150px', opacity: 0.8}} onError={(e) => e.target.style.display='none'} />
+                    </div>
+
+                    <div style={{marginTop: '40px', fontSize: '14px'}}>
+                      <p><strong><u>ግልባጭ (CC):</u></strong></p>
+                      <ul style={{listStyleType: 'none', paddingLeft: '20px', lineHeight: 1.8}}>
+                        <li>ለፕሬዚዳንት ጽ/ቤት</li>
+                        <li>ለአካዳሚክ ጉዳዮች ም/ፕሬዚዳንት</li>
+                        <li>ለአስተዳደር እና ልማት ም/ፕሬዚዳንት</li>
+                        <li>ለብቃትና የሰው ሀብት አስተዳደር ሥራ ክፍል</li>
+                        <li>ለ <strong>{user?.collegeName || '_______________'}</strong> ኮሌጅ / <strong>{user?.department || '_______________'}</strong> ት/ክፍል</li>
+                        <li>እንጅባራ ዩኒቨርሲቲ</li>
+                      </ul>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div style={{display: 'flex', justifyContent: 'space-between', marginTop: '10px', fontSize: '14px'}}>
+                      <div style={{flex: 1}}>
+                        <div style={{marginBottom: '10px'}}>
+                          <strong>ለአቶ/ወ/ሮ/ወ/ሪት:</strong> <u>{user?.firstName} {user?.lastName}</u> &nbsp;&nbsp;&nbsp;&nbsp;
+                          <strong>የመታወቂያ ቁጥር:</strong> <u>{user?.employeeCode || '____________'}</u>
+                        </div>
+                        <div style={{fontWeight: 'bold', marginTop: '20px'}}>
+                          <u style={{fontSize: '16px'}}>እንጅባራ ዩኒቨርሲቲ//</u>
+                        </div>
+                      </div>
+                      <div style={{textAlign: 'right', flex: '0 0 200px'}}>
+                         <div style={{marginBottom: '10px'}}><strong>ቁጥር:</strong> <u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u></div>
+                         <div><strong>ቀን:</strong> <u>{formatEthiopianDate(new Date())}</u></div>
+                      </div>
+                    </div>
+
+                    <div style={{textAlign: 'center', fontSize: '18px', fontWeight: 'bold', margin: '30px 0', textDecoration: 'underline'}}>
+                      የሠራተኞች ፈቃድ መጠየቂያ ፎርም
+                    </div>
+                    
+                    <ol style={{lineHeight: 2.2, fontSize: '14px', marginBottom: '20px', paddingLeft: '20px'}}>
+                      <li style={{marginBottom: '10px'}}> 
+                        <strong>የሚሰሩበት የስራ ሂደት:</strong> <span style={{marginRight: '20px'}}><u>{jobProcessDisplay}</u></span>
+                        <strong>ኬዝ/ቲም ቡድን:</strong> <span><u>{caseTeamDisplay}</u></span>
+                      </li>
+                      <li style={{marginBottom: '15px'}}> 
+                        <strong>ፈቃድ የተሰጠበት ምክንያት:</strong>
+                        <div style={{marginTop: '5px', padding: '10px', border: '1px dashed #777', background: '#fafafa', borderRadius: '4px', display: 'block', maxWidth: '100%', wordWrap: 'break-word', overflowWrap: 'break-word'}}>
+                          {viewedRequest.reason || 'N/A'}
+                        </div>
+                      </li>
+                      <li style={{marginBottom: '10px'}}> 
+                        <strong>የጠየቁት ፈቃድ አይነት:</strong> <u>{viewedRequest.leaveType.replace('_', ' ')}</u>
+                      </li>
+                      <li style={{marginBottom: '10px'}}>
+                        <strong>ፈቃድ የተጠየቀበት ጊዜ፡</strong> ከ <u>{displayEthDate(viewedRequest.startDateEth, viewedRequest.startDate)}</u> እስከ <u>{displayEthDate(viewedRequest.endDateEth, viewedRequest.endDate)}</u> 
+                        የ <u>{viewedRequest.requestedDays || viewedRequest.totalDays || 0}</u> የስራ ቀናት እንዲፈቀድልኝ እጠይቃለሁ:: <br/>
+                        <div style={{marginLeft: '20px', marginTop: '5px'}}>
+                          <strong>ፊርማ:</strong> <u>(Electronic Request)</u> &nbsp;&nbsp;&nbsp;&nbsp; 
+                          <strong>ቀን:</strong> <u>{formatEthiopianDateTime(viewedRequest.createdAt)}</u>
+                        </div>
+                      </li>
+                      <li style={{marginBottom: '10px'}}> 
+                        <strong>ፈቃድ ይዘው የሚሄዱበት ቦታ:</strong> <u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u> &nbsp;&nbsp;&nbsp;&nbsp; 
+                        <strong>ስ.ቁጥር:</strong> <u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u>
+                      </li>
+                      <li style={{marginBottom: '10px'}}> 
+                        <strong>የፈቃድ ጠያቂው የቅርብ ሀላፊ አስተያየት:</strong> <u>{viewedRequest.comments || 'System Approved'}</u><br/>
+                        <div style={{marginLeft: '20px', marginTop: '5px'}}>
+                          <strong>ስም:</strong> <u>HR Manager</u> &nbsp;&nbsp;&nbsp;&nbsp; 
+                          <strong>ፊርማ:</strong> <u>(Approved)</u> &nbsp;&nbsp;&nbsp;&nbsp; 
+                          <strong>ቀን:</strong> <u>{formatEthiopianDateTime(viewedRequest.approvedAt || new Date())}</u>
+                        </div>
+                      </li>
+                    </ol>
+
+                    <div style={{fontWeight: 'bold', marginBottom: '10px', marginTop: '30px', fontSize: '14px', textDecoration: 'underline'}}>በሰው ሀብት ልማት የሚሞላ</div>
+                    <div style={{marginLeft: '20px', lineHeight: 2.0, fontSize: '14px'}}>
+                      <strong>7. የእስካሁን የአመት ፈቃድ:</strong><br/>
+                      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; የ2015 ዓ/ም: <u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u> ቀናት<br/>
+                      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; የ2016 ዓ/ም: <u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u> ቀናት<br/>
+                      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; የ2017 ዓ/ም: <u>&nbsp;&nbsp;&nbsp;&nbsp;{viewedBalance ? viewedBalance.totalAllocatedDays : ''}&nbsp;&nbsp;&nbsp;&nbsp;</u> ቀናት<br/>
+                      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>የተፈቀደ:</strong> <u>&nbsp;&nbsp;&nbsp;&nbsp;{viewedRequest.requestedDays || viewedRequest.totalDays || 0}&nbsp;&nbsp;&nbsp;&nbsp;</u> ቀናት<br/>
+                    </div>
+                    
+                    <div style={{marginTop: '20px', lineHeight: 2.0, fontSize: '14px', textAlign: 'justify'}}>
+                      <strong>ቀሪ ፈቃድ:</strong> <u>&nbsp;&nbsp;&nbsp;&nbsp;{viewedBalance ? viewedBalance.remainingDays : ''}&nbsp;&nbsp;&nbsp;&nbsp;</u> ቀን ያለዎት ሲሆን 
+                      ከ <u>{displayEthDate(viewedRequest.startDateEth, viewedRequest.startDate)}</u> ጀምሮ 
+                      እስከ <u>{displayEthDate(viewedRequest.endDateEth, viewedRequest.endDate)}</u> ድረስ 
+                      <u>{viewedRequest.requestedDays || viewedRequest.totalDays || 0}</u> የስራ ቀናት ፈቃድ የተሰጠዎት መሆኑን አውቀዉ 
+                      ከ <u>{displayEthDate(viewedRequest.endDateEth, viewedRequest.endDate)}</u> ጀምሮ በመደበኛ ስራ ቦታዎ ላይ እንዲገኙ እናሳስባለን::
+                    </div>
+
+                    <div style={{textAlign: 'right', fontWeight: 'bold', fontSize: '16px', marginTop: '30px'}}>
+                      "ከሰላምታ ጋር"
+                    </div>
+
+                    <div style={{textAlign: 'center', marginTop: '10px'}}>
+                      <img src={stampImg} alt="HR Stamp" style={{maxWidth: '150px', opacity: 0.8}} onError={(e) => e.target.style.display='none'} />
+                    </div>
+
+                    <div style={{marginTop: '30px', fontSize: '14px'}}>
+                      <div style={{fontWeight: 'bold', fontSize: '16px', textDecoration: 'underline'}}>ግልባጭ//</div>
+                      <ul style={{listStyleType: 'none', paddingLeft: '20px', lineHeight: 2.0, fontWeight: 'bold', marginTop: '10px'}}>
+                        <li>➢ ለብቃትና የሰው ሀብት አስተዳደር ሥራ ክፍል</li>
+                        <li>➢ <span style={{borderBottom: '1px dashed black', display: 'inline-block', textAlign: 'left', width: '300px'}}>{user?.department ? 'ለ ' + user.department + ' ት/ክፍል' : ''}</span></li>
+                        <li>➢ ለብቃትና የሰው ሀብት ልማት ቡድን</li>
+                        <li style={{marginLeft: '25px', textDecoration: 'underline', marginTop: '10px'}}>እንጅባራ ዩኒቨርሲቲ//</li>
+                      </ul>
+                      <div style={{marginTop: '20px', textDecoration: 'underline'}}>
+                        <strong>ማሳሰቢያ:-</strong> ፈቃድዎን አንድ ቀን ቀድመው ማሳወቂያ ይጠበቅብዎታል:: በእጅጉን ጊዜ ተሰርቶ ይላካል::
+                      </div>
+                    </div>
+                  </>
+                )}
+            </div>
           </div>
         </div>
       )}

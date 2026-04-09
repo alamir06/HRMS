@@ -6,6 +6,7 @@ import { employeeService } from '../../../../services/employeeService';
 import ConfirmModal from '../../../../components/common/ConfirmModal';
 import EmployeeWizard from '../EmployeeWizard/EmployeeWizard';
 import EmployeeProfileModal from '../EmployeeProfile/EmployeeProfile';
+import { formatEthiopianDate, getAddisNowDate } from '../../../../utils/dateTime';
 import './Employees.css';
 
 const Employees = () => {
@@ -39,6 +40,11 @@ const Employees = () => {
   // Delete confirm states
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [employeeToDelete, setEmployeeToDelete] = useState(null);
+
+  const displayEthDate = (ethValue, gregValue) => {
+    if (ethValue) return ethValue;
+    return formatEthiopianDate(gregValue);
+  };
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -149,7 +155,7 @@ const Employees = () => {
       styles += el.outerHTML;
     });
 
-    const dateStr = new Date().toLocaleDateString();
+    const dateStr = getAddisNowDate();
 
     printWindow.document.write(`
       <html>
@@ -363,7 +369,7 @@ const Employees = () => {
                             : (emp.employmentStatus || 'ACTIVE')}
                       </span>
                     </td>
-                    <td>{emp.hireDate ? new Date(emp.hireDate).toLocaleDateString() : (i18n.language === 'am' ? 'አልተገኘም' : 'N/A')}</td>
+                    <td>{displayEthDate(emp.hireDateEth, emp.hireDate) || (i18n.language === 'am' ? 'አልተገኘም' : 'N/A')}</td>
                     <td>
                       <div className="table-actions">
                         <button className="action-btn-light" onClick={() => viewDetails(emp.id)} title={i18n.language === 'am' ? 'ዝርዝሮችን ይመልከቱ' : "View Details"}>
