@@ -562,6 +562,40 @@
   border-color: #059669;
   background-color: white;
 }
+
+.my-leave-request-input-group .ethiopian-date-input {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1.1fr 1fr 0.9fr;
+  gap: 0.5rem;
+}
+
+.my-leave-request-input-group .ethiopian-date-select {
+  width: 100%;
+  min-width: 0;
+  padding: 0.6rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  background-color: #f9fafb;
+  color: #374151;
+  font-size: 0.75rem;
+  font-weight: 500;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+
+.my-leave-request-input-group .ethiopian-date-select:focus {
+  border-color: #059669;
+  background-color: white;
+}
+
+@media (max-width: 768px) {
+  .my-leave-request-input-group .ethiopian-date-input {
+    grid-template-columns: 1fr;
+  }
+}
+
 .my-leave-request-textarea {
   min-height: 80px;
   resize: vertical;

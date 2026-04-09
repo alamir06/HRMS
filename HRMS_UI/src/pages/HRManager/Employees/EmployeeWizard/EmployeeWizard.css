@@ -289,6 +289,39 @@
   pointer-events: none;
 }
 
+.premium-input-wrap .ethiopian-date-input {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1.1fr 1fr 0.9fr;
+  gap: 0.45rem;
+  padding-left: 2.5rem;
+}
+
+.premium-input-wrap .ethiopian-date-select {
+  width: 100%;
+  min-width: 0;
+  padding: 0.72rem 0.55rem;
+  border: 1px solid #d1d5db;
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: #111827;
+  background: #fff;
+  outline: none;
+  appearance: none;
+}
+
+.premium-input-wrap .ethiopian-date-select:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(11, 130, 85, 0.12);
+}
+
+@media (max-width: 768px) {
+  .premium-input-wrap .ethiopian-date-input {
+    grid-template-columns: 1fr;
+  }
+}
+
 .premium-input-wrap input:focus,
 .premium-input-wrap select:focus {
   border-color: var(--primary-color);

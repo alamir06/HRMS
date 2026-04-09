@@ -27,7 +27,7 @@ const buildTransporter = () => {
   return transporter;
 };
 
-export const sendEmail = async ({ to, subject, text, html }) => {
+export const sendEmail = async ({ to, subject, text, html, attachments }) => {
   const activeTransporter = buildTransporter();
 
   if (!to) {
@@ -42,5 +42,5 @@ export const sendEmail = async ({ to, subject, text, html }) => {
 
   const from = process.env.SMTP_FROM || process.env.SMTP_USER;
 
-  return activeTransporter.sendMail({ from, to, subject, text, html });
+  return activeTransporter.sendMail({ from, to, subject, text, html, attachments });
 };

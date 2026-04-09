@@ -1,5 +1,8 @@
 import pool from "../../config/database.js";
 import { CrudService } from "../Commons/CommonServices.js";
+import { sendEmail } from "../../utils/emailService.js";
+import { generateLeaveDocumentHTML, getLeaveDocumentImageAttachments } from "../../utils/LeaveDocumentBuilder.js";
+import { toEthiopianDateString } from "../../utils/ethiopianDate.js";
 
 // Helper to calculate working days strictly excluding Saturday (6) and Sunday (0)
 const calculateWorkingDays = (startDate, endDate) => {
@@ -28,6 +31,25 @@ const calculateWorkingDays = (startDate, endDate) => {
 export class LeaveService extends CrudService {
   constructor() {
     super("leaveRequest", "id", true);
+  }
+
+  withEthiopianLeaveFields(record = {}) {
+    if (!record || typeof record !== "object") return record;
+
+    const out = { ...record };
+    const fieldMap = {
+      startDate: "startDateEth",
+      endDate: "endDateEth",
+      createdAt: "createdAtEth",
+      approvedAt: "approvedAtEth",
+    };
+
+    Object.entries(fieldMap).forEach(([sourceField, ethField]) => {
+      if (!Object.prototype.hasOwnProperty.call(out, sourceField)) return;
+      out[ethField] = out[sourceField] ? toEthiopianDateString(out[sourceField]) : null;
+    });
+
+    return out;
   }
 
   async requestLeave(payload) {
@@ -86,6 +108,7 @@ export class LeaveService extends CrudService {
 
   async approveLeave(requestId, approvedBy, payload = {}) {
     const connection = await pool.getConnection();
+    let approvalEmailPayload = null;
     try {
       await connection.beginTransaction();
 
@@ -111,7 +134,7 @@ export class LeaveService extends CrudService {
         // Trigger soft offboarding: keep records but disable access.
         await connection.query(
           `UPDATE employee 
-           SET employmentStatus = 'RESIGNED', terminationDate = ? 
+           SET employmentStatus = 'TERMINATED', terminationDate = ? 
            WHERE id = UUID_TO_BIN(?)`,
           [startDate, employeeId]
         );
@@ -146,7 +169,80 @@ export class LeaveService extends CrudService {
         [approvedBy, comments || null, commentsAmharic || null, requestId]
       );
 
+      // Prepare HTML email payload (actual sending happens after successful commit)
+      const [empRows] = await connection.query(
+        `SELECT ep.firstName, ep.lastName, ee.officialEmail, ep.personalEmail, d.departmentName, ds.title, ee.salary, e.hireDate, c.collegeName, e.employeeCode, e.employeeRole AS role
+         FROM employee e
+         LEFT JOIN employeePersonal ep ON e.id = ep.employeeId
+         LEFT JOIN employeeEmployment ee ON e.id = ee.employeeId
+         LEFT JOIN department d ON e.departmentId = d.id
+         LEFT JOIN college c ON d.collegeId = c.id
+         LEFT JOIN designations ds ON e.id = ds.employeeId
+         WHERE e.id = UUID_TO_BIN(?)`,
+         [employeeId]
+      );
+
+      if (empRows.length > 0) {
+        const fullEmployee = empRows[0];
+        const [leaveRow] = await connection.query(
+          `SELECT leaveType, startDate, endDate, totalDays, reason, comments, createdAt, approvedAt 
+           FROM leaveRequest WHERE id = UUID_TO_BIN(?)`,
+          [requestId]
+        );
+        const leaveData = leaveRow[0];
+        
+        let balanceData = null;
+        if (leaveData.leaveType !== 'ORGANIZATION_LEAVE') {
+          const [balanceRow] = await connection.query(
+            `SELECT remainingDays, totalAllocatedDays, usedDays FROM leaveBalance WHERE employeeId = UUID_TO_BIN(?) AND leaveType = ? AND year = YEAR(CURRENT_DATE)`,
+            [employeeId, leaveData.leaveType]
+          );
+          if (balanceRow.length > 0) balanceData = balanceRow[0];
+        }
+
+        try {
+          const htmlContent = generateLeaveDocumentHTML(fullEmployee, leaveData, balanceData);
+          const inlineAttachments = getLeaveDocumentImageAttachments();
+          const emailSubject = leaveData.leaveType === 'ORGANIZATION_LEAVE'
+            ? 'Termination Clearance Letter - Injibara University'
+            : 'Formal Leave Request Approved - Injibara University';
+
+          let targetEmail = null;
+          if (leaveData.leaveType === 'ORGANIZATION_LEAVE') {
+            // Organization leave documents must be sent only to personal email.
+            targetEmail = fullEmployee.personalEmail || null;
+          } else {
+            targetEmail = fullEmployee.officialEmail || fullEmployee.personalEmail || null;
+          }
+
+          if (targetEmail) {
+            approvalEmailPayload = {
+              to: targetEmail,
+              subject: emailSubject,
+              text: `Dear ${fullEmployee.firstName || 'Employee'}, your leave request has been approved. Please view the attached inline document content in this email.`,
+              html: htmlContent,
+              attachments: inlineAttachments,
+            };
+          } else {
+            console.warn(`Approval email skipped for employee ${employeeId}: no eligible recipient email found.`);
+          }
+        } catch (emailErr) {
+          console.error("Failed to build approval email payload:", emailErr);
+          // Non-blocking, continue with approval
+        }
+      }
+
       await connection.commit();
+
+      if (approvalEmailPayload) {
+        try {
+          await sendEmail(approvalEmailPayload);
+        } catch (emailErr) {
+          console.error("Failed to send approval email:", emailErr);
+          // Non-blocking: approval already committed
+        }
+      }
+
       return { success: true, message: "Leave request approved successfully" };
     } catch (error) {
       await connection.rollback();
@@ -206,9 +302,11 @@ export class LeaveService extends CrudService {
         [employeeId]
       );
 
+      const requestsWithEthDates = requests.map((record) => this.withEthiopianLeaveFields(record));
+
       return {
         balances,
-        requests
+        requests: requestsWithEthDates
       };
     } catch (error) {
       throw error;
@@ -297,12 +395,13 @@ export class LeaveService extends CrudService {
     params.push(parseInt(limit), offset);
 
     const [data] = await pool.query(query, params);
+    const dataWithEthDates = data.map((record) => this.withEthiopianLeaveFields(record));
     const [countResult] = await pool.query(countQuery, countParams);
     const [summaryResult] = await pool.query(summaryQuery, summaryParams);
     const summaryRow = summaryResult?.[0] || {};
 
     return {
-      data,
+      data: dataWithEthDates,
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),

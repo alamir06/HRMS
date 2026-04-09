@@ -22,6 +22,18 @@ export class EmployeeController {
   findAll = async (req, res) => {
     try {
       const { include, ...filters } = req.query;
+
+      if (String(filters.employmentStatus || "").toUpperCase() === "TERMINATED") {
+        return res.status(400).json({
+          success: false,
+          error: "Use /employees/terminated endpoint to fetch terminated employees.",
+        });
+      }
+
+      if ("includeTerminated" in filters) {
+        delete filters.includeTerminated;
+      }
+
       const includeArray = include
         ? include.split(",").filter((item) => item.trim() !== "")
         : [];
@@ -39,6 +51,30 @@ export class EmployeeController {
       });
     } catch (error) {
       this.handleError(res, error, "Find employees failed");
+    }
+  };
+
+  // Get terminated employees only
+  findTerminated = async (req, res) => {
+    try {
+      const { include, ...filters } = req.query;
+      const includeArray = include
+        ? include.split(",").filter((item) => item.trim() !== "")
+        : [];
+
+      const result = await employeeService.searchTerminatedEmployees(
+        filters,
+        includeArray
+      );
+
+      res.json({
+        success: true,
+        data: result.data,
+        pagination: result.pagination,
+        summary: result.summary,
+      });
+    } catch (error) {
+      this.handleError(res, error, "Find terminated employees failed");
     }
   };
 

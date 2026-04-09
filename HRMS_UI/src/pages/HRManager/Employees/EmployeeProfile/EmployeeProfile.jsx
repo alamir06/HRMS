@@ -3,6 +3,7 @@ import { ArrowLeft, User, Briefcase, GraduationCap, FileText, UploadCloud, Trash
 import { toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
 import { employeeService } from '../../../../services/employeeService';
+import { formatEthiopianDate } from '../../../../utils/dateTime';
 import './EmployeeProfile.css';
 
 const EmployeeProfileModal = ({ employeeId, onClose }) => {
@@ -12,6 +13,11 @@ const EmployeeProfileModal = ({ employeeId, onClose }) => {
   const [isUploadingPic, setIsUploadingPic] = useState(false);
   const [viewDocModal, setViewDocModal] = useState(null);
   const fileInputRef = useRef(null);
+
+  const displayEthDate = (ethValue, gregValue) => {
+    if (ethValue) return ethValue;
+    return formatEthiopianDate(gregValue);
+  };
 
   const storedUser = localStorage.getItem('user');
   let loggedUserId = null;
@@ -203,7 +209,7 @@ const EmployeeProfileModal = ({ employeeId, onClose }) => {
              </div>
              <div className="data-group">
                <label>Date of Birth</label>
-               <span>{employee.dateOfBirth ? new Date(employee.dateOfBirth).toLocaleDateString() : 'N/A'}</span>
+               <span>{displayEthDate(employee.dateOfBirthEth, employee.dateOfBirth) || 'N/A'}</span>
              </div>
              <div className="data-group">
                <label>Personal Phone</label>
@@ -222,7 +228,7 @@ const EmployeeProfileModal = ({ employeeId, onClose }) => {
            <div className="card-data-grid">
              <div className="data-group">
                <label>Hire Date</label>
-               <span>{employee.hireDate ? new Date(employee.hireDate).toLocaleDateString() : 'N/A'}</span>
+               <span>{displayEthDate(employee.hireDateEth, employee.hireDate) || 'N/A'}</span>
              </div>
              <div className="data-group">
                <label>Contract Type</label>

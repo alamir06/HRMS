@@ -10,6 +10,8 @@ import { employeeService } from '../../../../services/employeeService';
 import { departmentService } from '../../../../services/departmentService';
 import { collegeService } from '../../../../services/collegeService';
 import { outsourceCompanyService } from '../../../../services/outsourceCompanyService';
+import EthiopianDateInput from '../../../../components/common/EthiopianDateInput';
+import { getAddisTodayGregorian, toGregorianInputDate } from '../../../../utils/dateTime';
 import './EmployeeWizard.css';
 
 const steps = [
@@ -59,7 +61,7 @@ const EmployeeWizard = ({ onClose, onSuccess, editEmployeeId }) => {
     // Base
     employeeType: 'ACADEMIC',
     departmentId: '',
-    hireDate: new Date().toISOString().split('T')[0],
+    hireDate: getAddisTodayGregorian(),
     employmentType: 'FULL_TIME',
     employmentStatus: 'ACTIVE',
     
@@ -132,7 +134,7 @@ const EmployeeWizard = ({ onClose, onSuccess, editEmployeeId }) => {
                 ...prev,
                 employeeType: e.employeeType || 'ACADEMIC',
                 departmentId: e.departmentId || '',
-                hireDate: e.hireDate ? new Date(e.hireDate).toISOString().split('T')[0] : prev.hireDate,
+                hireDate: e.hireDate ? toGregorianInputDate(e.hireDate) : prev.hireDate,
                 employmentType: e.employmentType || 'FULL_TIME',
                 employmentStatus: e.employmentStatus || 'ACTIVE',
                 personal: {
@@ -143,7 +145,7 @@ const EmployeeWizard = ({ onClose, onSuccess, editEmployeeId }) => {
                   lastName: e.lastName || '',
                   lastNameAmharic: e.lastNameAmharic || '',
                   gender: e.gender || 'MALE',
-                  dateOfBirth: e.dateOfBirth ? new Date(e.dateOfBirth).toISOString().split('T')[0] : '',
+                  dateOfBirth: e.dateOfBirth ? toGregorianInputDate(e.dateOfBirth) : '',
                   personalEmail: e.personalEmail || '',
                   personalPhone: e.personalPhone || '',
                   emergencyContactName: e.emergencyContactName || '',
@@ -408,11 +410,11 @@ const EmployeeWizard = ({ onClose, onSuccess, editEmployeeId }) => {
                         <label>{t('forms.hireDate', 'Hire Date')} <span className="req">*</span></label>
                         <div className="premium-input-wrap">
                           <Calendar size={18} className="input-icon" />
-                          <input 
-                            type="date" 
-                            value={formData.hireDate} 
-                            onChange={e => updateBase('hireDate', e.target.value)} 
-                            required 
+                          <EthiopianDateInput
+                            value={formData.hireDate}
+                            onChange={(gregDate) => updateBase('hireDate', gregDate)}
+                            language={i18n.language}
+                            required
                           />
                         </div>
                       </div>
@@ -671,7 +673,12 @@ const EmployeeWizard = ({ onClose, onSuccess, editEmployeeId }) => {
                         <label>Date of Birth <span className="req">*</span></label>
                         <div className="premium-input-wrap">
                           <Calendar size={18} className="input-icon" />
-                          <input type="date" value={formData.personal.dateOfBirth} onChange={e => updateNested('personal', 'dateOfBirth', e.target.value)} required />
+                          <EthiopianDateInput
+                            value={formData.personal.dateOfBirth}
+                            onChange={(gregDate) => updateNested('personal', 'dateOfBirth', gregDate)}
+                            language={i18n.language}
+                            required
+                          />
                         </div>
                       </div>
 
@@ -825,7 +832,11 @@ const EmployeeWizard = ({ onClose, onSuccess, editEmployeeId }) => {
                               <label>Contract End Date</label>
                               <div className="premium-input-wrap">
                                 <Calendar size={18} className="input-icon" />
-                                <input type="date" value={formData.outsource.contractEndDate} onChange={e => updateNested('outsource', 'contractEndDate', e.target.value)} />
+                                <EthiopianDateInput
+                                  value={formData.outsource.contractEndDate}
+                                  onChange={(gregDate) => updateNested('outsource', 'contractEndDate', gregDate)}
+                                  language={i18n.language}
+                                />
                               </div>
                             </div>
                           </>
@@ -894,14 +905,23 @@ const EmployeeWizard = ({ onClose, onSuccess, editEmployeeId }) => {
                            <label>Start Date <span className="req">*</span></label>
                            <div className="premium-input-wrap">
                               <Calendar size={18} className="input-icon" />
-                              <input type="date" required value={ed.startDate} onChange={e => updateEducation(idx, 'startDate', e.target.value)} />
+                              <EthiopianDateInput
+                                value={ed.startDate}
+                                onChange={(gregDate) => updateEducation(idx, 'startDate', gregDate)}
+                                language={i18n.language}
+                                required
+                              />
                            </div>
                          </div>
                          <div className="premium-form-group">
                            <label>End Date</label>
                            <div className="premium-input-wrap">
                               <Calendar size={18} className="input-icon" />
-                              <input type="date" value={ed.endDate} onChange={e => updateEducation(idx, 'endDate', e.target.value)} />
+                              <EthiopianDateInput
+                                value={ed.endDate}
+                                onChange={(gregDate) => updateEducation(idx, 'endDate', gregDate)}
+                                language={i18n.language}
+                              />
                             </div>
                           </div>
                         </div>
@@ -924,7 +944,11 @@ const EmployeeWizard = ({ onClose, onSuccess, editEmployeeId }) => {
                             <label>Graduation Date</label>
                             <div className="premium-input-wrap">
                                <Calendar size={18} className="input-icon" />
-                               <input type="date" value={ed.graduationDate} onChange={e => updateEducation(idx, 'graduationDate', e.target.value)} />
+                               <EthiopianDateInput
+                                 value={ed.graduationDate}
+                                 onChange={(gregDate) => updateEducation(idx, 'graduationDate', gregDate)}
+                                 language={i18n.language}
+                               />
                             </div>
                           </div>
                         </div>
@@ -988,7 +1012,11 @@ const EmployeeWizard = ({ onClose, onSuccess, editEmployeeId }) => {
                                <label>Issue Date</label>
                                <div className="premium-input-wrap">
                                  <Calendar size={18} className="input-icon" />
-                                 <input type="date" value={doc.issueDate} onChange={e => updateDocumentField(idx, 'issueDate', e.target.value)} />
+                                 <EthiopianDateInput
+                                   value={doc.issueDate}
+                                   onChange={(gregDate) => updateDocumentField(idx, 'issueDate', gregDate)}
+                                   language={i18n.language}
+                                 />
                                </div>
                              </div>
                              <div className="premium-form-group">

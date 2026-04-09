@@ -26,6 +26,17 @@ export const employeeService = {
     return handleResponse(() => api.get(`/employees?${params.toString()}`));
   },
 
+  getTerminatedEmployees: async (page = 1, limit = 10, search = '', sortBy = 'createdAt', sortOrder = 'DESC', filters = {}) => {
+    const params = new URLSearchParams({ page, limit, sortBy, sortOrder });
+    if (search) params.append('search', search);
+
+    Object.entries(filters).forEach(([key, val]) => {
+      if (val) params.append(key, val);
+    });
+
+    return handleResponse(() => api.get(`/employees/terminated?${params.toString()}`));
+  },
+
   getEmployeeById: async (id, includes = []) => {
     const params = new URLSearchParams();
     if (includes.length > 0) {
