@@ -22,6 +22,7 @@ const MyLeaves = () => {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [viewedRequest, setViewedRequest] = useState(null);
+  const [supportDocPreviewUrl, setSupportDocPreviewUrl] = useState(null);
 
 // New Request Form State
   const [newRequest, setNewRequest] = useState({
@@ -47,6 +48,12 @@ const MyLeaves = () => {
     return formatEthiopianDate(gregValue);
   };
 
+  const clearSupportDocument = (event) => {
+    event.stopPropagation();
+    setNewRequest((prev) => ({ ...prev, supportDocument: null }));
+    setSupportDocPreviewUrl(null);
+  };
+
   useEffect(() => {
     const userStr = localStorage.getItem('user');
     if (userStr) {
@@ -54,6 +61,20 @@ const MyLeaves = () => {
     }
     fetchMyLeaves();
   }, []);
+
+  useEffect(() => {
+    if (!newRequest.supportDocument || !newRequest.supportDocument.type?.startsWith('image/')) {
+      setSupportDocPreviewUrl(null);
+      return;
+    }
+
+    const url = URL.createObjectURL(newRequest.supportDocument);
+    setSupportDocPreviewUrl(url);
+
+    return () => {
+      URL.revokeObjectURL(url);
+    };
+  }, [newRequest.supportDocument]);
 
   const fetchMyLeaves = async () => {
     try {
@@ -112,6 +133,7 @@ const MyLeaves = () => {
         toast.success("Leave request submitted successfully");
         setIsFormOpen(false);
         setNewRequest({ leaveType: 'ANNUAL', startDate: '', endDate: '', reason: '', supportDocument: null });
+        setSupportDocPreviewUrl(null);
         fetchMyLeaves(); 
       }
     } catch (error) {
@@ -446,14 +468,37 @@ const MyLeaves = () => {
                 <div className="my-leave-request-req-section-title" style={{marginBottom: '0.3rem'}}>Supporting Documents</div>
                 <p>Optional: Upload relevant certificates or medical reports. (JPG, PNG - Max 5MB)</p>
               </div>
-              <div className="my-leave-request-upload-box">
-                <div style={{ display: 'inline-flex', padding: '0.5rem', borderRadius: '50%', backgroundColor: 'white', border: '1px solid #e5e7eb', marginBottom: '0.75rem' }}>
-                   <CloudUpload size={18} color="#059669" />
-                </div>
-                <h4 style={{ fontSize: '0.75rem', color: '#111827', marginBottom: '0.2rem' }}>
-                  {newRequest.supportDocument ? newRequest.supportDocument.name : 'Click to upload or drop file'}
-                </h4>
-                <p style={{ fontSize: '0.6rem', color: '#9ca3af' }}>Academic, medical or legal documentation</p>
+              <div className={`my-leave-request-upload-box ${supportDocPreviewUrl ? 'has-image-preview' : ''}`}>
+                {supportDocPreviewUrl ? (
+                  <img src={supportDocPreviewUrl} alt="Selected support document" className="my-leave-request-upload-preview-image" />
+                ) : (
+                  <>
+                    <div style={{ display: 'inline-flex', padding: '0.5rem', borderRadius: '50%', backgroundColor: 'white', border: '1px solid #e5e7eb', marginBottom: '0.75rem' }}>
+                       <CloudUpload size={18} color="#059669" />
+                    </div>
+                    <h4 style={{ fontSize: '0.75rem', color: '#111827', marginBottom: '0.2rem' }}>
+                      {newRequest.supportDocument ? newRequest.supportDocument.name : 'Click to upload or drop file'}
+                    </h4>
+                    <p style={{ fontSize: '0.6rem', color: '#9ca3af' }}>Academic, medical or legal documentation</p>
+                  </>
+                )}
+
+                {newRequest.supportDocument && (
+                  <>
+                    <button
+                      type="button"
+                      className="my-leave-request-upload-remove-btn"
+                      onClick={clearSupportDocument}
+                      title="Remove selected file"
+                    >
+                      <X size={14} />
+                    </button>
+                    <div className="my-leave-request-upload-preview-meta">
+                      <span>{newRequest.supportDocument.name}</span>
+                    </div>
+                  </>
+                )}
+
                 <input 
                   type="file" 
                   style={{ opacity: 0, position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', cursor: 'pointer' }} 

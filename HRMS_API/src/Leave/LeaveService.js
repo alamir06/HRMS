@@ -158,6 +158,12 @@ export class LeaveService extends CrudService {
         if (updateResult.affectedRows === 0) {
           throw new Error("Failed to update leave balance. Possibly no balance allocation exists.");
         }
+
+        // Set employee status to ONLEAVE
+        await connection.query(
+          `UPDATE employee SET employmentStatus = 'ONLEAVE' WHERE id = UUID_TO_BIN(?)`,
+          [employeeId]
+        );
       }
 
       // Update the request status
