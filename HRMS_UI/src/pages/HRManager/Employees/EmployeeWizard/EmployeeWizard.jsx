@@ -35,6 +35,8 @@ const EmployeeWizard = ({ onClose, onSuccess, editEmployeeId }) => {
     zoom: 1
   });
 
+  const isImageFile = (file) => Boolean(file && typeof file.type === 'string' && file.type.startsWith('image/'));
+
   const openPreview = (file) => {
     setPreviewModal({
       isOpen: true,
@@ -214,7 +216,8 @@ const EmployeeWizard = ({ onClose, onSuccess, editEmployeeId }) => {
         issueDate: '', 
         issuingAuthority: '', 
         description: '', 
-        file: null 
+        file: null,
+        previewUrl: null,
       }]
     }));
   };
@@ -227,16 +230,41 @@ const EmployeeWizard = ({ onClose, onSuccess, editEmployeeId }) => {
 
   const updateDocumentFile = (idx, file) => {
     const newDocs = [...formData.documents];
+    const prevPreviewUrl = newDocs[idx].previewUrl;
+
+    if (prevPreviewUrl) {
+      URL.revokeObjectURL(prevPreviewUrl);
+      newDocs[idx].previewUrl = null;
+    }
+
     newDocs[idx].file = file;
     if (!newDocs[idx].documentName && file) {
       newDocs[idx].documentName = file.name.split('.')[0];
     }
+
+    if (isImageFile(file)) {
+      newDocs[idx].previewUrl = URL.createObjectURL(file);
+    }
+
     setFormData(prev => ({ ...prev, documents: newDocs }));
   };
 
   const removeDocument = (idx) => {
     const newDocs = [...formData.documents];
+    if (newDocs[idx]?.previewUrl) {
+      URL.revokeObjectURL(newDocs[idx].previewUrl);
+    }
     newDocs.splice(idx, 1);
+    setFormData(prev => ({ ...prev, documents: newDocs }));
+  };
+
+  const clearDocumentFile = (idx) => {
+    const newDocs = [...formData.documents];
+    if (newDocs[idx]?.previewUrl) {
+      URL.revokeObjectURL(newDocs[idx].previewUrl);
+    }
+    newDocs[idx].file = null;
+    newDocs[idx].previewUrl = null;
     setFormData(prev => ({ ...prev, documents: newDocs }));
   };
 
@@ -1029,13 +1057,34 @@ const EmployeeWizard = ({ onClose, onSuccess, editEmployeeId }) => {
                            </div>
                          </div>
                          <div className="document-uploader" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                           <div className="premium-dashboard-file-upload" style={{ flex: 1, minHeight: '180px' }}>
-                             <div className="upload-icon"><FileUp size={32} /></div>
-                             <div className="upload-text">Upload a File</div>
-                             <div className="upload-subtext">Max size: 5MB</div>
+                           <div className={`premium-dashboard-file-upload ${doc.previewUrl ? 'has-image-preview' : ''}`} style={{ flex: 1, minHeight: '180px' }}>
+                             {doc.previewUrl ? (
+                               <img
+                                 src={doc.previewUrl}
+                                 alt={doc.documentName || 'Document preview'}
+                                 className="upload-image-preview"
+                               />
+                             ) : (
+                               <>
+                                 <div className="upload-icon"><FileUp size={32} /></div>
+                                 <div className="upload-text">Upload a File</div>
+                                 <div className="upload-subtext">Max size: 5MB</div>
+                               </>
+                             )}
                              
                              {doc.file && (
                                 <div className="file-preview-meta">
+                                   <button
+                                     type="button"
+                                     className="upload-clear-btn"
+                                     onClick={(e) => {
+                                       e.stopPropagation();
+                                       clearDocumentFile(idx);
+                                     }}
+                                     title="Remove selected file"
+                                   >
+                                     <X size={12} />
+                                   </button>
                                    <span style={{ fontSize: '0.75rem', color: 'var(--primary-color)', fontWeight: '500', cursor: 'pointer', textDecoration: 'underline' }} 
                                          onClick={(e) => { e.stopPropagation(); openPreview(doc.file); }}>
                                      <File size={12} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} /> 
