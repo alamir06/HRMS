@@ -324,26 +324,46 @@ const EmployeeWizard = ({ onClose, onSuccess, editEmployeeId }) => {
       };
       if (submitPayload.academic) submitPayload.academic = { ...submitPayload.academic };
       
-      // Ensure language sync
+      // Ensure payload strictly matches the language
       if (i18n.language === 'am') {
-        submitPayload.personal.firstName = submitPayload.personal.firstName || submitPayload.personal.firstNameAmharic;
-        submitPayload.personal.middleName = submitPayload.personal.middleName || submitPayload.personal.middleNameAmharic;
-        submitPayload.personal.lastName = submitPayload.personal.lastName || submitPayload.personal.lastNameAmharic;
-        submitPayload.personal.emergencyContactName = submitPayload.personal.emergencyContactName || submitPayload.personal.emergencyContactNameAmharic;
-        submitPayload.employment.qualification = submitPayload.employment.qualification || submitPayload.employment.qualificationAmharic;
+        if (!submitPayload.personal.firstNameAmharic) submitPayload.personal.firstNameAmharic = submitPayload.personal.firstName;
+        if (!submitPayload.personal.middleNameAmharic) submitPayload.personal.middleNameAmharic = submitPayload.personal.middleName;
+        if (!submitPayload.personal.lastNameAmharic) submitPayload.personal.lastNameAmharic = submitPayload.personal.lastName;
+        if (!submitPayload.personal.emergencyContactNameAmharic) submitPayload.personal.emergencyContactNameAmharic = submitPayload.personal.emergencyContactName;
+        if (!submitPayload.employment.qualificationAmharic) submitPayload.employment.qualificationAmharic = submitPayload.employment.qualification;
         if (submitPayload.academic) {
-          submitPayload.academic.academicRank = submitPayload.academic.academicRank || submitPayload.academic.academicRankAmharic;
-          submitPayload.academic.fieldOfSpecialization = submitPayload.academic.fieldOfSpecialization || submitPayload.academic.fieldOfSpecializationAmharic;
+          if (!submitPayload.academic.academicRankAmharic) submitPayload.academic.academicRankAmharic = submitPayload.academic.academicRank;
+          if (!submitPayload.academic.fieldOfSpecializationAmharic) submitPayload.academic.fieldOfSpecializationAmharic = submitPayload.academic.fieldOfSpecialization;
+        }
+
+        delete submitPayload.personal.firstName;
+        delete submitPayload.personal.middleName;
+        delete submitPayload.personal.lastName;
+        delete submitPayload.personal.emergencyContactName;
+        delete submitPayload.employment.qualification;
+        if (submitPayload.academic) {
+          delete submitPayload.academic.academicRank;
+          delete submitPayload.academic.fieldOfSpecialization;
         }
       } else {
-        submitPayload.personal.firstNameAmharic = submitPayload.personal.firstNameAmharic || submitPayload.personal.firstName;
-        submitPayload.personal.middleNameAmharic = submitPayload.personal.middleNameAmharic || submitPayload.personal.middleName;
-        submitPayload.personal.lastNameAmharic = submitPayload.personal.lastNameAmharic || submitPayload.personal.lastName;
-        submitPayload.personal.emergencyContactNameAmharic = submitPayload.personal.emergencyContactNameAmharic || submitPayload.personal.emergencyContactName;
-        submitPayload.employment.qualificationAmharic = submitPayload.employment.qualificationAmharic || submitPayload.employment.qualification;
+        if (!submitPayload.personal.firstName) submitPayload.personal.firstName = submitPayload.personal.firstNameAmharic;
+        if (!submitPayload.personal.middleName) submitPayload.personal.middleName = submitPayload.personal.middleNameAmharic;
+        if (!submitPayload.personal.lastName) submitPayload.personal.lastName = submitPayload.personal.lastNameAmharic;
+        if (!submitPayload.personal.emergencyContactName) submitPayload.personal.emergencyContactName = submitPayload.personal.emergencyContactNameAmharic;
+        if (!submitPayload.employment.qualification) submitPayload.employment.qualification = submitPayload.employment.qualificationAmharic;
         if (submitPayload.academic) {
-          submitPayload.academic.academicRankAmharic = submitPayload.academic.academicRankAmharic || submitPayload.academic.academicRank;
-          submitPayload.academic.fieldOfSpecializationAmharic = submitPayload.academic.fieldOfSpecializationAmharic || submitPayload.academic.fieldOfSpecialization;
+          if (!submitPayload.academic.academicRank) submitPayload.academic.academicRank = submitPayload.academic.academicRankAmharic;
+          if (!submitPayload.academic.fieldOfSpecialization) submitPayload.academic.fieldOfSpecialization = submitPayload.academic.fieldOfSpecializationAmharic;
+        }
+
+        delete submitPayload.personal.firstNameAmharic;
+        delete submitPayload.personal.middleNameAmharic;
+        delete submitPayload.personal.lastNameAmharic;
+        delete submitPayload.personal.emergencyContactNameAmharic;
+        delete submitPayload.employment.qualificationAmharic;
+        if (submitPayload.academic) {
+          delete submitPayload.academic.academicRankAmharic;
+          delete submitPayload.academic.fieldOfSpecializationAmharic;
         }
       }
       
@@ -690,10 +710,14 @@ const EmployeeWizard = ({ onClose, onSuccess, editEmployeeId }) => {
                       </div>
 
                       <div className="premium-form-group">
-                        <label>Gender <span className="req">*</span></label>
+                        <label>{i18n.language === 'am' ? 'ፆታ' : 'Gender'} <span className="req">*</span></label>
                         <div className="gender-toggle-group">
-                          <button type="button" className={`gender-btn ${formData.personal.gender === 'MALE' ? 'active' : ''}`} onClick={() => updateNested('personal', 'gender', 'MALE')}>Male</button>
-                          <button type="button" className={`gender-btn ${formData.personal.gender === 'FEMALE' ? 'active' : ''}`} onClick={() => updateNested('personal', 'gender', 'FEMALE')}>Female</button>
+                          <button type="button" className={`gender-btn ${formData.personal.gender === 'MALE' ? 'active' : ''}`} onClick={() => updateNested('personal', 'gender', 'MALE')}>
+                            {i18n.language === 'am' ? 'ወንድ' : 'Male'}
+                          </button>
+                          <button type="button" className={`gender-btn ${formData.personal.gender === 'FEMALE' ? 'active' : ''}`} onClick={() => updateNested('personal', 'gender', 'FEMALE')}>
+                            {i18n.language === 'am' ? 'ሴት' : 'Female'}
+                          </button>
                         </div>
                       </div>
 

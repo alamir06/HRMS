@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from "uuid";
 import bcrypt from "bcryptjs";
 import { sendEmail } from "../../utils/emailService.js";
 import { toEthiopianDateString } from "../../utils/ethiopianDate.js";
+import { translatePairs } from "../../utils/translationService.js";
 export class EmployeeService extends CrudService {
   constructor() {
     super({
@@ -12,6 +13,58 @@ export class EmployeeService extends CrudService {
       idField: "id",
       uuidEnabled: true
     });
+  }
+
+  async applyEmployeeTranslations(payload = {}) {
+    if (!payload || typeof payload !== "object") return payload;
+
+    const personalPairs = [
+      { enKey: "firstName", amKey: "firstNameAmharic" },
+      { enKey: "middleName", amKey: "middleNameAmharic" },
+      { enKey: "lastName", amKey: "lastNameAmharic" },
+      { enKey: "emergencyContactName", amKey: "emergencyContactNameAmharic" },
+    ];
+    const employmentPairs = [
+      { enKey: "qualification", amKey: "qualificationAmharic" },
+    ];
+    const academicPairs = [
+      { enKey: "academicRank", amKey: "academicRankAmharic" },
+      { enKey: "fieldOfSpecialization", amKey: "fieldOfSpecializationAmharic" },
+    ];
+    const documentPairs = [
+      { enKey: "documentName", amKey: "documentNameAmharic" },
+      { enKey: "description", amKey: "descriptionAmharic" },
+    ];
+    const educationPairs = [
+      { enKey: "institutionName", amKey: "institutionNameAmharic" },
+      { enKey: "qualification", amKey: "qualificationAmharic" },
+      { enKey: "fieldOfStudy", amKey: "fieldOfStudyAmharic" },
+      { enKey: "description", amKey: "descriptionAmharic" },
+    ];
+
+    const translated = { ...payload };
+
+    if (translated.personal) {
+      translated.personal = await translatePairs(translated.personal, personalPairs);
+    }
+    if (translated.employment) {
+      translated.employment = await translatePairs(translated.employment, employmentPairs);
+    }
+    if (translated.academic) {
+      translated.academic = await translatePairs(translated.academic, academicPairs);
+    }
+    if (Array.isArray(translated.documents)) {
+      translated.documents = await Promise.all(
+        translated.documents.map((doc) => translatePairs(doc, documentPairs))
+      );
+    }
+    if (Array.isArray(translated.education)) {
+      translated.education = await Promise.all(
+        translated.education.map((edu) => translatePairs(edu, educationPairs))
+      );
+    }
+
+    return translated;
   }
 
   withEthiopianDateFields(record = {}) {
@@ -77,7 +130,8 @@ export class EmployeeService extends CrudService {
   }
 
   async createEmployee(fullData) {
-    const { personal, employment, academic, outsource, ...employeeData } = fullData;
+    const translatedData = await this.applyEmployeeTranslations(fullData);
+    const { personal, employment, academic, outsource, ...employeeData } = translatedData;
     const connection = await pool.getConnection();
     if (employeeData.employeeCode) {
       delete employeeData.employeeCode;
@@ -470,10 +524,19 @@ export class EmployeeService extends CrudService {
           d.departmentNameAmharic,
           des.title as designationTitle,
           des.titleAmharic as designationTitleAmharic,
-          des.gradeLevel as designationGradeLevel
+          des.gradeLevel as designationGradeLevel,
+          col.collegeName,
+          col.collegeNameAmharic,
+          ea.academicRank,
+          ea.academicRankAmharic,
+          ea.academicStatus,
+          ea.fieldOfSpecialization,
+          ea.fieldOfSpecializationAmharic
         FROM employee e
         LEFT JOIN employeePersonal ep ON e.id = ep.employeeId
         LEFT JOIN employeeEmployment ee ON e.id = ee.employeeId
+        LEFT JOIN employeeAcademic ea ON e.id = ea.employeeId
+        LEFT JOIN college col ON ea.collegeId = col.id
         LEFT JOIN company c ON e.companyId = c.id
         LEFT JOIN department d ON e.departmentId = d.id
         LEFT JOIN designations des ON des.employeeId = e.id
@@ -592,8 +655,9 @@ export class EmployeeService extends CrudService {
     const connection = await pool.getConnection();
     try {
       await connection.beginTransaction();
+      const translatedData = await this.applyEmployeeTranslations(fullData);
       const { personal, employment, academic, outsource, ...employeeData } =
-        fullData;
+        translatedData;
       const isUuidField = (key) => key.endsWith("_id") || key.endsWith("Id");
 
       // Validate department logic if departmentId or employeeType are being updated
@@ -858,12 +922,14 @@ export class EmployeeService extends CrudService {
     }
     if (allIncludes.includes("company")) {
       query += `,
-        c.companyName
+        c.companyName,
+        c.companyNameAmharic
       `;
     }
     if (allIncludes.includes("DEPARTMENT")) {
       query += `,
-        d.departmentName
+        d.departmentName,
+        d.departmentNameAmharic
       `;
     }
     if (allIncludes.includes("EMPLOYMENT")) {
@@ -1160,6 +1226,9 @@ export class EmployeeService extends CrudService {
     try {
       await connection.beginTransaction();
 
+      const translatedEducation = await this.applyEmployeeTranslations({ education: [educationData] });
+      const normalizedEducation = translatedEducation?.education?.[0] || educationData;
+
       const query = `
       INSERT INTO employeeEducation (
         employeeId, institutionName, institutionNameAmharic,
@@ -1171,19 +1240,19 @@ export class EmployeeService extends CrudService {
 
       const [result] = await connection.query(query, [
         employeeId,
-        educationData.institutionName,
-        educationData.institutionNameAmharic || null,
-        educationData.qualification,
-        educationData.qualificationAmharic || null,
-        educationData.fieldOfStudy || null,
-        educationData.fieldOfStudyAmharic || null,
-        educationData.startDate,
-        educationData.endDate || null,
-        educationData.graduationDate || null,
-        educationData.grade || null,
-        educationData.description || null,
-        educationData.descriptionAmharic || null,
-        educationData.documentId || null,
+        normalizedEducation.institutionName,
+        normalizedEducation.institutionNameAmharic || null,
+        normalizedEducation.qualification,
+        normalizedEducation.qualificationAmharic || null,
+        normalizedEducation.fieldOfStudy || null,
+        normalizedEducation.fieldOfStudyAmharic || null,
+        normalizedEducation.startDate,
+        normalizedEducation.endDate || null,
+        normalizedEducation.graduationDate || null,
+        normalizedEducation.grade || null,
+        normalizedEducation.description || null,
+        normalizedEducation.descriptionAmharic || null,
+        normalizedEducation.documentId || null,
       ]);
 
       await connection.commit();
@@ -1241,6 +1310,7 @@ export class EmployeeService extends CrudService {
     try {
       await connection.beginTransaction();
 
+      const translatedData = await this.applyEmployeeTranslations(fullData);
       const {
         personal,
         employment,
@@ -1250,7 +1320,7 @@ export class EmployeeService extends CrudService {
         documents,
         education,
         ...employeeData
-      } = fullData;
+      } = translatedData;
 
       // Generate UUID for the new employee
       const employeeUUID = uuidv4();

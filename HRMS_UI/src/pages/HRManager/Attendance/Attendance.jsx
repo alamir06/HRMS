@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "./Attendance.css";
-import { Search, Download, Users, CheckCircle2, Clock, Umbrella, Plus, X, Sun, Cloud, CalendarDays, Lock, Check } from "lucide-react";
+import { Search, Download, Users, CheckCircle2, Clock, Umbrella, Plus, X, Sun, Cloud, CalendarDays, Lock, Check, ChevronDown, ChevronLeft, ChevronRight, Eye } from "lucide-react";
 import { toast } from "react-toastify";
 import EthiopianDateInput from "../../../components/common/EthiopianDateInput";
+import AttendanceDetailsModal from "./AttendanceDetailsModal";
 import { employeeService } from "../../../services/employeeService";
 import { attendanceService } from "../../../services/attendanceService";
-import { formatEthiopianDateTime } from "../../../utils/dateTime";
+import { formatEthiopianDateTime, formatEthiopianDate } from "../../../utils/dateTime";
 
 const statusOptions = ["Present", "Late", "On Leave", "Absent"];
 
@@ -17,15 +18,48 @@ const Attendance = () => {
   const [employeesData, setEmployeesData] = useState([]);
   const [attendanceData, setAttendanceData] = useState([]);
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [pagination, setPagination] = useState({ total: 0, pages: 1 });
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [summary, setSummary] = useState({ totalStaff: 0, presentToday: 0, lateArrival: 0, onLeave: 0 });
   const [employeeSearch, setEmployeeSearch] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [timeFilter, setTimeFilter] = useState("DAILY");
+  const periodMenuRef = useRef(null);
+  const [isPeriodMenuOpen, setIsPeriodMenuOpen] = useState(false);
+  const [viewDetailsEmp, setViewDetailsEmp] = useState(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (periodMenuRef.current && !periodMenuRef.current.contains(event.target)) {
+        setIsPeriodMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const periodOptions = [
+    { value: 'DAILY', label: 'Daily' },
+    { value: 'WEEKLY', label: 'Weekly' },
+    { value: 'MONTHLY', label: 'Monthly' },
+    { value: 'YEARLY', label: 'Yearly' },
+  ];
+  const selectedPeriodLabel = periodOptions.find((item) => item.value === timeFilter)?.label || 'Daily';
+
+  const getLocalDate = () => {
+    const today = new Date();
+    const tzOffset = today.getTimezoneOffset() * 60000;
+    return new Date(today.getTime() - tzOffset).toISOString().split('T')[0];
+  };
 
   const [record, setRecord] = useState({
     employee: "",
-    date: new Date().toISOString().split("T")[0],
+    date: getLocalDate(),
     morningCheckIn: null,
     morningCheckOut: null,
     morningStatus: "Present",
@@ -47,34 +81,101 @@ const Attendance = () => {
   }, [isNewRecordOpen]);
 
   useEffect(() => {
+    const fetchExistingRecord = async () => {
+      // Always reset the shift fields when employee or date changes
+      setRecord(prev => ({
+        ...prev,
+        morningCheckIn: null, morningCheckOut: null,
+        afternoonCheckIn: null, afternoonCheckOut: null,
+        remarks: ""
+      }));
+
+      if (!isNewRecordOpen || !record.employee || !record.date) {
+        return;
+      }
+      
+      try {
+         const res = await attendanceService.getEmployeeAttendance(record.employee, { limit: 50 });
+         if (res.success && res.data) {
+           const dayRecords = res.data.filter(r => r.date === record.date);
+           const morningRec = dayRecords.find(r => r.shiftName && r.shiftName.toLowerCase().includes("morning")) || dayRecords.find(r => r.shiftId === "1"); 
+           const afternoonRec = dayRecords.find(r => r.shiftName && r.shiftName.toLowerCase().includes("afternoon")) || dayRecords.find(r => r.shiftId === "2");
+           
+           setRecord(prev => ({
+             ...prev,
+             morningCheckIn: morningRec?.checkIn ? morningRec.checkIn.slice(0,5) : null,
+             morningCheckOut: morningRec?.checkOut ? morningRec.checkOut.slice(0,5) : null,
+             afternoonCheckIn: afternoonRec?.checkIn ? afternoonRec.checkIn.slice(0,5) : null,
+             afternoonCheckOut: afternoonRec?.checkOut ? afternoonRec.checkOut.slice(0,5) : null,
+             remarks: morningRec?.notes || afternoonRec?.notes || ""
+           }));
+         }
+      } catch (error) {
+         // API might return 404 if no records exist, which is fine, we remain reset.
+      }
+    };
+
+    fetchExistingRecord();
+  }, [isNewRecordOpen, record.employee, record.date]);
+
+  useEffect(() => {
     const delayDebounce = setTimeout(() => {
       loadGridData();
     }, 400);
     return () => clearTimeout(delayDebounce);
-  }, [search]);
+  }, [search, timeFilter, page, limit]);
 
   const loadGridData = async () => {
      setIsLoading(true);
      try {
-        const empRes = await employeeService.getAllEmployees(1, 50, search);
-        const emps = empRes.success ? empRes.data.data || empRes.data : [];
+        const empRes = await employeeService.getAllEmployees(page, limit, search, "createdAt", "DESC", { period: "ALL" });
+        const allEmps = empRes.success ? empRes.data.data || empRes.data : [];
+        setPagination(empRes.pagination || { total: allEmps.length, pages: 1 });
+        const activeEmps = allEmps.filter(e => !e.employmentStatus || String(e.employmentStatus).trim().toUpperCase() !== 'TERMINATED');
 
-        const today = new Date().toISOString().split("T")[0];
-        const attRes = await attendanceService.getAllAttendance({ Date: today });
+        const systemEmpRes = await employeeService.getAllEmployees(1, 1000, search, "createdAt", "DESC", { period: "ALL" });
+        const globalEmps = systemEmpRes.success ? systemEmpRes.data.data || systemEmpRes.data : [];
+        const validSystemEmps = globalEmps.filter(e => !e.employmentStatus || String(e.employmentStatus).trim().toUpperCase() !== 'TERMINATED');
+
+        const attRes = await attendanceService.getAllAttendance({ period: timeFilter });
         const atts = attRes.success ? attRes.data : [];
 
-        setEmployeesData(emps);
+        let calcPresent = 0;
+        let calcLate = 0;
+        let calcLeave = 0;
+        let calcAbsent = 0;
+
+        validSystemEmps.forEach(emp => {
+          const empRecords = atts.filter(a => a.employeeId === emp.id);
+          const morningRec = empRecords.find(a => a.shiftName?.toLowerCase().includes("morning") || a.shiftId === "1") || {};
+          const afternoonRec = empRecords.find(a => a.shiftName?.toLowerCase().includes("afternoon") || a.shiftId === "2") || {};
+
+          const isEmpOnLeave = emp.employmentStatus && String(emp.employmentStatus).trim().toUpperCase().replace(/\s+/g, '') === 'ONLEAVE';
+          let dailyStatus = "Absent";
+          
+          if (isEmpOnLeave) {
+             dailyStatus = "On Leave";
+             calcLeave++;
+          } else {
+             if (empRecords.length > 0) {
+               dailyStatus = morningRec.status || afternoonRec.status || "Present";
+             }
+             if (dailyStatus === "Absent" || empRecords.length === 0) calcAbsent++;
+             else if (dailyStatus === "Late" || morningRec.lateMinutes > 0 || afternoonRec.lateMinutes > 0) calcLate++;
+             else if (dailyStatus === "On Leave" || dailyStatus === "Leave") calcLeave++;
+             else calcPresent++;
+          }
+        });
+
+        setEmployeesData(activeEmps);
         setAttendanceData(atts);
 
-        const presentCount = atts.filter(a => a.status === 'Present').length;
-        const lateCount = atts.filter(a => a.status === 'Late' || Number(a.lateMinutes) > 0).length;
-        const leaveCount = atts.filter(a => a.status === 'On Leave' || a.status === 'Leave').length;
-
         setSummary({
-          totalStaff: empRes.success && empRes.pagination ? empRes.pagination.total : emps.length,
-          presentToday: presentCount,
-          lateArrival: lateCount,
-          onLeave: leaveCount
+           totalStaff: empRes.pagination ? empRes.pagination.total : activeEmps.length,
+           absentToday: calcAbsent,
+           presentToday: calcPresent,
+           lateArrival: calcLate,
+           onLeave: calcLeave
         });
      } catch (e) {
         console.error("Failed fetching data", e);
@@ -87,7 +188,7 @@ const Attendance = () => {
     setRecord((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleDirectStamp = async (fieldKey, shiftName, type, statusKey) => {
+  const handleDirectStamp = async (fieldKey, shiftName, type, isDependentOn = null) => {
     if (!record.employee || !record.date) {
       toast.error("Employee and Date are required to stamp!");
       return;
@@ -104,7 +205,6 @@ const Attendance = () => {
 
       let res;
       if (type === "checkIn") {
-        payload.status = record[statusKey];
         res = await attendanceService.checkIn(record.employee, payload);
       } else {
         res = await attendanceService.checkOut(record.employee, payload);
@@ -162,7 +262,7 @@ const Attendance = () => {
      }, 500);
    };
 
-  const getStampButton = (fieldKey, shiftName, type, statusKey, isDependentOn = null) => {
+   const getStampButton = (fieldKey, shiftName, type, isDependentOn = null) => {
      const val = record[fieldKey];
      if (val) {
         return (
@@ -179,7 +279,7 @@ const Attendance = () => {
        )
      }
      return (
-       <button type="button" disabled={isSaving} className="hr-attendance-stamp-btn" onClick={() => handleDirectStamp(fieldKey, shiftName, type, statusKey)} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 16px', borderRadius: '8px', border: '1px solid #38a169', background: 'white', color: '#38a169', cursor: 'pointer', fontWeight: 600 }}>
+       <button type="button" disabled={isSaving} className="hr-attendance-stamp-btn" onClick={() => handleDirectStamp(fieldKey, shiftName, type, isDependentOn)} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 16px', borderRadius: '8px', border: '1px solid #38a169', background: 'white', color: '#38a169', cursor: 'pointer', fontWeight: 600 }}>
            <Clock size={16} /> {stampTime}
        </button>
      )
@@ -189,7 +289,49 @@ const Attendance = () => {
     <div className="hr-attendance-container">
       <div className="hr-attendance-summary-header">
         <div className="hr-attendance-summary-spacer" />
-        <button className="hr-attendance-export-btn" style={{ marginLeft: '10px' }} onClick={() => setIsNewRecordOpen(true)}>
+        <div className="hr-attendance-period-filter-wrap" ref={periodMenuRef}>
+          <button
+            type="button"
+            className={`hr-attendance-period-filter-trigger ${isPeriodMenuOpen ? 'open' : ''}`}
+            onClick={() => setIsPeriodMenuOpen((prev) => !prev)}
+          >
+            <span>{selectedPeriodLabel}</span>
+            <ChevronDown size={16} className="hr-attendance-period-filter-chevron" />
+          </button>
+
+          {isPeriodMenuOpen && (
+            <div className="hr-attendance-period-filter-menu">
+              {periodOptions.map((item) => (
+                <button
+                  key={item.value}
+                  type="button"
+                  className={`hr-attendance-period-filter-option ${timeFilter === item.value ? 'active' : ''}`}
+                  onClick={() => {
+                    setTimeFilter(item.value);
+                    setIsPeriodMenuOpen(false);
+                  }}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        <button className="hr-attendance-export-btn" style={{ marginLeft: '10px' }} onClick={() => {
+           setRecord({
+              employee: "",
+              date: getLocalDate(),
+              morningCheckIn: null,
+              morningCheckOut: null,
+              morningStatus: "Present",
+              afternoonCheckIn: null,
+              afternoonCheckOut: null,
+              afternoonStatus: "Present",
+              remarks: "",
+           });
+           setEmployeeSearch("");
+           setIsNewRecordOpen(true);
+        }}>
           <Plus size={18} style={{ marginRight: '6px' }} /> 
           New Record
         </button>
@@ -199,15 +341,15 @@ const Attendance = () => {
         <div className="hr-attendance-summary-card total" style={{ background: '#e0f2fe', borderColor: '#bae6fd' }}>
           <div className="hr-attendance-summary-icon" style={{ color: '#0369a1' }}><Users size={16} /></div>
           <div>
-            <span className="hr-attendance-summary-label">TOTAL STAFF</span>
-            <div className="hr-attendance-summary-value">{summary.totalStaff}</div>
+            <span className="hr-attendance-summary-label">TOTAL ABSENT</span>
+            <div className="hr-attendance-summary-value">{summary.absentToday}</div>
           </div>
         </div>
 
         <div className="hr-attendance-summary-card approved" style={{ background: '#edf8f2', borderColor: '#d8ecdf' }}>
           <div className="hr-attendance-summary-icon" style={{ color: '#198f55' }}><CheckCircle2 size={16} /></div>
           <div>
-            <span className="hr-attendance-summary-label">PRESENT TODAY</span>
+            <span className="hr-attendance-summary-label">PRESENT</span>
             <div className="hr-attendance-summary-value">{summary.presentToday}</div>
           </div>
         </div>
@@ -252,22 +394,44 @@ const Attendance = () => {
             <thead>
                <tr>
                   <th>EMPLOYEE</th>
-                  <th>MORNING SHIFT (02:00 - 06:00)</th>
-                  <th>AFTERNOON SHIFT (08:00 - 11:00)</th>
+                  <th>M. SHIFT</th>
+                  <th>A. SHIFT</th>
+                  <th>STATUS</th>
+                  <th style={{ textAlign: 'right' }}>ACTIONS</th>
                </tr>
             </thead>
             <tbody>
                {isLoading ? (
                   <tr>
-                    <td colSpan="3" style={{ textAlign: 'center', padding: '40px' }}>Loading Data...</td>
+                    <td colSpan="7" style={{ textAlign: 'center', padding: '40px' }}>Loading Data...</td>
                   </tr>
                ) : employeesData.length === 0 ? (
                   <tr>
-                    <td colSpan="3" style={{ textAlign: 'center', padding: '40px' }}>No Employees found.</td>
+                    <td colSpan="7" style={{ textAlign: 'center', padding: '40px' }}>No Employees found.</td>
                   </tr>
                ) : (
                  employeesData.map((emp) => {
-                   const attRecord = attendanceData.find(a => a.employeeId === emp.id) || {};
+                   const empRecords = attendanceData.filter(a => a.employeeId === emp.id);
+                   const morningRec = empRecords.find(a => a.shiftName?.toLowerCase().includes("morning") || a.shiftId === "1") || {};
+                   const afternoonRec = empRecords.find(a => a.shiftName?.toLowerCase().includes("afternoon") || a.shiftId === "2") || {};
+
+                   const isEmpOnLeave = emp.employmentStatus && String(emp.employmentStatus).trim().toUpperCase().replace(/\s+/g, '') === 'ONLEAVE';
+                   
+                   let displayStatus = "Absent";
+                   if (isEmpOnLeave) {
+                      displayStatus = "On Leave";
+                   } else if (empRecords.length > 0) {
+                      const mStatus = String(morningRec.status || "").toUpperCase();
+                      const aStatus = String(afternoonRec.status || "").toUpperCase();
+                      if (mStatus === "LATE" || aStatus === "LATE" || morningRec.lateMinutes > 0 || afternoonRec.lateMinutes > 0) {
+                         displayStatus = "Late";
+                      } else {
+                         displayStatus = "Present";
+                      }
+                   }
+                   
+                   const showAsRejected = !isEmpOnLeave && (empRecords.length === 0 || displayStatus === "Absent");
+                   
                    return (
                      <tr key={emp.id}>
                         <td>
@@ -282,32 +446,42 @@ const Attendance = () => {
                            </div>
                         </td>
                         <td>
-                           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                              <div style={{ display: 'flex', gap: '8px' }}>
-                                 <span className="hr-attendance-type-badge">
-                                    IN: {attRecord.checkIn ? attRecord.checkIn.slice(0, 5) : '-:-'}
-                                 </span>
-                                 <span className="hr-attendance-type-badge">
-                                    OUT: {attRecord.checkOut ? attRecord.checkOut.slice(0, 5) : '-:-'}
-                                 </span>
-                              </div>
-                              <div>
-                                 <span className={`hr-attendance-badge ${attRecord.status === 'On Leave' ? 'hr-attendance-badge-approved' : attRecord.status === 'Absent' ? 'hr-attendance-badge-rejected' : 'hr-attendance-badge-pending'}`}>
-                                    {attRecord.status || "Absent"}
-                                 </span>
-                              </div>
+                           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                 In: <strong style={{ color: 'var(--text-primary)' }}>{isEmpOnLeave ? '--:--' : morningRec.checkIn || '--:--'}</strong>
+                              </span>
+                              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                 Out: <strong style={{ color: 'var(--text-primary)' }}>{isEmpOnLeave ? '--:--' : morningRec.checkOut || '--:--'}</strong>
+                              </span>
                            </div>
                         </td>
                         <td>
-                           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                              <div style={{ display: 'flex', gap: '8px' }}>
-                                 <span className="hr-attendance-type-badge" style={{ opacity: 0.6 }}>IN: -:-</span>
-                                 <span className="hr-attendance-type-badge" style={{ opacity: 0.6 }}>OUT: -:-</span>
-                              </div>
-                              <div>
-                                 <span className="hr-attendance-badge hr-attendance-badge-rejected">Absent</span>
-                              </div>
+                           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                 In: <strong style={{ color: 'var(--text-primary)' }}>{isEmpOnLeave ? '--:--' : afternoonRec.checkIn || '--:--'}</strong>
+                              </span>
+                              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                 Out: <strong style={{ color: 'var(--text-primary)' }}>{isEmpOnLeave ? '--:--' : afternoonRec.checkOut || '--:--'}</strong>
+                              </span>
                            </div>
+                        </td>
+                        <td>
+                           <span className={`hr-attendance-badge ${displayStatus === 'On Leave' ? 'hr-attendance-badge-pending' : displayStatus === 'Late' ? 'hr-attendance-badge-info' : displayStatus === 'Present' ? 'hr-attendance-badge-approved' : 'hr-attendance-badge-rejected'}`}>
+                              {displayStatus}
+                           </span>
+                        </td>
+                        <td style={{ textAlign: 'right' }}>
+                          <div className="hr-attendance-table-actions" style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                             {isEmpOnLeave ? (
+                                <button className="hr-attendance-action-btn-light" disabled style={{ opacity: 0.5, cursor: 'not-allowed' }} title="Employee On Leave">
+                                   <Lock size={14} />
+                                </button>
+                             ) : (
+                                <button className="hr-attendance-action-btn-light" onClick={() => setViewDetailsEmp(emp)} title="View Details">
+                                   <Eye size={14} />
+                                </button>
+                             )}
+                          </div>
                         </td>
                      </tr>
                    );
@@ -318,7 +492,26 @@ const Attendance = () => {
         </div>
         <div className="hr-attendance-table-footer">
           <div className="hr-attendance-page-limit-selector">
-            <span>Showing 1 to {employeesData.length} records</span>
+            <span>Show</span>
+            <select className="hr-attendance-limit-dropdown" value={limit} onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}>
+              <option value={5}>5</option>
+              <option value={10}>10</option>
+              <option value={15}>15</option>
+              <option value={20}>20</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+            </select>
+            <span>entries</span>
+          </div>
+
+          <div className="hr-attendance-pagination-controls">
+            <span>
+              Showing {(page - 1) * limit + 1} to {Math.min(page * limit, pagination.total)} of {pagination.total}
+            </span>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+               <button className="hr-attendance-page-btn" onClick={() => setPage(page - 1)} disabled={page <= 1}><ChevronLeft size={16} /></button>
+               <button className="hr-attendance-page-btn" onClick={() => setPage(page + 1)} disabled={page >= pagination.pages}><ChevronRight size={16} /></button>
+            </div>
           </div>
         </div>
       </div>
@@ -338,23 +531,30 @@ const Attendance = () => {
                  <div className="hr-attendance-detail-item">
                     <label>Employee Name</label>
                     <div style={{ position: 'relative' }}>
-                       <input 
-                         type="text"
-                         className="hr-attendance-action-modal-input"
-                         style={{ minHeight: '40px', padding: '8px', width: '100%' }}
-                         placeholder="Type to search..."
-                         value={employeeSearch}
-                         onChange={e => {
-                            setEmployeeSearch(e.target.value);
-                            if(!isDropdownOpen) setIsDropdownOpen(true);
-                            if (e.target.value === '') handleRecordChange("employee", "");
-                         }}
-                         onFocus={() => setIsDropdownOpen(true)}
-                         onBlur={() => setTimeout(() => setIsDropdownOpen(false), 200)}
-                       />
+                        <label htmlFor="modalEmployeeSearch" style={{ margin: 0, width: '100%', padding: '0 12px', minHeight: '40px', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid var(--border-color)', borderRadius: '8px', background: 'var(--bg-primary)' }}>
+                          <Search size={18} color="var(--text-secondary)" />
+                          <input 
+                            id="modalEmployeeSearch"
+                            type="text"
+                            style={{ border: 'none', outline: 'none', background: 'transparent', width: '100%', padding: '8px 0' }}
+                            placeholder="Type to search..."
+                            value={employeeSearch}
+                            onChange={e => {
+                               setEmployeeSearch(e.target.value);
+                               if(!isDropdownOpen) setIsDropdownOpen(true);
+                               if (e.target.value === '') handleRecordChange("employee", "");
+                            }}
+                            onFocus={() => setIsDropdownOpen(true)}
+                            onBlur={() => setTimeout(() => setIsDropdownOpen(false), 200)}
+                          />
+                        </label>
                        {isDropdownOpen && (
                          <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'var(--bg-primary)', border: '1px solid var(--border-color)', borderRadius: '8px', zIndex: 10, maxHeight: '200px', overflowY: 'auto', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
-                            {employeesData.filter(emp => `${emp.firstName} ${emp.lastName}`.toLowerCase().includes(employeeSearch.toLowerCase())).map((emp) => (
+                            {employeesData.filter(emp => {
+                               const isNotOnLeave = !(emp.employmentStatus && String(emp.employmentStatus).trim().toUpperCase().replace(/\s+/g, '') === 'ONLEAVE');
+                               const matchesSearch = `${emp.firstName} ${emp.lastName}`.toLowerCase().includes(employeeSearch.toLowerCase());
+                               return isNotOnLeave && matchesSearch;
+                            }).map((emp) => (
                                <div 
                                  key={emp.id} 
                                  style={{ padding: '10px 12px', cursor: 'pointer', borderBottom: '1px solid var(--border-color)', color: 'var(--text-primary)' }}
@@ -376,14 +576,10 @@ const Attendance = () => {
                  </div>
                  <div className="hr-attendance-detail-item">
                     <label>Entry Date</label>
-                    <div style={{ display: 'flex', alignItems: 'center', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '0 8px', background: 'var(--bg-primary)' }}>
-                       <EthiopianDateInput 
-                          value={record.date} 
-                          onChange={(val) => handleRecordChange("date", val)} 
-                       />
-                       <CalendarDays size={18} color="var(--text-secondary)" />
-                    </div>
-                 </div>
+                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px', borderRadius: '8px', border: '1px solid #e2e8f0', background: '#f8fafc', color: '#4a5568', fontWeight: 600, width: '100%', cursor: 'not-allowed', height: '40px' }}>
+                        <CalendarDays size={18} /> {formatEthiopianDate(record.date)}
+                     </div>
+                  </div>
                </div>
 
                <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
@@ -391,20 +587,14 @@ const Attendance = () => {
                      <Sun size={20} color="#0b8255" />
                      <h3 style={{ margin: 0, fontSize: '1rem', color: 'var(--text-primary)' }}>Morning Shift</h3>
                   </div>
-                  <div className="hr-attendance-detail-grid" style={{ gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr)' }}>
+                  <div className="hr-attendance-detail-grid" style={{ gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)' }}>
                      <div className="hr-attendance-detail-item">
                         <label>CHECK-IN</label>
-                        {getStampButton("morningCheckIn", "Morning", "checkIn", "morningStatus")}
+                        {getStampButton("morningCheckIn", "Morning", "checkIn")}
                      </div>
                      <div className="hr-attendance-detail-item">
                         <label>CHECK-OUT</label>
-                        {getStampButton("morningCheckOut", "Morning", "checkOut", null, "morningCheckIn")}
-                     </div>
-                     <div className="hr-attendance-detail-item">
-                        <label>STATUS</label>
-                        <select className="hr-attendance-action-modal-input" style={{ minHeight: '38px', padding: '8px' }} value={record.morningStatus} onChange={e => handleRecordChange("morningStatus", e.target.value)}>
-                           {statusOptions.map(o => <option key={o} value={o}>{o}</option>)}
-                        </select>
+                        {getStampButton("morningCheckOut", "Morning", "checkOut", "morningCheckIn")}
                      </div>
                   </div>
                </div>
@@ -414,20 +604,14 @@ const Attendance = () => {
                      <Cloud size={20} color="#0b8255" />
                      <h3 style={{ margin: 0, fontSize: '1rem', color: 'var(--text-primary)' }}>Afternoon Shift</h3>
                   </div>
-                  <div className="hr-attendance-detail-grid" style={{ gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr)' }}>
+                  <div className="hr-attendance-detail-grid" style={{ gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)' }}>
                      <div className="hr-attendance-detail-item">
                         <label>CHECK-IN</label>
-                        {getStampButton("afternoonCheckIn", "Afternoon", "checkIn", "afternoonStatus")}
+                        {getStampButton("afternoonCheckIn", "Afternoon", "checkIn")}
                      </div>
                      <div className="hr-attendance-detail-item">
                         <label>CHECK-OUT</label>
-                        {getStampButton("afternoonCheckOut", "Afternoon", "checkOut", null, "afternoonCheckIn")}
-                     </div>
-                     <div className="hr-attendance-detail-item">
-                        <label>STATUS</label>
-                        <select className="hr-attendance-action-modal-input" style={{ minHeight: '38px', padding: '8px' }} value={record.afternoonStatus} onChange={e => handleRecordChange("afternoonStatus", e.target.value)}>
-                           {statusOptions.map(o => <option key={o} value={o}>{o}</option>)}
-                        </select>
+                        {getStampButton("afternoonCheckOut", "Afternoon", "checkOut", "afternoonCheckIn")}
                      </div>
                   </div>
                </div>
@@ -460,7 +644,12 @@ const Attendance = () => {
           </div>
         </div>
       )}
+
+      {viewDetailsEmp && (
+         <AttendanceDetailsModal employee={viewDetailsEmp} onClose={() => setViewDetailsEmp(null)} />
+      )}
     </div>
+  
   );
 };
 

@@ -25,7 +25,7 @@ const attendanceCrudRouter = createCrudRouter({
   createRoles: ["HRMANAGER", "HEAD"], 
   updateRoles: ["HRMANAGER", "HEAD"],
   deleteRoles: ["HRMANAGER", "HEAD"],
-  readRoles: ["HRMANAGER", "HEAD", "DEAN"], 
+  readRoles: ["HRMANAGER", "HEAD", "DEAN", "EMPLOYEE"], 
   middleware: {
     create: [attendanceAuthGuard],
     update: [attendanceAuthGuard],

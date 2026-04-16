@@ -342,6 +342,11 @@
   color: #991b1b;
 }
 
+.hr-attendance-badge-info {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
 .hr-attendance-table-actions {
   display: flex;
   justify-content: flex-end;

@@ -99,11 +99,11 @@ const Colleges = () => {
       
       const payload = { ...formData };
       if (i18n.language === 'am') {
-        payload.collegeName = payload.collegeName || payload.collegeNameAmharic;
-        payload.collegeDescription = payload.collegeDescription || payload.collegeDescriptionAmharic;
+        delete payload.collegeName;
+        delete payload.collegeDescription;
       } else {
-        payload.collegeNameAmharic = payload.collegeNameAmharic || payload.collegeName;
-        payload.collegeDescriptionAmharic = payload.collegeDescriptionAmharic || payload.collegeDescription;
+        delete payload.collegeNameAmharic;
+        delete payload.collegeDescriptionAmharic;
       }
 
       if (editingCollege) {
@@ -179,13 +179,13 @@ const Colleges = () => {
           <input 
             id="searchCollege" 
             type="text" 
-            placeholder="Search colleges by name or description..." 
+            placeholder={i18n.language === 'am' ? "ኮሌጆችን በስም ወይም በመግለጫ ይፈልጉ..." : "Search colleges by name or description..."} 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </label>
         <button className="btn-add-college" onClick={handleOpenAdd}>
-          <Plus size={18} /> Add College
+          <Plus size={18} /> {i18n.language === 'am' ? "ኮሌጅ አክል" : "Add College"}
         </button>
       </div>
 
@@ -207,23 +207,23 @@ const Colleges = () => {
                     <th className="college-sortable-header" onClick={() => handleSort('collegeName')}>
                       <div className="college-th-content">College Name {renderSortIcon('collegeName')}</div>
                     </th>
-                    <th>Description</th>
+                    <th>{i18n.language === 'am' ? "መግለጫ" : "Description"}</th>
                   </>
                 )}
                 <th className="college-sortable-header" onClick={() => handleSort('createdAt')}>
-                  <div className="college-th-content">Created Date {renderSortIcon('createdAt')}</div>
+                  <div className="college-th-content">{i18n.language === 'am' ? "የተፈጠረበት ቀን" : "Created Date"} {renderSortIcon('createdAt')}</div>
                 </th>
-                <th>Actions</th>
+                <th>{i18n.language === 'am' ? "እርምጃዎች" : "Actions"}</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan="4" style={{ textAlign: 'center' }}>Loading...</td>
+                  <td colSpan="4" style={{ textAlign: 'center' }}>{i18n.language === 'am' ? "በመጫን ላይ..." : "Loading..."}</td>
                 </tr>
               ) : colleges.length === 0 ? (
                 <tr>
-                  <td colSpan="4" style={{ textAlign: 'center' }}>No colleges found.</td>
+                  <td colSpan="4" style={{ textAlign: 'center' }}>{i18n.language === 'am' ? "ምንም ኮሌጅ አልተገኘም።" : "No colleges found."}</td>
                 </tr>
               ) : (
                 colleges.map(college => (
@@ -246,10 +246,10 @@ const Colleges = () => {
                     <td>{new Date(college.createdAt).toLocaleDateString()}</td>
                     <td>
                       <div className="college-table-actions">
-                        <button className="college-action-btn-light" onClick={() => handleOpenEdit(college)} title="Edit">
+                        <button className="college-action-btn-light" onClick={() => handleOpenEdit(college)} title={i18n.language === 'am' ? "አስተካክል" : "Edit"}>
                           <Pencil size={14} />
                         </button>
-                        <button className="college-action-btn-light college-action-btn-danger" onClick={() => triggerDelete(college)} title="Delete">
+                        <button className="college-action-btn-light college-action-btn-danger" onClick={() => triggerDelete(college)} title={i18n.language === 'am' ? "ሰርዝ" : "Delete"}>
                           <Trash2 size={14} />
                         </button>
                       </div>
@@ -264,7 +264,7 @@ const Colleges = () => {
         {/* Footer Toolbar: Page Limit & Pagination */}
         <div className="college-table-footer">
           <div className="college-page-limit-selector">
-            <span>Show</span>
+            <span>{i18n.language === 'am' ? "አሳይ" : "Show"}</span>
             <select 
               className="college-limit-dropdown" 
               value={limit} 
@@ -273,15 +273,17 @@ const Colleges = () => {
                 setPage(1);
               }}
             >
-              <option value={10}>10</option>
-              <option value={20}>20</option>
-              <option value={50}>50</option>
+               <option value={5}>5</option>
+               <option value={10}>10</option>
+               <option value={20}>20</option>
+               <option value={30}>30</option>
+               <option value={50}>50</option>
             </select>
-            <span>entries</span>
+            <span>{i18n.language === 'am' ? "መዝገቦች" : "entries"}</span>
           </div>
 
           <div className="college-pagination-controls">
-            <span>Showing {(page - 1) * limit + 1} to {Math.min(page * limit, pagination.total)} of {pagination.total}</span>
+            <span>{i18n.language === 'am' ? `${(page - 1) * limit + 1} እስከ ${Math.min(page * limit, pagination.total)} ከ ${pagination.total} በማሳየት ላይ` : `Showing ${(page - 1) * limit + 1} to ${Math.min(page * limit, pagination.total)} of ${pagination.total}`}</span>
             <div style={{ display: 'flex', gap: '0.5rem' }}>
                <button 
                 className="college-page-btn" 
@@ -307,7 +309,9 @@ const Colleges = () => {
         <div className="modal-overlay" onClick={closeFormModal}>
           <div className="college-modal-form-wrapper" onClick={(e) => e.stopPropagation()}>
             <div className="college-modal-form-header">
-              <h3>{editingCollege ? 'Edit College' : 'Add New College'}</h3>
+              <h3>{editingCollege 
+                ? (i18n.language === 'am' ? 'ኮሌጅ አስተካክል' : 'Edit College') 
+                : (i18n.language === 'am' ? 'አዲስ ኮሌጅ አክል' : 'Add New College')}</h3>
               <button className="college-close-btn" onClick={closeFormModal}><X size={20} /></button>
             </div>
             
@@ -317,7 +321,9 @@ const Colleges = () => {
               onSubmit={handleFormSubmit}
               onCancel={closeFormModal}
               twoColumns={true}
-              submitText={editingCollege ? "Update College" : "Create College"}
+              submitText={editingCollege 
+                ? (i18n.language === 'am' ? "ኮሌጅ አዘምን" : "Update College") 
+                : (i18n.language === 'am' ? "ኮሌጅ ፍጠር" : "Create College")}
               isLoading={isSubmitting}
             />
           </div>
@@ -327,9 +333,11 @@ const Colleges = () => {
       {/* Reusable Confirm Modal for Deletions */}
       <ConfirmModal 
         isOpen={deleteModalOpen}
-        title="Delete College"
-        message={`Are you sure you want to permanently delete "${collegeToDelete?.collegeName}"? This cannot be undone.`}
-        confirmText="Confirm Delete"
+        title={i18n.language === 'am' ? "ኮሌጅ ሰርዝ" : "Delete College"}
+        message={i18n.language === 'am' 
+          ? `በእርግጥ "${collegeToDelete?.collegeNameAmharic || collegeToDelete?.collegeName}" ፋይሉን መሰረዝ ይፈልጋሉ? ይህ እርምጃ ሊቀለበስ አይችልም።`
+          : `Are you sure you want to permanently delete "${collegeToDelete?.collegeName}"? This cannot be undone.`}
+        confirmText={i18n.language === 'am' ? "መሰረዙን አረጋግጥ" : "Confirm Delete"}
         isDestructive={true}
         onConfirm={confirmDelete}
         onCancel={() => setDeleteModalOpen(false)}

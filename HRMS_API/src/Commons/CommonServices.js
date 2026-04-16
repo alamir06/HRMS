@@ -305,7 +305,12 @@ export class CrudService {
 
     try {
       const setClause = Object.keys(data)
-        .map((key) => `${key} = ?`)
+        .map((key) => {
+          if (this.uuidFields.includes(key) && data[key] !== null && data[key] !== undefined) {
+            return `${key} = UUID_TO_BIN(?)`;
+          }
+          return `${key} = ?`;
+        })
         .join(", ");
       const values = [...Object.values(data)];
 

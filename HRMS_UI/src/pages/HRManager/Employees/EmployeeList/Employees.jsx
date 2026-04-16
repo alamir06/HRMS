@@ -11,6 +11,7 @@ import './Employees.css';
 
 const Employees = () => {
   const { i18n } = useTranslation();
+  const isAmharic = i18n.language === 'am';
   const [employees, setEmployees] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   
@@ -44,6 +45,51 @@ const Employees = () => {
   const displayEthDate = (ethValue, gregValue) => {
     if (ethValue) return ethValue;
     return formatEthiopianDate(gregValue);
+  };
+
+  const getLocalizedText = (enValue, amValue) => {
+    if (isAmharic && amValue) return amValue;
+    return enValue || amValue || '';
+  };
+
+  const getEmployeeDisplayName = (emp) => {
+    const enName = `${emp.firstName || ''} ${emp.lastName || ''}`.trim();
+    const amName = `${emp.firstNameAmharic || ''} ${emp.lastNameAmharic || ''}`.trim();
+    return getLocalizedText(enName, amName) || (isAmharic ? 'ሰራተኛ' : 'Employee');
+  };
+
+  const getEmployeeTypeLabel = (value) => {
+    const map = {
+      ACADEMIC: { en: 'ACADEMIC', am: 'አካዳሚክ' },
+      ADMINISTRATIVE: { en: 'ADMINISTRATIVE', am: 'አስተዳደራዊ' },
+      OUTSOURCE: { en: 'OUTSOURCE', am: 'ውጭ' },
+    };
+    if (!value) return '';
+    return isAmharic ? map[value]?.am || value : map[value]?.en || value;
+  };
+
+  const getEmploymentTypeLabel = (value) => {
+    const map = {
+      FULLTIME: { en: 'FULLTIME', am: 'ሙሉ ጊዜ' },
+      FULL_TIME: { en: 'FULLTIME', am: 'ሙሉ ጊዜ' },
+      PARTTIME: { en: 'PARTTIME', am: 'ተከፋፈል ጊዜ' },
+      CONTRACT: { en: 'CONTRACT', am: 'ውል' },
+      INTERN: { en: 'INTERN', am: 'ስልጠና' },
+    };
+    if (!value) return '';
+    return isAmharic ? map[value]?.am || value : map[value]?.en || value;
+  };
+
+  const getEmploymentStatusLabel = (value) => {
+    const map = {
+      ACTIVE: { en: 'ACTIVE', am: 'ገባሪ' },
+      ONLEAVE: { en: 'ON LEAVE', am: 'በፈቃድ' },
+      TERMINATED: { en: 'TERMINATED', am: 'ተቋርጧል' },
+      RESIGNED: { en: 'RESIGNED', am: 'ተቋርጧል' },
+      INACTIVE: { en: 'INACTIVE', am: 'የማይሰራ' },
+    };
+    if (!value) return '';
+    return isAmharic ? map[value]?.am || value : map[value]?.en || value;
   };
 
   useEffect(() => {
@@ -192,20 +238,20 @@ const Employees = () => {
   };
 
   const periodOptions = [
-    { value: 'DAILY', label: i18n.language === 'am' ? 'ዕለታዊ' : 'Daily' },
-    { value: 'WEEKLY', label: i18n.language === 'am' ? 'ሳምንታዊ' : 'Weekly' },
-    { value: 'MONTHLY', label: i18n.language === 'am' ? 'ወርሃዊ' : 'Monthly' },
-    { value: 'YEARLY', label: i18n.language === 'am' ? 'አመታዊ' : 'Yearly' },
+    { value: 'DAILY', label: isAmharic ? 'ዕለታዊ' : 'Daily' },
+    { value: 'WEEKLY', label: isAmharic ? 'ሳምንታዊ' : 'Weekly' },
+    { value: 'MONTHLY', label: isAmharic ? 'ወርሃዊ' : 'Monthly' },
+    { value: 'YEARLY', label: isAmharic ? 'አመታዊ' : 'Yearly' },
   ];
 
-  const selectedPeriodLabel = periodOptions.find((item) => item.value === period)?.label || (i18n.language === 'am' ? 'ዕለታዊ' : 'Daily');
+  const selectedPeriodLabel = periodOptions.find((item) => item.value === period)?.label || (isAmharic ? 'ዕለታዊ' : 'Daily');
 
   return (
     <div className="employees-container">
       <div className="employees-directory-header">
         <div className="employees-directory-title-block">
-          <h2>{i18n.language === 'am' ? 'የሰራተኞች ማውጫ' : 'Employee Directory'}</h2>
-          <p>{i18n.language === 'am' ? 'የድርጅቱ ሰራተኞችን ይቆጣጠሩ እና ያስተዳድሩ' : 'Monitor and manage your organization workforce'}</p>
+          <h2>{isAmharic ? 'የሰራተኞች ማውጫ' : 'Employee Directory'}</h2>
+          <p>{isAmharic ? 'የድርጅቱ ሰራተኞችን ይቆጣጠሩ እና ያስተዳድሩ' : 'Monitor and manage your organization workforce'}</p>
         </div>
 
         <div className="employees-directory-actions">
@@ -240,7 +286,7 @@ const Employees = () => {
           </div>
 
           <button className="btn-add-employee" onClick={() => { setEditEmployeeId(null); setIsWizardOpen(true); }}>
-            <Plus size={18} /> {i18n.language === 'am' ? 'ሰራተኛ አክል' : 'Add Employee'}
+            <Plus size={18} /> {isAmharic ? 'ሰራተኛ አክል' : 'Add Employee'}
           </button>
         </div>
       </div>
@@ -249,36 +295,36 @@ const Employees = () => {
         <div className="employees-summary-card">
           <div className="employees-summary-icon"><Users size={18} /></div>
           <div className="employees-summary-content">
-            <span className="employees-summary-kicker">{i18n.language === 'am' ? 'አሁን ገባሪ' : 'ACTIVE NOW'}</span>
+            <span className="employees-summary-kicker">{isAmharic ? 'አሁን ገባሪ' : 'ACTIVE NOW'}</span>
             <div className="employees-summary-value">{summary.activeNow}</div>
-            <span className="employees-summary-label">{i18n.language === 'am' ? 'ጠቅላላ ሰራተኞች' : 'Total Employees'}</span>
+            <span className="employees-summary-label">{isAmharic ? 'ጠቅላላ ሰራተኞች' : 'Total Employees'}</span>
           </div>
         </div>
 
         <div className="employees-summary-card">
           <div className="employees-summary-icon"><GraduationCap size={18} /></div>
           <div className="employees-summary-content">
-            <span className="employees-summary-kicker">{i18n.language === 'am' ? 'አካዳሚክ' : 'TENURED'}</span>
+            <span className="employees-summary-kicker">{isAmharic ? 'አካዳሚክ' : 'TENURED'}</span>
             <div className="employees-summary-value">{summary.academic}</div>
-            <span className="employees-summary-label">{i18n.language === 'am' ? 'ጠቅላላ አካዳሚክ' : 'Total Academic'}</span>
+            <span className="employees-summary-label">{isAmharic ? 'ጠቅላላ አካዳሚክ' : 'Total Academic'}</span>
           </div>
         </div>
 
         <div className="employees-summary-card">
           <div className="employees-summary-icon"><BriefcaseBusiness size={18} /></div>
           <div className="employees-summary-content">
-            <span className="employees-summary-kicker">{i18n.language === 'am' ? 'ኦፕሬሽናል' : 'OPERATIONAL'}</span>
+            <span className="employees-summary-kicker">{isAmharic ? 'ኦፕሬሽናል' : 'OPERATIONAL'}</span>
             <div className="employees-summary-value">{summary.administrative}</div>
-            <span className="employees-summary-label">{i18n.language === 'am' ? 'ጠቅላላ አስተዳደራዊ' : 'Total Administrative'}</span>
+            <span className="employees-summary-label">{isAmharic ? 'ጠቅላላ አስተዳደራዊ' : 'Total Administrative'}</span>
           </div>
         </div>
 
         <div className="employees-summary-card">
           <div className="employees-summary-icon"><Building2 size={18} /></div>
           <div className="employees-summary-content">
-            <span className="employees-summary-kicker">{i18n.language === 'am' ? 'ውጭ ኮንትራክት' : 'CONTRACTUAL'}</span>
+            <span className="employees-summary-kicker">{isAmharic ? 'ውጭ ኮንትራክት' : 'CONTRACTUAL'}</span>
             <div className="employees-summary-value">{summary.outsource}</div>
-            <span className="employees-summary-label">{i18n.language === 'am' ? 'ጠቅላላ ውጭ ሰራተኛ' : 'Total Outsource'}</span>
+            <span className="employees-summary-label">{isAmharic ? 'ጠቅላላ ውጭ ሰራተኛ' : 'Total Outsource'}</span>
           </div>
         </div>
       </div>
@@ -289,13 +335,13 @@ const Employees = () => {
           <input 
             id="searchEmployee" 
             type="text" 
-            placeholder={i18n.language === 'am' ? 'ሰራተኞችን በስም፣ በኢሜል ወይም በመለያ ያግኙ...' : 'Search employees by name, email, or ID...'} 
+              placeholder={isAmharic ? 'ሰራተኞችን በስም፣ በኢሜል ወይም በመለያ ያግኙ...' : 'Search employees by name, email, or ID...'} 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </label>
         <button className="employees-export-btn" onClick={handleExportPdf}>
-          <Download size={18} /> {i18n.language === 'am' ? 'ወደ ፒዲኤፍ ላክ' : 'Export as PDF'}
+          <Download size={18} /> {isAmharic ? 'ወደ ፒዲኤፍ ላክ' : 'Export as PDF'}
         </button>
       </div>
 
@@ -304,8 +350,8 @@ const Employees = () => {
           <table className="modern-data-table">
             <thead>
               <tr>
-                <th>{i18n.language === 'am' ? 'መገለጫ' : 'Profile'}</th>
-                {i18n.language === 'am' ? (
+                <th>{isAmharic ? 'መገለጫ' : 'Profile'}</th>
+                {isAmharic ? (
                   <th className="sortable-header" onClick={() => handleSort('firstNameAmharic')}>
                     <div className="th-content">ስም {renderSortIcon('firstNameAmharic')}</div>
                   </th>
@@ -314,71 +360,70 @@ const Employees = () => {
                     <div className="th-content">Name {renderSortIcon('firstName')}</div>
                   </th>
                 )}
-                <th>{i18n.language === 'am' ? 'የቅጥር ዓይነት' : 'Employment Type'}</th>
-                <th>{i18n.language === 'am' ? 'ሚና/ዲፓርትመንት' : 'Role/Department'}</th>
-                <th>{i18n.language === 'am' ? 'ሁኔታ' : 'Status'}</th>
+                <th>{isAmharic ? 'የቅጥር ዓይነት' : 'Employment Type'}</th>
+                <th>{isAmharic ? 'ሚና/ዲፓርትመንት' : 'Role/Department'}</th>
+                <th>{isAmharic ? 'ሁኔታ' : 'Status'}</th>
                 <th className="sortable-header" onClick={() => handleSort('hireDate')}>
-                  <div className="th-content">{i18n.language === 'am' ? 'የተቀጠረበት ቀን' : 'Hire Date'} {renderSortIcon('hireDate')}</div>
+                  <div className="th-content">{isAmharic ? 'የተቀጠረበት ቀን' : 'Hire Date'} {renderSortIcon('hireDate')}</div>
                 </th>
-                <th>{i18n.language === 'am' ? 'ድርጊቶች' : 'Actions'}</th>
+                <th>{isAmharic ? 'ድርጊቶች' : 'Actions'}</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan="7" style={{ textAlign: 'center' }}>{i18n.language === 'am' ? 'ሰራተኞችን በመጫን ላይ...' : 'Loading...'}</td>
+                  <td colSpan="7" style={{ textAlign: 'center' }}>{isAmharic ? 'ሰራተኞችን በመጫን ላይ...' : 'Loading...'}</td>
                 </tr>
               ) : employees.length === 0 ? (
                 <tr>
-                  <td colSpan="7" style={{ textAlign: 'center' }}>{i18n.language === 'am' ? 'ምንም ሰራተኛ አልተገኘም.' : 'No employees found.'}</td>
+                  <td colSpan="7" style={{ textAlign: 'center' }}>{isAmharic ? 'ምንም ሰራተኛ አልተገኘም.' : 'No employees found.'}</td>
                 </tr>
               ) : (
                 employees.map(emp => (
                   <tr key={emp.id}>
                     <td>
                       <div className="table-avatar">
+                        {(() => {
+                          const displayName = getEmployeeDisplayName(emp);
+                          return (
                         <img 
-                           src={emp.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(emp.firstName + ' ' + emp.lastName)}&background=0B8255&color=fff`} 
+                           src={emp.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=0B8255&color=fff`} 
                            alt="avatar" 
-                           onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(emp.firstName + ' ' + emp.lastName)}&background=0B8255&color=fff` }}
+                           onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=0B8255&color=fff` }}
                         />
+                          );
+                        })()}
                       </div>
                     </td>
                     <td className="col-primary-text">
-                       {i18n.language === 'am' && emp.firstNameAmharic 
-                         ? `${emp.firstNameAmharic} ${emp.lastNameAmharic || ''}`
-                         : `${emp.firstName} ${emp.lastName}`}
+                       {getEmployeeDisplayName(emp)}
                        <span style={{display: 'block', fontSize: '0.75rem', color: '#6b7280', fontWeight: 'normal'}}>
-                         {emp.officialEmail || emp.personalEmail || (i18n.language === 'am' ? "ኢሜል አልተገኘም" : "No Email")}
+                         {emp.officialEmail || emp.personalEmail || (isAmharic ? "ኢሜል አልተገኘም" : "No Email")}
                        </span>
                     </td>
                     <td>
                       <span className="badge badge-academic">
-                        {emp.employmentType || emp.employeeType || "UNKNOWN"}
+                        {getEmploymentTypeLabel(emp.employmentType) || getEmployeeTypeLabel(emp.employeeType) || "UNKNOWN"}
                       </span>
                     </td>
                     <td>
-                      {emp.departmentName || (i18n.language === 'am' ? "ዲፓርትመንት አልተመደበም" : "No Department")}
+                      {getLocalizedText(emp.departmentName, emp.departmentNameAmharic) || (isAmharic ? "ዲፓርትመንት አልተመደበም" : "No Department")}
                     </td>
                     <td>
                       <span className={`badge ${emp.employmentStatus === 'ACTIVE' ? 'badge-active' : 'badge-inactive'}`}>
-                        {emp.employmentStatus === 'ACTIVE' 
-                          ? (i18n.language === 'am' ? 'ገባሪ' : 'ACTIVE')
-                          : emp.employmentStatus === 'INACTIVE'
-                            ? (i18n.language === 'am' ? 'የማይሰራ' : 'INACTIVE')
-                            : (emp.employmentStatus || 'ACTIVE')}
+                        {getEmploymentStatusLabel(emp.employmentStatus || 'ACTIVE')}
                       </span>
                     </td>
-                    <td>{displayEthDate(emp.hireDateEth, emp.hireDate) || (i18n.language === 'am' ? 'አልተገኘም' : 'N/A')}</td>
+                    <td>{displayEthDate(emp.hireDateEth, emp.hireDate) || (isAmharic ? 'አልተገኘም' : 'N/A')}</td>
                     <td>
                       <div className="table-actions">
-                        <button className="action-btn-light" onClick={() => viewDetails(emp.id)} title={i18n.language === 'am' ? 'ዝርዝሮችን ይመልከቱ' : "View Details"}>
+                        <button className="action-btn-light" onClick={() => viewDetails(emp.id)} title={isAmharic ? 'ዝርዝሮችን ይመልከቱ' : "View Details"}>
                           <Eye size={14} />
                         </button>
-                        <button className="action-btn-light" onClick={() => triggerEdit(emp)} title={i18n.language === 'am' ? 'አስተካክል' : "Edit"}>
+                        <button className="action-btn-light" onClick={() => triggerEdit(emp)} title={isAmharic ? 'አስተካክል' : "Edit"}>
                           <Pencil size={14} />
                         </button>
-                        <button className="action-btn-light action-btn-danger" onClick={() => triggerDelete(emp)} title={i18n.language === 'am' ? 'ሰርዝ' : "Delete"}>
+                        <button className="action-btn-light action-btn-danger" onClick={() => triggerDelete(emp)} title={isAmharic ? 'ሰርዝ' : "Delete"}>
                           <Trash2 size={14} />
                         </button>
                       </div>
@@ -392,7 +437,7 @@ const Employees = () => {
 
         <div className="table-footer">
           <div className="page-limit-selector">
-            <span>{i18n.language === 'am' ? 'አሳይ' : 'Show'}</span>
+            <span>{isAmharic ? 'አሳይ' : 'Show'}</span>
             <select className="limit-dropdown" value={limit} onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}>
               <option value={5}>5</option>
               <option value={10}>10</option>
