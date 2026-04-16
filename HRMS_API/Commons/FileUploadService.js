@@ -175,7 +175,6 @@ export class FileUploadService {
 
     const config =
       fileType === "document" ? this.documentConfig : this.imageConfig;
-
     if (!config.allowedMimeTypes.includes(file.mimetype)) {
       throw new Error(
         `Invalid file type. Allowed types: ${config.allowedMimeTypes.join(

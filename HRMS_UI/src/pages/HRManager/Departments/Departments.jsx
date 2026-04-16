@@ -205,11 +205,11 @@ const Departments = () => {
       const payload = { ...formData };
       
       if (i18n.language === 'am') {
-        payload.departmentName = payload.departmentName || payload.departmentNameAmharic;
-        payload.departmentDescription = payload.departmentDescription || payload.departmentDescriptionAmharic;
+        delete payload.departmentName;
+        delete payload.departmentDescription;
       } else {
-        payload.departmentNameAmharic = payload.departmentNameAmharic || payload.departmentName;
-        payload.departmentDescriptionAmharic = payload.departmentDescriptionAmharic || payload.departmentDescription;
+        delete payload.departmentNameAmharic;
+        delete payload.departmentDescriptionAmharic;
       }
 
       // Default company mapped generically if omitted by backend, but we'll let EnsureDefaultCompany handle it
@@ -290,22 +290,22 @@ const Departments = () => {
     const baseFields = [
       {
         name: 'departmentType',
-        label: 'Type',
+        label: i18n.language === 'am' ? 'አይነት' : 'Type',
         type: 'select',
         required: true,
         options: [
-          { value: 'ACADEMIC', label: 'Academic' },
-          { value: 'ADMINISTRATIVE', label: 'Administrative' }
+          { value: 'ACADEMIC', label: i18n.language === 'am' ? 'አካዳሚክ' : 'Academic' },
+          { value: 'ADMINISTRATIVE', label: i18n.language === 'am' ? 'አስተዳደር' : 'Administrative' }
         ]
       },
       {
         name: 'departmentStatus',
-        label: 'Status',
+        label: i18n.language === 'am' ? 'ሁኔታ' : 'Status',
         type: 'select',
         required: true,
         options: [
-          { value: 'ACTIVE', label: 'Active' },
-          { value: 'INACTIVE', label: 'Inactive' }
+          { value: 'ACTIVE', label: i18n.language === 'am' ? 'ገባሪ' : 'Active' },
+          { value: 'INACTIVE', label: i18n.language === 'am' ? 'የማይሰራ' : 'Inactive' }
         ]
       },
       ...textFields
@@ -315,10 +315,10 @@ const Departments = () => {
     if (activeFormType === 'ACADEMIC') {
       baseFields.splice(2, 0, {
         name: 'collegeId',
-        label: 'Linked College',
+        label: i18n.language === 'am' ? 'የተሳሰረበት ኮሌጅ' : 'Linked College',
         type: 'select',
         required: true,
-        options: colleges.map(c => ({ value: c.id, label: c.collegeName }))
+        options: colleges.map(c => ({ value: c.id, label: i18n.language === 'am' ? (c.collegeNameAmharic || c.collegeName) : c.collegeName }))
       });
     } else if (activeFormType === 'ADMINISTRATIVE') {
       baseFields.splice(2, 0, {
@@ -343,7 +343,9 @@ const Departments = () => {
 
              selects.push(
                <div className="common-form-group" key={`admin_dept_${i}`} style={{ marginBottom: i < adminHierarchy.length ? '1rem' : '0' }}>
-                 <label className="common-form-label" style={{ display: 'block', marginBottom: '0.5rem' }}>Parent Department (Level {i + 1})</label>
+                 <label className="common-form-label" style={{ display: 'block', marginBottom: '0.5rem' }}>
+                   {i18n.language === 'am' ? `ዋና ዲፓርትመንት (ደረጃ ${i + 1})` : `Parent Department (Level ${i + 1})`}
+                 </label>
                  <select
                    className="common-form-select"
                    value={selectedValue}
@@ -368,9 +370,9 @@ const Departments = () => {
                      setAdminHierarchy(newHierarchy);
                    }}
                  >
-                   <option value="">-- Select Department --</option>
+                   <option value="">{i18n.language === 'am' ? "-- ዲፓርትመንት ምረጥ --" : "-- Select Department --"}</option>
                    {availableOptions.filter(d => d.id !== editingDept?.id).map(d => (
-                     <option key={d.id} value={d.id}>{d.departmentName}</option>
+                     <option key={d.id} value={d.id}>{i18n.language === 'am' ? (d.departmentNameAmharic || d.departmentName) : d.departmentName}</option>
                    ))}
                  </select>
                </div>
@@ -397,13 +399,13 @@ const Departments = () => {
           <input
             id="searchDepartment"
             type="text"
-            placeholder="Search departments by name or description..."
+            placeholder={i18n.language === 'am' ? "ዲፓርትመንቶችን በስም ወይም በመግለጫ ይፈልጉ..." : "Search departments by name or description..."}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </label>
         <button className="btn-add-department" onClick={handleOpenAdd}>
-          <Plus size={18} /> Add Department
+          <Plus size={18} /> {i18n.language === 'am' ? "ዲፓርትመንት አክል" : "Add Department"}
         </button>
       </div>
 
@@ -422,23 +424,23 @@ const Departments = () => {
                     <div className="department-th-content">Department Name {renderSortIcon('departmentName')}</div>
                   </th>
                 )}
-                <th>Type</th>
-                <th>College / Parent</th>
-                <th>Status</th>
+                <th>{i18n.language === 'am' ? "አይነት" : "Type"}</th>
+                <th>{i18n.language === 'am' ? "ኮሌጅ / ወላጅ" : "College / Parent"}</th>
+                <th>{i18n.language === 'am' ? "ሁኔታ" : "Status"}</th>
                 <th className="department-sortable-header" onClick={() => handleSort('createdAt')}>
-                  <div className="department-th-content">Created Date {renderSortIcon('createdAt')}</div>
+                  <div className="department-th-content">{i18n.language === 'am' ? "የተፈጠረበት ቀን" : "Created Date"} {renderSortIcon('createdAt')}</div>
                 </th>
-                <th>Actions</th>
+                <th>{i18n.language === 'am' ? "እርምጃዎች" : "Actions"}</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan="6" style={{ textAlign: 'center' }}>Loading...</td>
+                  <td colSpan="6" style={{ textAlign: 'center' }}>{i18n.language === 'am' ? "በመጫን ላይ..." : "Loading..."}</td>
                 </tr>
               ) : departments.length === 0 ? (
                 <tr>
-                  <td colSpan="6" style={{ textAlign: 'center' }}>No departments found.</td>
+                  <td colSpan="6" style={{ textAlign: 'center' }}>{i18n.language === 'am' ? "ምንም ዲፓርትመንት አልተገኘም።" : "No departments found."}</td>
                 </tr>
               ) : (
                 departments.map(dept => (
@@ -455,13 +457,15 @@ const Departments = () => {
                     </td>
                     <td>
                       {dept.departmentType === 'ACADEMIC' && dept.collegeId
-                        ? colleges.find(c => c.id === dept.collegeId)?.collegeName || 'Linked'
+                        ? colleges.find(c => c.id === dept.collegeId)?.[i18n.language === 'am' ? 'collegeNameAmharic' : 'collegeName'] || colleges.find(c => c.id === dept.collegeId)?.collegeName || (i18n.language === 'am' ? 'የተሳሰረ' : 'Linked')
                         : dept.parentDepartmentId
-                          ? (parentDepartments.find(p => p.id === dept.parentDepartmentId)?.departmentName
+                          ? (parentDepartments.find(p => p.id === dept.parentDepartmentId)?.[i18n.language === 'am' ? 'departmentNameAmharic' : 'departmentName']
+                            || parentDepartments.find(p => p.id === dept.parentDepartmentId)?.departmentName
+                            || departments.find(p => p.id === dept.parentDepartmentId)?.[i18n.language === 'am' ? 'departmentNameAmharic' : 'departmentName']
                             || departments.find(p => p.id === dept.parentDepartmentId)?.departmentName
                             || parentNamesCache[dept.parentDepartmentId]
-                            || 'Unknown Parent')
-                          : 'None (Root)'
+                            || (i18n.language === 'am' ? 'ያልታወቀ ወላጅ' : 'Unknown Parent'))
+                          : (i18n.language === 'am' ? 'ምንም (ዋና)' : 'None (Root)')
                       }
                     </td>
                     <td>
@@ -472,10 +476,10 @@ const Departments = () => {
                     <td>{new Date(dept.createdAt).toLocaleDateString()}</td>
                     <td>
                       <div className="department-table-actions">
-                        <button className="department-action-btn-light" onClick={() => handleOpenEdit(dept)} title="Edit">
+                        <button className="department-action-btn-light" onClick={() => handleOpenEdit(dept)} title={i18n.language === 'am' ? "አስተካክል" : "Edit"}>
                           <Pencil size={14} />
                         </button>
-                        <button className="department-action-btn-light department-action-btn-danger" onClick={() => triggerDelete(dept)} title="Delete">
+                        <button className="department-action-btn-light department-action-btn-danger" onClick={() => triggerDelete(dept)} title={i18n.language === 'am' ? "ሰርዝ" : "Delete"}>
                           <Trash2 size={14} />
                         </button>
                       </div>
@@ -490,7 +494,7 @@ const Departments = () => {
         {/* Footer Toolbar: Page Limit & Pagination */}
         <div className="department-table-footer">
           <div className="department-page-limit-selector">
-            <span>Show</span>
+            <span>{i18n.language === 'am' ? "አሳይ" : "Show"}</span>
             <select
               className="department-limit-dropdown"
               value={limit}
@@ -503,11 +507,11 @@ const Departments = () => {
               <option value={20}>20</option>
               <option value={50}>50</option>
             </select>
-            <span>entries</span>
+            <span>{i18n.language === 'am' ? "መዝገቦች" : "entries"}</span>
           </div>
 
           <div className="department-pagination-controls">
-            <span>Showing {(page - 1) * limit + 1} to {Math.min(page * limit, pagination.total)} of {pagination.total}</span>
+            <span>{i18n.language === 'am' ? `${(page - 1) * limit + 1} እስከ ${Math.min(page * limit, pagination.total)} ከ ${pagination.total} በማሳየት ላይ` : `Showing ${(page - 1) * limit + 1} to ${Math.min(page * limit, pagination.total)} of ${pagination.total}`}</span>
             <div style={{ display: 'flex', gap: '0.5rem' }}>
               <button
                 className="department-page-btn"
@@ -533,7 +537,9 @@ const Departments = () => {
         <div className="department-modal-overlay" onClick={closeFormModal}>
           <div className="department-modal-form-wrapper department-wide-modal" onClick={(e) => e.stopPropagation()}>
             <div className="department-modal-form-header">
-              <h3>{editingDept ? 'Edit Department' : 'Add New Department'}</h3>
+              <h3>{editingDept 
+                ? (i18n.language === 'am' ? 'ዲፓርትመንት አስተካክል' : 'Edit Department') 
+                : (i18n.language === 'am' ? 'አዲስ ዲፓርትመንት አክል' : 'Add New Department')}</h3>
               <button className="department-close-btn" onClick={closeFormModal}><X size={20} /></button>
             </div>
 
@@ -550,7 +556,9 @@ const Departments = () => {
               onSubmit={handleFormSubmit}
               onCancel={closeFormModal}
               twoColumns={true}
-              submitText={editingDept ? "Update Department" : "Create Department"}
+              submitText={editingDept 
+                ? (i18n.language === 'am' ? "ዲፓርትመንት አዘምን" : "Update Department") 
+                : (i18n.language === 'am' ? "ዲፓርትመንት ፍጠር" : "Create Department")}
               isLoading={isSubmitting}
             />
           </div>
@@ -560,9 +568,11 @@ const Departments = () => {
       {/* Reusable Confirm Modal for Deletions */}
       <ConfirmModal
         isOpen={deleteModalOpen}
-        title="Delete Department"
-        message={`Are you sure you want to permanently delete "${deptToDelete?.departmentName}"? This action cannot be undone.`}
-        confirmText="Confirm Delete"
+        title={i18n.language === 'am' ? "ዲፓርትመንት ሰርዝ" : "Delete Department"}
+        message={i18n.language === 'am' 
+          ? `በእርግጥ "${deptToDelete?.departmentNameAmharic || deptToDelete?.departmentName}" ዲፓርትመንትን መሰረዝ ይፈልጋሉ? ይህ እርምጃ ሊቀለበስ አይችልም።` 
+          : `Are you sure you want to permanently delete "${deptToDelete?.departmentName}"? This action cannot be undone.`}
+        confirmText={i18n.language === 'am' ? "መሰረዙን አረጋግጥ" : "Confirm Delete"}
         isDestructive={true}
         onConfirm={confirmDelete}
         onCancel={() => setDeleteModalOpen(false)}

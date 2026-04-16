@@ -7,6 +7,21 @@ import { authenticateToken, authorize } from "../../middleware/auth.js";
 import departmentCustomController from "./departmentController.js";
 import { ensureDefaultCompanyIdInBody } from "../Commons/defaultCompany.js";
 import pool from "../../config/database.js";
+import { translatePairs } from "../../utils/translationService.js";
+
+const applyDepartmentTranslations = async (req, res, next) => {
+  try {
+    if (req.body) {
+      req.body = await translatePairs(req.body, [
+        { enKey: "departmentName", amKey: "departmentNameAmharic" },
+        { enKey: "departmentDescription", amKey: "departmentDescriptionAmharic" }
+      ]);
+    }
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
 
 const validateDepartmentRelations = async (req, res, next) => {
   const { departmentType, collegeId, parentDepartmentId } = req.body;
@@ -93,9 +108,9 @@ const departmentCrudRouter = createCrudRouter({
   updateRoles: ["HRMANAGER"],
   deleteRoles: ["HRMANAGER"],
   middleware: {
-    create: [ensureDefaultCompanyIdInBody(), validateDepartmentRelations],
+    create: [ensureDefaultCompanyIdInBody(), validateDepartmentRelations, applyDepartmentTranslations],
     read: [],
-    update: [validateDepartmentRelations],
+    update: [validateDepartmentRelations, applyDepartmentTranslations],
     delete: [validateDepartmentDeletion],
     list: [],
     count: [],

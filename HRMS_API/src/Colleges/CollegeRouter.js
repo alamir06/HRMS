@@ -5,6 +5,21 @@ import { authenticateToken, authorize } from '../../middleware/auth.js';
 import collegeCustomController from "./CollegeController.js"
 import { ensureDefaultCompanyIdInBody } from "../Commons/defaultCompany.js";
 import pool from "../../config/database.js";
+import { translatePairs } from "../../utils/translationService.js";
+
+const applyCollegeTranslations = async (req, res, next) => {
+  try {
+    if (req.body) {
+      req.body = await translatePairs(req.body, [
+        { enKey: "collegeName", amKey: "collegeNameAmharic" },
+        { enKey: "collegeDescription", amKey: "collegeDescriptionAmharic" }
+      ]);
+    }
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
 
 const collegeRouter = express.Router();
 
@@ -50,9 +65,9 @@ const collegeCrudRouter = createCrudRouter({
   updateRoles: ["HRMANAGER"],
   deleteRoles: ["HRMANAGER"],
   middleware: {
-    create: [ensureDefaultCompanyIdInBody()],
+    create: [ensureDefaultCompanyIdInBody(), applyCollegeTranslations],
     read: [],
-    update: [],
+    update: [applyCollegeTranslations],
     delete: [validateCollegeDeletion],
     list: [],
     count: [],

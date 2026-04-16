@@ -1,4 +1,6 @@
 import pool from "../../config/database.js";
+import { translatePairs } from "../../utils/translationService.js";
+import { collegeValidationSchema } from "./CollegeValidation.js";
 
 const collegeCustomController = {
   getCollegesByCompany: async (req, res) => {
@@ -145,13 +147,19 @@ const collegeCustomController = {
 
       const results = [];
       for (const college of colleges) {
+        let payload = college;
+        payload = await translatePairs(payload, [
+          { enKey: "collegeName", amKey: "collegeNameAmharic" },
+          { enKey: "collegeDescription", amKey: "collegeDescriptionAmharic" }
+        ]);
+
         const {
           companyId,
           collegeName,
           collegeNameAmharic,
           collegeDescription,
           collegeDescriptionAmharic,
-        } = college;
+        } = payload;
 
         const query = `
           INSERT INTO college (companyId, collegeName, collegeNameAmharic, collegeDescription, collegeDescriptionAmharic) 

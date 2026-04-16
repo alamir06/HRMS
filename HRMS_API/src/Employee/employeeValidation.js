@@ -75,11 +75,11 @@ const employeeBaseSchema = z.object({
     .nullable()
     .optional(),
   personal: z.object({
-    firstName: z.string().min(1, "First name is required"),
+    firstName: z.string().optional().nullable(),
     firstNameAmharic: z.string().optional().nullable(),
     middleName: z.string().optional().nullable(),
     middleNameAmharic: z.string().optional().nullable(),
-    lastName: z.string().min(1, "Last name is required"),
+    lastName: z.string().optional().nullable(),
     lastNameAmharic: z.string().optional().nullable(),
     gender: z.string().toUpperCase().optional().nullable(),
     dateOfBirth: z
@@ -100,7 +100,15 @@ const employeeBaseSchema = z.object({
     emergencyContactNameAmharic: z.string().optional().nullable(),
     emergencyContactPhone: z.string().optional().nullable(),
     profilePicture: z.string().optional().nullable(),
-  }).strict(),
+  }).strict()
+  .refine((data) => data.firstName || data.firstNameAmharic, {
+    message: "First name is required",
+    path: ["firstName"],
+  })
+  .refine((data) => data.lastName || data.lastNameAmharic, {
+    message: "Last name is required",
+    path: ["lastName"],
+  }),
   employment: z
     .object({
       officialEmail: z
