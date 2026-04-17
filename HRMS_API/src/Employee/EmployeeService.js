@@ -891,7 +891,7 @@ export class EmployeeService extends CrudService {
       employeeType,
       employmentStatus,
       employmentType,
-      period = "DAILY",
+      period = "ALL",
       sortBy = "createdAt",
       sortOrder = "DESC",
       includeTerminated = false,
@@ -961,7 +961,7 @@ export class EmployeeService extends CrudService {
       whereConditions.push(`e.employmentStatus <> 'TERMINATED'`);
     }
 
-    const normalizedPeriod = String(period || "DAILY").toUpperCase();
+    const normalizedPeriod = String(period || "ALL").toUpperCase();
     if (normalizedPeriod === "DAILY") {
       whereConditions.push(`DATE(e.hireDate) = CURDATE()`);
     } else if (normalizedPeriod === "WEEKLY") {
