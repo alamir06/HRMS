@@ -21,6 +21,7 @@ import MyAssetsAndBenefits from './pages/EmployeePortal/MyAssetsAndBenefits/MyAs
 import MyNotices from './pages/EmployeePortal/MyNotices/MyNotices';
 import MyNotifications from './pages/EmployeePortal/MyNotifications/MyNotifications';
 import LeaveRequests from './pages/HRManager/Leaves/LeaveRequests';
+import Designations from './pages/HRManager/Designation/Designations';
 import './index.css';
 
 // Admin Protected Route Component
@@ -123,6 +124,7 @@ function App() {
           <Route path="outsourcing" element={<OutsourcingCompanies />} />
           <Route path="attendance" element={<Attendance />} />
           <Route path="leave" element={<LeaveRequests />} />
+          <Route path="designation" element={<Designations />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Route>
 

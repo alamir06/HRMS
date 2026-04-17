@@ -29,7 +29,7 @@ const Employees = () => {
     administrative: 0,
     outsource: 0,
   });
-  const [period, setPeriod] = useState('DAILY');
+  const [period, setPeriod] = useState('ALL');
   const [isPeriodMenuOpen, setIsPeriodMenuOpen] = useState(false);
   const periodMenuRef = useRef(null);
 
@@ -238,13 +238,14 @@ const Employees = () => {
   };
 
   const periodOptions = [
+    { value: 'ALL', label: isAmharic ? 'ሁሉንም አሳይ' : 'All Time' },
     { value: 'DAILY', label: isAmharic ? 'ዕለታዊ' : 'Daily' },
     { value: 'WEEKLY', label: isAmharic ? 'ሳምንታዊ' : 'Weekly' },
     { value: 'MONTHLY', label: isAmharic ? 'ወርሃዊ' : 'Monthly' },
     { value: 'YEARLY', label: isAmharic ? 'አመታዊ' : 'Yearly' },
   ];
 
-  const selectedPeriodLabel = periodOptions.find((item) => item.value === period)?.label || (isAmharic ? 'ዕለታዊ' : 'Daily');
+  const selectedPeriodLabel = periodOptions.find((item) => item.value === period)?.label || (isAmharic ? 'ሁሉንም አሳይ' : 'All Time');
 
   return (
     <div className="employees-container">
