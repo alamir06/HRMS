@@ -188,18 +188,15 @@ designationRouter.post(
           titleAmharic,
           jobDescription,
           jobDescriptionAmharic,
-          gradeLevel,
-          minSalary,
-          maxSalary,
           status = "ACTIVE",
         } = payload;
 
         await connection.query(
           `INSERT INTO designations (
             id, employeeId, departmentId, collegeId, title, titleAmharic,
-            jobDescription, jobDescriptionAmharic, gradeLevel, minSalary, maxSalary, status
+            jobDescription, jobDescriptionAmharic, status
           ) VALUES (
-            UUID_TO_BIN(?), UUID_TO_BIN(?), UUID_TO_BIN(?), UUID_TO_BIN(?), ?, ?, ?, ?, ?, ?, ?, ?
+            UUID_TO_BIN(?), UUID_TO_BIN(?), UUID_TO_BIN(?), UUID_TO_BIN(?), ?, ?, ?, ?, ?
           )`,
           [
             id,
@@ -210,9 +207,6 @@ designationRouter.post(
             titleAmharic || null,
             jobDescription || null,
             jobDescriptionAmharic || null,
-            gradeLevel || null,
-            minSalary ?? null,
-            maxSalary ?? null,
             status,
           ]
         );
@@ -227,7 +221,6 @@ designationRouter.post(
             COALESCE(BIN_TO_UUID(des.collegeId), BIN_TO_UUID(d.collegeId), BIN_TO_UUID(empDept.collegeId)) as collegeId,
             des.title,
             des.titleAmharic,
-            des.gradeLevel,
             des.status,
             COALESCE(d.departmentName, empDept.departmentName) as departmentName,
             COALESCE(c.collegeName, dCollege.collegeName, empCollege.collegeName) as collegeName,
