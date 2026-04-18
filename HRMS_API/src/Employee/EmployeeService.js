@@ -903,6 +903,7 @@ export class EmployeeService extends CrudService {
       SELECT 
         BIN_TO_UUID(e.id) as id,
         e.employeeCode,
+        e.employeeType,
         e.employmentType,
         e.employmentStatus,
         e.hireDate
@@ -929,7 +930,8 @@ export class EmployeeService extends CrudService {
     if (allIncludes.includes("DEPARTMENT")) {
       query += `,
         d.departmentName,
-        d.departmentNameAmharic
+        d.departmentNameAmharic,
+        d.departmentType
       `;
     }
     if (allIncludes.includes("EMPLOYMENT")) {

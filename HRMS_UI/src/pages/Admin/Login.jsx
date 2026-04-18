@@ -14,7 +14,7 @@ const AdminLogin = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    
+
     // Validate phone number format matching Ethiopian +251 9...
     const phoneRegex = /^9\d{8}$/;
     if (!phoneRegex.test(phone)) {
@@ -24,10 +24,9 @@ const AdminLogin = () => {
 
     try {
       setIsLoading(true);
-      // Construct the identifier expected by the backend logic (+251 is fixed in UI)
       const identifier = `+251${phone}`;
-      const response = await authService.login({ identifier, password });
-      
+      const response = await authService.login({ identifier, password: password.trim() });
+
       if (response.success && response.data?.token) {
         localStorage.setItem('adminToken', response.data.token);
         localStorage.setItem('user', JSON.stringify(response.data.user));
@@ -54,33 +53,33 @@ const AdminLogin = () => {
     document.documentElement.setAttribute('data-theme', newTheme);
   };
   // dfghjhk
-// jsdfchsvdmc
+  // jsdfchsvdmc
   return (
     <div className="login-master-container">
       <div className="login-split-card">
         {/* Left Side: SVG Illustration Panel */}
         <div className="login-left-panel">
           <div className="illustration-wrapper">
-             {/* Creating the vector art with SVG to perfectly match the mockup's shapes */}
+            {/* Creating the vector art with SVG to perfectly match the mockup's shapes */}
             <svg width="340" height="420" viewBox="0 0 340 420" fill="none" xmlns="http://www.w3.org/2000/svg">
               {/* Phone Body */}
               <rect x="50" y="20" width="180" height="380" rx="35" fill="white" filter="url(#drop-shadow)" />
               {/* Phone Top Notch */}
               <rect x="110" y="30" width="60" height="8" rx="4" fill="#E5E7EB" />
-              
+
               {/* Top 3 UI Circles */}
               <circle cx="95" cy="80" r="16" fill="#D1D5DB" />
               <circle cx="120" cy="80" r="16" fill="#9CA3AF" />
               <circle cx="145" cy="80" r="18" fill="#10B981" />
-              
+
               {/* Lines representing UI text */}
               <rect x="90" y="140" width="100" height="4" rx="2" fill="#E5E7EB" />
               <rect x="75" y="155" width="130" height="4" rx="2" fill="#E5E7EB" />
               <rect x="75" y="170" width="130" height="4" rx="2" fill="#E5E7EB" />
-              
+
               {/* Bottom Green Module Block inside Phone */}
               <rect x="140" y="220" width="60" height="30" rx="8" fill="#A7F3D0" />
-              
+
               {/* The Abstract Geometric Character Next to Phone */}
               {/* Head */}
               <circle cx="230" cy="235" r="16" fill="#FBCFE8" />
@@ -98,7 +97,7 @@ const AdminLogin = () => {
               {/* Advanced native SVG shadow filter for the phone popup effect */}
               <defs>
                 <filter id="drop-shadow" x="20" y="-10" width="240" height="440" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
-                  <feDropShadow dx="-10" dy="15" stdDeviation="15" floodOpacity="0.1"/>
+                  <feDropShadow dx="-10" dy="15" stdDeviation="15" floodOpacity="0.1" />
                 </filter>
               </defs>
             </svg>
@@ -114,7 +113,7 @@ const AdminLogin = () => {
             </p>
 
             <form onSubmit={handleLogin} className="pro-login-form">
-              {/* Phone Input */}
+              {/* Identifier Input */}
               <div className="form-group">
                 <label className="input-label">PHONE NUMBER</label>
                 <div className="composite-input">
@@ -124,12 +123,12 @@ const AdminLogin = () => {
                     <span>+251</span>
                     <svg className="caret" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                   </div>
-                  <input 
+                  <input
                     id="username"
                     name="username"
-                    type="tel" 
-                    placeholder="Enter phone number" 
-                    required 
+                    type="tel"
+                    placeholder="Enter phone number"
+                    required
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     maxLength="9"
@@ -145,18 +144,18 @@ const AdminLogin = () => {
                   <a href="#" className="forgot-link">Forgot?</a>
                 </div>
                 <div className="composite-input password-input">
-                  <input 
+                  <input
                     id="password"
                     name="password"
-                    type={showPassword ? "text" : "password"} 
-                    placeholder="Enter password" 
-                    required 
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter password"
+                    required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     autoComplete="current-password"
                   />
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     className="toggle-password"
                     onClick={() => setShowPassword(!showPassword)}
                   >

@@ -11,6 +11,17 @@ const generatePassword = () => {
 };
 
 export const findUserByIdentifier = async (identifier) => {
+  let alt1 = identifier;
+  let alt2 = identifier;
+  let alt3 = identifier;
+
+  const ethPhoneMatch = identifier.match(/^(?:\+251|0)?(9\d{8})$/);
+  if (ethPhoneMatch) {
+    alt1 = `+251${ethPhoneMatch[1]}`;
+    alt2 = `0${ethPhoneMatch[1]}`;
+    alt3 = `${ethPhoneMatch[1]}`;
+  }
+
   const [rows] = await pool.execute(
     `SELECT 
        BIN_TO_UUID(u.id) AS id,
@@ -33,9 +44,11 @@ export const findUserByIdentifier = async (identifier) => {
      FROM users u
      JOIN employee e ON u.employeeId = e.id
      LEFT JOIN employeePersonal ep ON e.id = ep.employeeId  
-     WHERE u.username = ? OR ep.personalEmail = ? OR ep.personalPhone = ?        
+     WHERE u.username = ? 
+        OR ep.personalEmail = ? 
+        OR ep.personalPhone IN (?, ?, ?)       
      LIMIT 1`,
-    [identifier, identifier, identifier]
+    [identifier, identifier, alt1, alt2, alt3]
   );
 
   return rows.length ? rows[0] : null;

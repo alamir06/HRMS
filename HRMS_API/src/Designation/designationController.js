@@ -14,9 +14,6 @@ const designationCustomController = {
           d.title,
           d.titleAmharic,
           d.jobDescription,
-          d.gradeLevel,
-          d.minSalary,
-          d.maxSalary,
           d.status,
           dep.departmentName,
           dep.departmentNameAmharic,
@@ -187,7 +184,6 @@ const designationCustomController = {
           des.title LIKE ? OR 
           des.titleAmharic LIKE ? OR 
           des.jobDescription LIKE ? OR
-          des.gradeLevel LIKE ? OR
           dep.departmentName LIKE ? OR
           ep.firstName LIKE ? OR
           ep.lastName LIKE ?
@@ -196,14 +192,13 @@ const designationCustomController = {
           des.title LIKE ? OR 
           des.titleAmharic LIKE ? OR 
           des.jobDescription LIKE ? OR
-          des.gradeLevel LIKE ? OR
           dep.departmentName LIKE ? OR
           ep.firstName LIKE ? OR
           ep.lastName LIKE ?
         )`;
         const searchTerm = `%${query}%`;
-        params.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
-        countParams.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
+        params.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
+        countParams.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
       }
 
       if (departmentId) {
@@ -225,6 +220,20 @@ const designationCustomController = {
         countQuery += ` AND des.status = ?`;
         params.push(status);
         countParams.push(status);
+      }
+
+      const period = req.query.period;
+      if (period && period !== "ALL") {
+        let dateCondition = "";
+        if (period === "DAILY") dateCondition = "DATE(des.createdAt) = CURDATE()";
+        else if (period === "WEEKLY") dateCondition = "YEARWEEK(des.createdAt, 1) = YEARWEEK(CURDATE(), 1)";
+        else if (period === "MONTHLY") dateCondition = "YEAR(des.createdAt) = YEAR(CURDATE()) AND MONTH(des.createdAt) = MONTH(CURDATE())";
+        else if (period === "YEARLY") dateCondition = "YEAR(des.createdAt) = YEAR(CURDATE())";
+
+        if (dateCondition) {
+           sqlQuery += ` AND ${dateCondition}`;
+           countQuery += ` AND ${dateCondition}`;
+        }
       }
 
       sqlQuery += ` ORDER BY des.title ASC LIMIT ? OFFSET ?`;
