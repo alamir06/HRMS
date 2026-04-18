@@ -40,10 +40,20 @@ export const findUserByIdentifier = async (identifier) => {
        ep.profilePicture,
        ep.firstName,
        ep.middleName,
-       ep.lastName
+       ep.lastName,
+       d.departmentName AS department,
+       col.collegeName AS collegeName,
+       ee.salary AS salary,
+       COALESCE(des.title, ea.academicRank, e.employeeRole) AS position,
+       e.hireDate AS hireDate
      FROM users u
      JOIN employee e ON u.employeeId = e.id
-     LEFT JOIN employeePersonal ep ON e.id = ep.employeeId  
+     LEFT JOIN employeePersonal ep ON e.id = ep.employeeId
+     LEFT JOIN department d ON e.departmentId = d.id
+     LEFT JOIN college col ON d.collegeId = col.id
+     LEFT JOIN employeeEmployment ee ON e.id = ee.employeeId
+     LEFT JOIN designations des ON e.id = des.employeeId AND des.status = true
+     LEFT JOIN employeeAcademic ea ON e.id = ea.employeeId
      WHERE u.username = ? 
         OR ep.personalEmail = ? 
         OR ep.personalPhone IN (?, ?, ?)       
