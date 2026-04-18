@@ -656,7 +656,7 @@ export class EmployeeService extends CrudService {
     try {
       await connection.beginTransaction();
       const translatedData = await this.applyEmployeeTranslations(fullData);
-      const { personal, employment, academic, outsource, ...employeeData } =
+      const { personal, employment, academic, outsource, hr, ...employeeData } =
         translatedData;
       const isUuidField = (key) => key.endsWith("_id") || key.endsWith("Id");
 

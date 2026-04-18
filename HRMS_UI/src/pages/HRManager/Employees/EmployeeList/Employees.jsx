@@ -403,7 +403,7 @@ const Employees = () => {
                        </span>
                     </td>
                     <td>
-                      <span className="badge badge-academic">
+                      <span className={`badge ${emp.employmentType === 'OUTSOURCED' ? 'badge-outsource' : `badge-${(emp.employeeType || 'academic').toLowerCase()}`}`}>
                         {getEmploymentTypeLabel(emp.employmentType) || getEmployeeTypeLabel(emp.employeeType) || "UNKNOWN"}
                       </span>
                     </td>

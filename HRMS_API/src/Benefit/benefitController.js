@@ -9,6 +9,8 @@ const parseMoney = (value) => {
   return Number.isNaN(parsed) ? null : parsed;
 };
 
+import { v4 as uuidv4 } from "uuid";
+
 export const benefitController = {
   enrollEmployee: async (req, res) => {
     const {
@@ -23,6 +25,7 @@ export const benefitController = {
     } = req.body;
 
     try {
+      const newId = uuidv4();
       const [existing] = await pool.query(
         `SELECT id
            FROM employeeBenefits
@@ -41,6 +44,7 @@ export const benefitController = {
 
       const [result] = await pool.query(
         `INSERT INTO employeeBenefits (
+           id,
            employeeId,
            benefitId,
            enrollmentDate,
@@ -52,6 +56,7 @@ export const benefitController = {
          ) VALUES (
            UUID_TO_BIN(?),
            UUID_TO_BIN(?),
+           UUID_TO_BIN(?),
            ?,
            ?,
            ?,
@@ -60,6 +65,7 @@ export const benefitController = {
            ?
          )`,
         [
+          newId,
           employeeId,
           benefitId,
           enrollmentDate,
@@ -75,7 +81,7 @@ export const benefitController = {
         success: true,
         message: "Employee enrolled",
         data: {
-          id: result.insertId,
+          id: newId,
           employeeId,
           benefitId,
           status,

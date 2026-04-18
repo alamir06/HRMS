@@ -23,7 +23,8 @@ const ConfirmModal = ({
   confirmText = "OK",
   cancelText = "Cancel",
   isDestructive = false,
-  confirmDisabled = false
+  confirmDisabled = false,
+  isSubmitting = false
 }) => {
 
   // Prevent background scrolling when modal is open
@@ -59,15 +60,15 @@ const ConfirmModal = ({
         )}
         
         <div className="modal-actions">
-          <button className="btn-cancel" onClick={onCancel}>
+          <button className="btn-cancel" onClick={onCancel} disabled={isSubmitting}>
             {cancelText}
           </button>
           <button 
             className={`btn-confirm ${isDestructive ? 'destructive' : ''}`} 
             onClick={onConfirm}
-            disabled={confirmDisabled}
+            disabled={confirmDisabled || isSubmitting}
           >
-            {confirmText}
+            {isSubmitting ? "Processing..." : confirmText}
           </button>
         </div>
       </div>

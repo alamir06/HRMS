@@ -35,6 +35,7 @@ const LeaveRequests = () => {
     request: null,
     reason: '',
   });
+  const [isSubmittingAction, setIsSubmittingAction] = useState(false);
 
   const displayEthDate = (ethValue, gregValue) => {
     if (ethValue) return ethValue;
@@ -158,11 +159,16 @@ const LeaveRequests = () => {
     const requestId = actionModal.request?.id;
     if (!requestId) return;
 
+    setIsSubmittingAction(true);
     let ok = false;
-    if (actionModal.action === 'approve') {
-      ok = await handleApprove(requestId, reason);
-    } else {
-      ok = await handleReject(requestId, reason);
+    try {
+      if (actionModal.action === 'approve') {
+        ok = await handleApprove(requestId, reason);
+      } else {
+        ok = await handleReject(requestId, reason);
+      }
+    } finally {
+      setIsSubmittingAction(false);
     }
 
     if (ok) {
@@ -569,6 +575,7 @@ const LeaveRequests = () => {
         confirmDisabled={!actionModal.reason.trim()}
         onConfirm={confirmAction}
         onCancel={closeActionModal}
+        isSubmitting={isSubmittingAction}
       />
 
     </div>
