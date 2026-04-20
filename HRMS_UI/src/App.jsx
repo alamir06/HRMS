@@ -7,7 +7,8 @@ import Attendance from './pages/HRManager/Attendance/Attendance.jsx';
 import AdminLogin from './pages/Admin/Login';
 import DashboardLayout from './layouts/DashboardLayout';
 import DashboardOverview from './pages/Admin/DashboardOverview';
-import Benefits from './pages/HRManager/Benefits/Benefits';
+import BenefitList from './pages/HRManager/Benefits/BenefitList/BenefitList';
+import BenefitAssignment from './pages/HRManager/Benefits/BenefitAssignment/BenefitAssignment';
 import Colleges from './pages/HRManager/Colleges/Colleges';
 import Departments from './pages/HRManager/Departments/Departments';
 import Employees from './pages/HRManager/Employees/EmployeeList/Employees';
@@ -117,8 +118,8 @@ function App() {
           }
         >
           <Route index element={<DashboardOverview />} />
-          <Route path="benefits" element={<Benefits />} />
-          <Route path="benefit" element={<Benefits />} />
+          <Route path="benefit/list" element={<BenefitList />} />
+          <Route path="benefit/assignment" element={<BenefitAssignment />} />
           <Route path="colleges" element={<Colleges />} />
           <Route path="departments" element={<Departments />} />
           <Route path="employees" element={<Employees />} />

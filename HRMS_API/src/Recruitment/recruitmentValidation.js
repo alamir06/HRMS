@@ -17,10 +17,20 @@ const applicantStatusEnum = z.enum([
 const interviewStatusEnum = z.enum(["SCHEDULED", "COMPLETED", "CANCELLED", "noShow"]);
 
 const recruitmentBase = z.object({
-  jobTitle: z.string().min(1, "Job title is required"),
+  jobTitle: z.string().min(1, "Job title is required").optional().nullable(),
   jobTitleAmharic: z.string().optional().nullable(),
   departmentId: uuidSchema,
-  designationId: uuidSchema,
+  designationId: uuidSchema.optional().nullable(),
+  level: z.string().optional().nullable(),
+  referenceNumber: z.string().optional().nullable(),
+  educationLevel: z.string().optional().nullable(),
+  recruitmentType: z.enum(["ADMINISTRATIVE", "ACADEMIC"]).optional(),
+  specialization: z.string().optional().nullable(),
+  specializationAmharic: z.string().optional().nullable(),
+  academicRank: z.string().optional().nullable(),
+  academicRankAmharic: z.string().optional().nullable(),
+  remark: z.string().optional().nullable(),
+  remarkAmharic: z.string().optional().nullable(),
   jobDescription: z.string().optional().nullable(),
   jobDescriptionAmharic: z.string().optional().nullable(),
   requirements: z.string().optional().nullable(),
@@ -33,7 +43,6 @@ const recruitmentBase = z.object({
   status: recruitmentStatusEnum.optional(),
   postedDate: dateSchema.optional().nullable(),
   closingDate: dateSchema.optional().nullable(),
-  createdBy: uuidSchema,
 }).strict();
 
 const applicantBase = z.object({

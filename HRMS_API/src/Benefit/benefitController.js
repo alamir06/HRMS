@@ -251,4 +251,53 @@ export const benefitController = {
       });
     }
   },
+
+  getAllEnrollments: async (req, res) => {
+    try {
+      const { benefitId } = req.query;
+
+      const conditions = [];
+      const params = [];
+
+      if (benefitId) {
+        conditions.push("eb.benefitId = UUID_TO_BIN(?)");
+        params.push(benefitId);
+      }
+
+      const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+
+      const [records] = await pool.query(
+        `SELECT 
+           BIN_TO_UUID(eb.id) as enrollmentId,
+           BIN_TO_UUID(eb.employeeId) as employeeId,
+           BIN_TO_UUID(eb.benefitId) as benefitId,
+           ep.firstName,
+           ep.lastName,
+           ep.firstNameAmharic,
+           ep.lastNameAmharic,
+           b.benefitName,
+           eb.enrollmentDate,
+           eb.status,
+           eb.coverageAmount,
+           eb.endDate
+         FROM employeeBenefits eb
+         JOIN benefits b ON eb.benefitId = b.id
+         JOIN employeePersonal ep ON eb.employeeId = ep.employeeId
+         ${whereClause}
+         ORDER BY eb.enrollmentDate DESC`,
+        params
+      );
+
+      res.json({
+        success: true,
+        data: records,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: "Failed to fetch all enrollments",
+        message: error.message,
+      });
+    }
+  },
 };

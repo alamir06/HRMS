@@ -27,7 +27,7 @@ const Sidebar = ({ onOpenProfile, mobileOpen = false, onCloseMobile }) => {
   const [authUser, setAuthUser] = useState(null);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileViewport, setIsMobileViewport] = useState(window.innerWidth <= 768);
-  const [isAssetExpanded, setIsAssetExpanded] = useState(false);
+  const [expandedMenus, setExpandedMenus] = useState({});
   const location = useLocation();
 
   useEffect(() => {
@@ -57,7 +57,14 @@ const Sidebar = ({ onOpenProfile, mobileOpen = false, onCloseMobile }) => {
     { name: t('sidebar.attendance', 'Attendance'), path: '/dashboard/attendance', icon: <Clock size={20} /> },
     { name: t('sidebar.leave', 'Leave'), path: '/dashboard/leave', icon: <CalendarOff size={20} /> },
     { name: t('sidebar.payroll', 'Payroll'), path: '/dashboard/payroll', icon: <Banknote size={20} /> },
-    { name: t('sidebar.benefits', 'Benefits'), path: '/dashboard/benefits', icon: <Gift size={20} /> },
+    { 
+      name: t('sidebar.benefits', 'Benefits'), 
+      icon: <Gift size={20} />,
+      subItems: [
+        { name: t('sidebar.benefitList', 'Benefit List'), path: '/dashboard/benefit/list' },
+        { name: t('sidebar.benefitAssignment', 'Benefit Assignment'), path: '/dashboard/benefit/assignment' }
+      ]
+    },
     { 
       name: t('sidebar.assets', 'Assets'), 
       icon: <Component size={20} />,
@@ -100,7 +107,7 @@ const Sidebar = ({ onOpenProfile, mobileOpen = false, onCloseMobile }) => {
                   <div 
                     className={`nav-link ${item.subItems.some(sub => location.pathname.startsWith(sub.path)) ? 'active' : ''}`}
                     onClick={() => {
-                       setIsAssetExpanded(!isAssetExpanded);
+                       setExpandedMenus(prev => ({ ...prev, [item.name]: !prev[item.name] }));
                        if (shouldCollapse) setIsCollapsed(false);
                     }}
                     title={shouldCollapse ? item.name : undefined}
@@ -111,10 +118,10 @@ const Sidebar = ({ onOpenProfile, mobileOpen = false, onCloseMobile }) => {
                       {!shouldCollapse && <span className="nav-text">{item.name}</span>}
                     </div>
                     {!shouldCollapse && (
-                      isAssetExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />
+                      expandedMenus[item.name] ? <ChevronDown size={16} /> : <ChevronRight size={16} />
                     )}
                   </div>
-                  {(!shouldCollapse && isAssetExpanded) && (
+                  {(!shouldCollapse && expandedMenus[item.name]) && (
                     <ul className="nav-sub-items">
                       {item.subItems.map((subItem, idx) => (
                         <li key={idx}>
