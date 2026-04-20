@@ -24,8 +24,7 @@ const enrollmentCrudRouter = createCrudRouter({
   uuidEnabled: true,
 });
 
-benefitRouter.use("/catalog", benefitCrudRouter);
-benefitRouter.use("/enrollments", enrollmentCrudRouter);
+
 
 benefitRouter.post(
   "/enrollments/enroll",
@@ -54,5 +53,8 @@ benefitRouter.get(
   authorize("HRMANAGER", "HROFFICER", "EMPLOYEE"),
   benefitController.getEmployeeBenefits
 );
+
+benefitRouter.use("/catalog", benefitCrudRouter);
+benefitRouter.use("/enrollments", enrollmentCrudRouter);
 
 export default benefitRouter;
