@@ -26,6 +26,16 @@ const mapRecruitmentRecord = (record) => ({
   jobTitleAmharic: record.jobTitleAmharic,
   departmentId: record.departmentId,
   designationId: record.designationId,
+  level: record.level,
+  referenceNumber: record.referenceNumber,
+  educationLevel: record.educationLevel,
+  recruitmentType: record.recruitmentType,
+  specialization: record.specialization,
+  specializationAmharic: record.specializationAmharic,
+  academicRank: record.academicRank,
+  academicRankAmharic: record.academicRankAmharic,
+  remark: record.remark,
+  remarkAmharic: record.remarkAmharic,
   departmentName: record.departmentName,
   designationName: record.designationName,
   jobDescription: record.jobDescription,
@@ -93,6 +103,16 @@ export const createRecruitment = async (req, res, next) => {
       jobTitleAmharic,
       departmentId,
       designationId,
+      level,
+      referenceNumber,
+      educationLevel,
+      recruitmentType = 'ADMINISTRATIVE',
+      specialization,
+      specializationAmharic,
+      academicRank,
+      academicRankAmharic,
+      remark,
+      remarkAmharic,
       jobDescription,
       jobDescriptionAmharic,
       requirements,
@@ -103,36 +123,67 @@ export const createRecruitment = async (req, res, next) => {
       status = "DRAFT",
       postedDate,
       closingDate,
-      createdBy,
     } = req.body;
 
+    const createdBy = req.user.id;
+
     await connection.beginTransaction();
+
+    const [deptRows] = await connection.query(
+      "SELECT departmentType FROM department WHERE id = UUID_TO_BIN(?)",
+      [departmentId]
+    );
+
+    if (deptRows.length === 0) {
+      await connection.rollback();
+      return res.status(404).json({ success: false, message: "Department not found" });
+    }
+
+    if (deptRows[0].departmentType !== recruitmentType) {
+      await connection.rollback();
+      return res.status(400).json({
+        success: false,
+        message: `Type mismatch: Cannot post an ${recruitmentType} vacancy to an ${deptRows[0].departmentType} department.`,
+      });
+    }
 
     const insertQuery = `
       INSERT INTO recruitment (
         id, jobTitle, jobTitleAmharic, departmentId, designationId,
+        level, referenceNumber, educationLevel,
+        recruitmentType, specialization, specializationAmharic, academicRank, academicRankAmharic, remark, remarkAmharic,
         jobDescription, jobDescriptionAmharic, requirements, requirementsAmharic,
         vacancies, experienceRequired, salaryRange, status, postedDate, closingDate,
         createdBy
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (UUID_TO_BIN(?), ?, ?, UUID_TO_BIN(?), UUID_TO_BIN(?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, UUID_TO_BIN(?))
     `;
 
     await connection.execute(insertQuery, [
       id,
-      jobTitle,
-      jobTitleAmharic,
+      jobTitle || null,
+      jobTitleAmharic || null,
       departmentId,
-      designationId,
-      jobDescription,
-      jobDescriptionAmharic,
-      requirements,
-      requirementsAmharic,
+      designationId || null,
+      level || null,
+      referenceNumber || null,
+      educationLevel || null,
+      recruitmentType,
+      specialization || null,
+      specializationAmharic || null,
+      academicRank || null,
+      academicRankAmharic || null,
+      remark || null,
+      remarkAmharic || null,
+      jobDescription || null,
+      jobDescriptionAmharic || null,
+      requirements || null,
+      requirementsAmharic || null,
       vacancies,
-      experienceRequired,
-      salaryRange,
+      experienceRequired || null,
+      salaryRange || null,
       status,
-      postedDate,
-      closingDate,
+      postedDate || null,
+      closingDate || null,
       createdBy,
     ]);
 
@@ -165,7 +216,7 @@ export const createRecruitment = async (req, res, next) => {
 export const listRecruitment = async (_req, res, next) => {
   try {
     const query = `
-      SELECT r.*, d.name AS departmentName, ds.name AS designationName
+      SELECT r.*, BIN_TO_UUID(r.id) as id, BIN_TO_UUID(r.departmentId) as departmentId, BIN_TO_UUID(r.designationId) as designationId, BIN_TO_UUID(r.createdBy) as createdBy, d.name AS departmentName, ds.name AS designationName
       FROM recruitment r
       LEFT JOIN department d ON d.id = r.departmentId
       LEFT JOIN designation ds ON ds.id = r.designationId
@@ -186,11 +237,11 @@ export const getRecruitmentById = async (req, res, next) => {
   const { id } = req.params;
   try {
     const query = `
-      SELECT r.*, d.name AS departmentName, ds.name AS designationName
+      SELECT r.*, BIN_TO_UUID(r.id) as id, BIN_TO_UUID(r.departmentId) as departmentId, BIN_TO_UUID(r.designationId) as designationId, BIN_TO_UUID(r.createdBy) as createdBy, d.name AS departmentName, ds.name AS designationName
       FROM recruitment r
       LEFT JOIN department d ON d.id = r.departmentId
       LEFT JOIN designation ds ON ds.id = r.designationId
-      WHERE r.id = ?
+      WHERE r.id = UUID_TO_BIN(?)
     `;
 
     const [rows] = await pool.query(query, [id]);
@@ -222,6 +273,16 @@ export const updateRecruitment = async (req, res, next) => {
     "jobTitleAmharic",
     "departmentId",
     "designationId",
+    "level",
+    "referenceNumber",
+    "educationLevel",
+    "recruitmentType",
+    "specialization",
+    "specializationAmharic",
+    "academicRank",
+    "academicRankAmharic",
+    "remark",
+    "remarkAmharic",
     "jobDescription",
     "jobDescriptionAmharic",
     "requirements",
@@ -239,8 +300,13 @@ export const updateRecruitment = async (req, res, next) => {
 
   for (const [key, value] of Object.entries(fields)) {
     if (allowedFields.includes(key)) {
-      setClauses.push(`${key} = ?`);
-      values.push(value);
+      if (key === "departmentId" || key === "designationId") {
+        setClauses.push(`${key} = UUID_TO_BIN(?)`);
+        values.push(value);
+      } else {
+        setClauses.push(`${key} = ?`);
+        values.push(value);
+      }
     }
   }
 
@@ -250,7 +316,7 @@ export const updateRecruitment = async (req, res, next) => {
 
   values.push(id);
 
-  const query = `UPDATE recruitment SET ${setClauses.join(", ")}, updatedAt = NOW() WHERE id = ?`;
+  const query = `UPDATE recruitment SET ${setClauses.join(", ")}, updatedAt = NOW() WHERE id = UUID_TO_BIN(?)`;
 
   try {
     const [result] = await pool.execute(query, values);
@@ -285,7 +351,7 @@ export const updateRecruitment = async (req, res, next) => {
 
 export const deleteRecruitment = async (req, res, next) => {
   const { id } = req.params;
-  const query = "DELETE FROM recruitment WHERE id = ?";
+  const query = "DELETE FROM recruitment WHERE id = UUID_TO_BIN(?)";
 
   try {
     const [result] = await pool.execute(query, [id]);

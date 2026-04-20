@@ -24,7 +24,12 @@ const enrollmentCrudRouter = createCrudRouter({
   uuidEnabled: true,
 });
 
-
+benefitRouter.get(
+  "/enrollments/all",
+  authenticateToken,
+  authorize("HRMANAGER", "HROFFICER", "EMPLOYEE"),
+  benefitController.getAllEnrollments
+);
 
 benefitRouter.post(
   "/enrollments/enroll",

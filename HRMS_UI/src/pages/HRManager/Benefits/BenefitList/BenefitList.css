@@ -1,4 +1,4 @@
-.benefits-container {
+.benefit-container {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -6,7 +6,7 @@
   animation: fadeIn 0.3s ease-in-out;
 }
 
-.benefits-top-toolbar {
+.benefit-top-toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -70,8 +70,7 @@
   transform: scale(0.98);
 }
 
-.benefits-table-card,
-.benefit-section-card {
+.benefit-table-card {
   background-color: var(--bg-secondary);
   border-radius: var(--radius-md);
   box-shadow: var(--card-shadow);
@@ -82,8 +81,7 @@
   padding: 1rem;
 }
 
-.benefit-table-responsive-wrapper,
-.benefit-table-wrap {
+.benefit-table-responsive-wrapper {
   width: 100%;
   overflow-x: auto;
 }
@@ -169,7 +167,7 @@
   justify-content: center;
   width: 32px;
   height: 32px;
-  border: none; /* Aligning with asset action button */
+  border: none;
   border-radius: 4px;
   background-color: rgba(11, 130, 85, 0.1);
   color: var(--primary-color);
@@ -319,191 +317,13 @@
   color: #ef4444;
 }
 
-.benefit-subsections {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
-}
-
-.benefit-section-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 0.8rem;
-  margin-bottom: 0.9rem;
-}
-
-.benefit-section-head h3 {
-  margin: 0;
-  font-size: 1.05rem;
-  color: var(--text-primary);
-}
-
-.benefit-grid-form {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.75rem;
-}
-
-.benefit-grid-form.compact {
-  margin-top: 0.25rem;
-}
-
-.benefit-grid-form label,
-.inline-filters label,
-.summary-picker {
-  display: grid;
-  gap: 0.35rem;
-  font-size: 0.82rem;
-  color: var(--text-primary);
-}
-
-.benefit-grid-form input,
-.benefit-grid-form select,
-.benefit-grid-form textarea,
-.inline-filters select,
-.summary-picker select {
-  width: 100%;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 0.52rem 0.65rem;
-  font-size: 0.9rem;
-  background: var(--bg-primary);
-  color: var(--text-primary);
-}
-
-.benefit-grid-form textarea {
-  resize: vertical;
-}
-
-.actions {
-  display: flex;
-  justify-content: flex-start;
-}
-
-.benefit-btn {
-  border: none; /* Aligning with modern design */
-  background: #ffffff;
-  color: #1f2937;
-  border-radius: 8px;
-  padding: 0.55rem 0.8rem;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  cursor: pointer;
-  font-size: 0.85rem;
-  transition: background-color 0.2s ease, color 0.2s ease;
-}
-
-.benefit-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.benefit-btn.primary {
-  background: #0b8255;
-  color: #ffffff;
-}
-
-.benefit-btn.primary:hover {
-  background: #086a45;
-}
-
-.benefit-table {
-  width: 100%;
-  border-collapse: collapse;
-  min-width: 620px;
-}
-
-.benefit-table th,
-.benefit-table td {
-  border-bottom: 1px solid var(--border-color);
-  padding: 0.6rem 0.55rem;
-  text-align: left;
-  font-size: 0.84rem;
-  color: var(--text-secondary);
-}
-
-.benefit-table th {
-  color: var(--text-primary);
-  font-weight: 600;
-  background: rgba(0, 0, 0, 0.02);
-}
-
-.benefit-table .empty {
-  text-align: center;
-  color: var(--text-secondary);
-  padding: 1rem;
-}
-
-.inline-filters {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.65rem;
-  margin-bottom: 0.75rem;
-}
-
-.summary-picker {
-  min-width: 260px;
-}
-
-.summary-empty {
-  margin: 0;
-  color: var(--text-secondary);
-  font-size: 0.88rem;
-}
-
-.summary-metrics {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-}
-
-.metric-card {
-  border: 1px solid var(--border-color);
-  border-radius: 10px;
-  padding: 0.7rem;
-  background: var(--bg-primary);
-  display: grid;
-  gap: 0.2rem;
-}
-
-.metric-card span {
-  font-size: 0.76rem;
-  color: var(--text-secondary);
-}
-
-.metric-card strong {
-  font-size: 1rem;
-  color: var(--text-primary);
-}
-
-@media (max-width: 1100px) {
-  .benefit-subsections {
-    grid-template-columns: 1fr;
-  }
-}
-
 @media (max-width: 768px) {
-  .benefits-top-toolbar,
+  .benefit-top-toolbar,
   .benefit-table-footer {
     flex-direction: column;
     align-items: stretch;
   }
-
   .benefit-pagination-controls {
     justify-content: space-between;
-  }
-
-  .benefit-grid-form,
-  .inline-filters,
-  .summary-metrics {
-    grid-template-columns: 1fr;
-  }
-
-  .summary-picker {
-    min-width: 0;
-    width: 100%;
   }
 }

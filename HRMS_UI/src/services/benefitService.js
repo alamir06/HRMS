@@ -44,5 +44,11 @@ export const benefitService = {
     const query = status ? `?status=${encodeURIComponent(status)}` : '';
     const response = await api.get(`/benefits/employees/${employeeId}${query}`);
     return response.data;
+  },
+
+  getAllEnrollments: async (benefitId = '') => {
+    const query = benefitId ? `?benefitId=${encodeURIComponent(benefitId)}` : '';
+    const response = await api.get(`/benefits/enrollments/all${query}`);
+    return response.data;
   }
 };
