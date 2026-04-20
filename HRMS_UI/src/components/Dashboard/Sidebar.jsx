@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import injLogo from '../../assets/inj-logo.jpg';
 import { 
@@ -17,8 +17,9 @@ import {
   UsersRound, 
   Component, 
   FileSearch,
-  ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  ChevronDown,
+  ChevronLeft
 } from 'lucide-react';
 import './Sidebar.css';
 
@@ -26,6 +27,8 @@ const Sidebar = ({ onOpenProfile, mobileOpen = false, onCloseMobile }) => {
   const [authUser, setAuthUser] = useState(null);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileViewport, setIsMobileViewport] = useState(window.innerWidth <= 768);
+  const [isAssetExpanded, setIsAssetExpanded] = useState(false);
+  const location = useLocation();
 
   useEffect(() => {
     try {
@@ -55,7 +58,14 @@ const Sidebar = ({ onOpenProfile, mobileOpen = false, onCloseMobile }) => {
     { name: t('sidebar.leave', 'Leave'), path: '/dashboard/leave', icon: <CalendarOff size={20} /> },
     { name: t('sidebar.payroll', 'Payroll'), path: '/dashboard/payroll', icon: <Banknote size={20} /> },
     { name: t('sidebar.benefits', 'Benefits'), path: '/dashboard/benefits', icon: <Gift size={20} /> },
-    { name: t('sidebar.assets', 'Assets'), path: '/dashboard/asset', icon: <Component size={20} /> },
+    { 
+      name: t('sidebar.assets', 'Assets'), 
+      icon: <Component size={20} />,
+      subItems: [
+        { name: t('sidebar.assetList', 'Asset List'), path: '/dashboard/asset/list' },
+        { name: t('sidebar.assetAssignment', 'Asset Assignment'), path: '/dashboard/asset/assignment' }
+      ]
+    },
     { name: t('sidebar.recruitment', 'Recruitment'), path: '/dashboard/recruitment', icon: <FileSearch size={20} /> },
     { name: t('sidebar.designations', 'Designations'), path: '/dashboard/designation', icon: <Briefcase size={20} /> },
     { name: t('sidebar.outsourcing', 'Outsourcing'), path: '/dashboard/outsourcing', icon: <UsersRound size={20} /> },
@@ -85,16 +95,53 @@ const Sidebar = ({ onOpenProfile, mobileOpen = false, onCloseMobile }) => {
         <ul>
           {navItems.map((item, index) => (
             <li key={index}>
-              <NavLink 
-                to={item.path} 
-                end={item.path === '/dashboard'} 
-                className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}
-                title={shouldCollapse ? item.name : undefined}
-                onClick={() => onCloseMobile && onCloseMobile()}
-              >
-                <div className="nav-icon-wrapper">{item.icon}</div>
-                {!shouldCollapse && <span className="nav-text">{item.name}</span>}
-              </NavLink>
+              {item.subItems ? (
+                <>
+                  <div 
+                    className={`nav-link ${item.subItems.some(sub => location.pathname.startsWith(sub.path)) ? 'active' : ''}`}
+                    onClick={() => {
+                       setIsAssetExpanded(!isAssetExpanded);
+                       if (shouldCollapse) setIsCollapsed(false);
+                    }}
+                    title={shouldCollapse ? item.name : undefined}
+                    style={{ cursor: 'pointer', justifyContent: 'space-between' }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                      <div className="nav-icon-wrapper">{item.icon}</div>
+                      {!shouldCollapse && <span className="nav-text">{item.name}</span>}
+                    </div>
+                    {!shouldCollapse && (
+                      isAssetExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />
+                    )}
+                  </div>
+                  {(!shouldCollapse && isAssetExpanded) && (
+                    <ul className="nav-sub-items">
+                      {item.subItems.map((subItem, idx) => (
+                        <li key={idx}>
+                          <NavLink
+                            to={subItem.path}
+                            className={({ isActive }) => isActive ? 'nav-sub-link active' : 'nav-sub-link'}
+                            onClick={() => onCloseMobile && onCloseMobile()}
+                          >
+                            {subItem.name}
+                          </NavLink>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </>
+              ) : (
+                <NavLink 
+                  to={item.path} 
+                  end={item.path === '/dashboard'} 
+                  className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}
+                  title={shouldCollapse ? item.name : undefined}
+                  onClick={() => onCloseMobile && onCloseMobile()}
+                >
+                  <div className="nav-icon-wrapper">{item.icon}</div>
+                  {!shouldCollapse && <span className="nav-text">{item.name}</span>}
+                </NavLink>
+              )}
             </li>
           ))}
         </ul>

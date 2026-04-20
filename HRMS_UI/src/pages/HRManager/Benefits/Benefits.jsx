@@ -17,6 +17,7 @@ import { employeeService } from '../../../services/employeeService';
 import { benefitService } from '../../../services/benefitService';
 import CommonForm from '../../../components/common/CommonForm';
 import ConfirmModal from '../../../components/common/ConfirmModal';
+import { formatEthiopianDate } from '../../../utils/dateTime';
 import './Benefits.css';
 
 const BENEFIT_TYPES = ['Health', 'Retirement', 'Insurance', 'Wellness', 'Other'];
@@ -368,7 +369,7 @@ const Benefits = () => {
   return (
     <div className="benefits-container">
       <div className="benefits-top-toolbar">
-        <label className="search-wrapper-benefit" htmlFor="searchBenefit">
+        <label className="benefit-search-wrapper" htmlFor="searchBenefit">
           <Search size={18} color="var(--text-secondary)" />
           <input
             id="searchBenefit"
@@ -384,25 +385,25 @@ const Benefits = () => {
       </div>
 
       <div className="benefits-table-card">
-        <div className="table-responsive-wrapper">
-          <table className="modern-data-table">
+        <div className="benefit-table-responsive-wrapper">
+          <table className="benefit-modern-data-table">
             <thead>
               <tr>
-                <th className="sortable-header" onClick={() => handleSort('benefitName')}>
-                  <div className="th-content">Benefit Name {renderSortIcon('benefitName')}</div>
+                <th className="benefit-sortable-header" onClick={() => handleSort('benefitName')}>
+                  <div className="benefit-th-content">Benefit Name {renderSortIcon('benefitName')}</div>
                 </th>
-                <th className="sortable-header" onClick={() => handleSort('benefitNameAmharic')}>
-                  <div className="th-content">Name (Amharic) {renderSortIcon('benefitNameAmharic')}</div>
+                <th className="benefit-sortable-header" onClick={() => handleSort('benefitNameAmharic')}>
+                  <div className="benefit-th-content">Name (Amharic) {renderSortIcon('benefitNameAmharic')}</div>
                 </th>
-                <th className="sortable-header" onClick={() => handleSort('benefitType')}>
-                  <div className="th-content">Type {renderSortIcon('benefitType')}</div>
+                <th className="benefit-sortable-header" onClick={() => handleSort('benefitType')}>
+                  <div className="benefit-th-content">Type {renderSortIcon('benefitType')}</div>
                 </th>
-                <th className="sortable-header" onClick={() => handleSort('costToCompany')}>
-                  <div className="th-content">Cost {renderSortIcon('costToCompany')}</div>
+                <th className="benefit-sortable-header" onClick={() => handleSort('costToCompany')}>
+                  <div className="benefit-th-content">Cost {renderSortIcon('costToCompany')}</div>
                 </th>
                 <th>Status</th>
-                <th className="sortable-header" onClick={() => handleSort('createdAt')}>
-                  <div className="th-content">Created Date {renderSortIcon('createdAt')}</div>
+                <th className="benefit-sortable-header" onClick={() => handleSort('createdAt')}>
+                  <div className="benefit-th-content">Created Date {renderSortIcon('createdAt')}</div>
                 </th>
                 <th>Actions</th>
               </tr>
@@ -424,20 +425,20 @@ const Benefits = () => {
                     <td>{benefit.benefitType}</td>
                     <td>{benefit.costToCompany ?? '-'}</td>
                     <td>
-                      <span className={`badge ${benefit.isActive ? 'badge-active' : 'badge-inactive'}`}>
+                      <span className={`benefit-status-badge benefit-status-${benefit.isActive}`}>
                         {benefit.isActive ? 'Active' : 'Inactive'}
                       </span>
                     </td>
-                    <td>{new Date(benefit.createdAt).toLocaleDateString()}</td>
+                    <td>{formatEthiopianDate(benefit.createdAt)}</td>
                     <td>
-                      <div className="table-actions">
-                        <button className="action-btn-light" onClick={() => setSelectedBenefitId(benefit.id)} title="Summary">
+                      <div className="benefit-table-actions">
+                        <button className="benefit-action-btn-light" onClick={() => setSelectedBenefitId(benefit.id)} title="Summary">
                           <BarChart3 size={14} />
                         </button>
-                        <button className="action-btn-light" onClick={() => handleOpenEdit(benefit)} title="Edit">
+                        <button className="benefit-action-btn-light" onClick={() => handleOpenEdit(benefit)} title="Edit">
                           <Pencil size={14} />
                         </button>
-                        <button className="action-btn-light action-btn-danger" onClick={() => triggerDelete(benefit)} title="Delete">
+                        <button className="benefit-action-btn-light benefit-action-btn-danger" onClick={() => triggerDelete(benefit)} title="Delete">
                           <Trash2 size={14} />
                         </button>
                       </div>
@@ -449,11 +450,11 @@ const Benefits = () => {
           </table>
         </div>
 
-        <div className="table-footer">
-          <div className="page-limit-selector">
+        <div className="benefit-table-footer">
+          <div className="benefit-page-limit-selector">
             <span>Show</span>
             <select
-              className="limit-dropdown"
+              className="benefit-limit-dropdown"
               value={limit}
               onChange={(event) => {
                 setLimit(Number(event.target.value));
@@ -469,15 +470,15 @@ const Benefits = () => {
             <span>entries</span>
           </div>
 
-          <div className="pagination-controls">
+          <div className="benefit-pagination-controls">
             <span>
               Showing {pagination.total === 0 ? 0 : (page - 1) * limit + 1} to {Math.min(page * limit, pagination.total)} of {pagination.total}
             </span>
             <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <button className="page-btn" onClick={() => setPage(page - 1)} disabled={page <= 1}>
+              <button className="benefit-page-btn" onClick={() => setPage(page - 1)} disabled={page <= 1}>
                 <ChevronLeft size={16} />
               </button>
-              <button className="page-btn" onClick={() => setPage(page + 1)} disabled={page >= pagination.pages}>
+              <button className="benefit-page-btn" onClick={() => setPage(page + 1)} disabled={page >= pagination.pages}>
                 <ChevronRight size={16} />
               </button>
             </div>
@@ -770,10 +771,10 @@ const Benefits = () => {
 
       {isFormModalOpen && (
         <div className="modal-overlay" onClick={closeFormModal}>
-          <div className="modal-form-wrapper" onClick={(event) => event.stopPropagation()}>
-            <div className="modal-form-header">
+          <div className="benefit-modal-form-wrapper" onClick={(event) => event.stopPropagation()}>
+            <div className="benefit-modal-form-header">
               <h3>{editingBenefit ? 'Edit Benefit' : 'Add New Benefit'}</h3>
-              <button className="close-btn" onClick={closeFormModal}><X size={20} /></button>
+              <button className="benefit-close-btn" onClick={closeFormModal}><X size={20} /></button>
             </div>
 
             <CommonForm
