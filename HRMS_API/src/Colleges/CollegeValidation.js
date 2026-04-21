@@ -6,8 +6,9 @@ export const collegeValidationSchema = {
       .uuid('Invalid Company ID format')
       .min(1, 'Company ID is required'),
     collegeName: z.string()
-      .min(1, 'College name is required')
-      .max(255, 'College name must be less than 255 characters'),
+      .max(255, 'College name must be less than 255 characters')
+      .optional()
+      .nullable(),
     collegeNameAmharic: z.string()
       .max(255, 'Amharic college name must be less than 255 characters')
       .optional()
@@ -20,16 +21,19 @@ export const collegeValidationSchema = {
       .max(1000, 'Amharic description must be less than 1000 characters')
       .optional()
       .nullable()
-  }).strict(),
+  }).refine(data => data.collegeName || data.collegeNameAmharic, {
+    message: "At least one college name (English or Amharic) must be provided",
+    path: ["collegeName"],
+  }),
 
   update: z.object({
     companyId: z.string()
       .uuid('Invalid company ID format')
       .optional(),
     collegeName: z.string()
-      .min(1, 'College name is required')
       .max(255, 'College name must be less than 255 characters')
-      .optional(),
+      .optional()
+      .nullable(),
     collegeNameAmharic: z.string()
       .max(255, 'Amharic college name must be less than 255 characters')
       .optional()
@@ -42,7 +46,7 @@ export const collegeValidationSchema = {
       .max(1000, 'Amharic description must be less than 1000 characters')
       .optional()
       .nullable()
-  }).strict(),
+  }),
 
   id: z.object({
     id: z.string().uuid('Invalid college ID format')

@@ -10,7 +10,14 @@ const pool = mysql.createPool({
   database: process.env.DB_NAME,
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0
+  queueLimit: 0,
+  timezone: '+03:00'
+});
+
+pool.on('connection', (connection) => {
+  connection.query("SET time_zone = '+03:00'", () => {
+    // Keep app resilient if timezone set fails on some hosts.
+  });
 });
 
 export default pool;

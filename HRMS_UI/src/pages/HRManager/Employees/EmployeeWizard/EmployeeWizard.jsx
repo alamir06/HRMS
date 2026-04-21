@@ -10,6 +10,8 @@ import { employeeService } from '../../../../services/employeeService';
 import { departmentService } from '../../../../services/departmentService';
 import { collegeService } from '../../../../services/collegeService';
 import { outsourceCompanyService } from '../../../../services/outsourceCompanyService';
+import EthiopianDateInput from '../../../../components/common/EthiopianDateInput';
+import { getAddisTodayGregorian, toGregorianInputDate } from '../../../../utils/dateTime';
 import './EmployeeWizard.css';
 
 const steps = [
@@ -32,6 +34,8 @@ const EmployeeWizard = ({ onClose, onSuccess, editEmployeeId }) => {
     url: null,
     zoom: 1
   });
+
+  const isImageFile = (file) => Boolean(file && typeof file.type === 'string' && file.type.startsWith('image/'));
 
   const openPreview = (file) => {
     setPreviewModal({
@@ -59,7 +63,7 @@ const EmployeeWizard = ({ onClose, onSuccess, editEmployeeId }) => {
     // Base
     employeeType: 'ACADEMIC',
     departmentId: '',
-    hireDate: new Date().toISOString().split('T')[0],
+    hireDate: getAddisTodayGregorian(),
     employmentType: 'FULL_TIME',
     employmentStatus: 'ACTIVE',
     
@@ -132,7 +136,7 @@ const EmployeeWizard = ({ onClose, onSuccess, editEmployeeId }) => {
                 ...prev,
                 employeeType: e.employeeType || 'ACADEMIC',
                 departmentId: e.departmentId || '',
-                hireDate: e.hireDate ? new Date(e.hireDate).toISOString().split('T')[0] : prev.hireDate,
+                hireDate: e.hireDate ? toGregorianInputDate(e.hireDate) : prev.hireDate,
                 employmentType: e.employmentType || 'FULL_TIME',
                 employmentStatus: e.employmentStatus || 'ACTIVE',
                 personal: {
@@ -143,7 +147,7 @@ const EmployeeWizard = ({ onClose, onSuccess, editEmployeeId }) => {
                   lastName: e.lastName || '',
                   lastNameAmharic: e.lastNameAmharic || '',
                   gender: e.gender || 'MALE',
-                  dateOfBirth: e.dateOfBirth ? new Date(e.dateOfBirth).toISOString().split('T')[0] : '',
+                  dateOfBirth: e.dateOfBirth ? toGregorianInputDate(e.dateOfBirth) : '',
                   personalEmail: e.personalEmail || '',
                   personalPhone: e.personalPhone || '',
                   emergencyContactName: e.emergencyContactName || '',
@@ -212,7 +216,8 @@ const EmployeeWizard = ({ onClose, onSuccess, editEmployeeId }) => {
         issueDate: '', 
         issuingAuthority: '', 
         description: '', 
-        file: null 
+        file: null,
+        previewUrl: null,
       }]
     }));
   };
@@ -225,16 +230,41 @@ const EmployeeWizard = ({ onClose, onSuccess, editEmployeeId }) => {
 
   const updateDocumentFile = (idx, file) => {
     const newDocs = [...formData.documents];
+    const prevPreviewUrl = newDocs[idx].previewUrl;
+
+    if (prevPreviewUrl) {
+      URL.revokeObjectURL(prevPreviewUrl);
+      newDocs[idx].previewUrl = null;
+    }
+
     newDocs[idx].file = file;
     if (!newDocs[idx].documentName && file) {
       newDocs[idx].documentName = file.name.split('.')[0];
     }
+
+    if (isImageFile(file)) {
+      newDocs[idx].previewUrl = URL.createObjectURL(file);
+    }
+
     setFormData(prev => ({ ...prev, documents: newDocs }));
   };
 
   const removeDocument = (idx) => {
     const newDocs = [...formData.documents];
+    if (newDocs[idx]?.previewUrl) {
+      URL.revokeObjectURL(newDocs[idx].previewUrl);
+    }
     newDocs.splice(idx, 1);
+    setFormData(prev => ({ ...prev, documents: newDocs }));
+  };
+
+  const clearDocumentFile = (idx) => {
+    const newDocs = [...formData.documents];
+    if (newDocs[idx]?.previewUrl) {
+      URL.revokeObjectURL(newDocs[idx].previewUrl);
+    }
+    newDocs[idx].file = null;
+    newDocs[idx].previewUrl = null;
     setFormData(prev => ({ ...prev, documents: newDocs }));
   };
 
@@ -294,26 +324,46 @@ const EmployeeWizard = ({ onClose, onSuccess, editEmployeeId }) => {
       };
       if (submitPayload.academic) submitPayload.academic = { ...submitPayload.academic };
       
-      // Ensure language sync
+      // Ensure payload strictly matches the language
       if (i18n.language === 'am') {
-        submitPayload.personal.firstName = submitPayload.personal.firstName || submitPayload.personal.firstNameAmharic;
-        submitPayload.personal.middleName = submitPayload.personal.middleName || submitPayload.personal.middleNameAmharic;
-        submitPayload.personal.lastName = submitPayload.personal.lastName || submitPayload.personal.lastNameAmharic;
-        submitPayload.personal.emergencyContactName = submitPayload.personal.emergencyContactName || submitPayload.personal.emergencyContactNameAmharic;
-        submitPayload.employment.qualification = submitPayload.employment.qualification || submitPayload.employment.qualificationAmharic;
+        if (!submitPayload.personal.firstNameAmharic) submitPayload.personal.firstNameAmharic = submitPayload.personal.firstName;
+        if (!submitPayload.personal.middleNameAmharic) submitPayload.personal.middleNameAmharic = submitPayload.personal.middleName;
+        if (!submitPayload.personal.lastNameAmharic) submitPayload.personal.lastNameAmharic = submitPayload.personal.lastName;
+        if (!submitPayload.personal.emergencyContactNameAmharic) submitPayload.personal.emergencyContactNameAmharic = submitPayload.personal.emergencyContactName;
+        if (!submitPayload.employment.qualificationAmharic) submitPayload.employment.qualificationAmharic = submitPayload.employment.qualification;
         if (submitPayload.academic) {
-          submitPayload.academic.academicRank = submitPayload.academic.academicRank || submitPayload.academic.academicRankAmharic;
-          submitPayload.academic.fieldOfSpecialization = submitPayload.academic.fieldOfSpecialization || submitPayload.academic.fieldOfSpecializationAmharic;
+          if (!submitPayload.academic.academicRankAmharic) submitPayload.academic.academicRankAmharic = submitPayload.academic.academicRank;
+          if (!submitPayload.academic.fieldOfSpecializationAmharic) submitPayload.academic.fieldOfSpecializationAmharic = submitPayload.academic.fieldOfSpecialization;
+        }
+
+        delete submitPayload.personal.firstName;
+        delete submitPayload.personal.middleName;
+        delete submitPayload.personal.lastName;
+        delete submitPayload.personal.emergencyContactName;
+        delete submitPayload.employment.qualification;
+        if (submitPayload.academic) {
+          delete submitPayload.academic.academicRank;
+          delete submitPayload.academic.fieldOfSpecialization;
         }
       } else {
-        submitPayload.personal.firstNameAmharic = submitPayload.personal.firstNameAmharic || submitPayload.personal.firstName;
-        submitPayload.personal.middleNameAmharic = submitPayload.personal.middleNameAmharic || submitPayload.personal.middleName;
-        submitPayload.personal.lastNameAmharic = submitPayload.personal.lastNameAmharic || submitPayload.personal.lastName;
-        submitPayload.personal.emergencyContactNameAmharic = submitPayload.personal.emergencyContactNameAmharic || submitPayload.personal.emergencyContactName;
-        submitPayload.employment.qualificationAmharic = submitPayload.employment.qualificationAmharic || submitPayload.employment.qualification;
+        if (!submitPayload.personal.firstName) submitPayload.personal.firstName = submitPayload.personal.firstNameAmharic;
+        if (!submitPayload.personal.middleName) submitPayload.personal.middleName = submitPayload.personal.middleNameAmharic;
+        if (!submitPayload.personal.lastName) submitPayload.personal.lastName = submitPayload.personal.lastNameAmharic;
+        if (!submitPayload.personal.emergencyContactName) submitPayload.personal.emergencyContactName = submitPayload.personal.emergencyContactNameAmharic;
+        if (!submitPayload.employment.qualification) submitPayload.employment.qualification = submitPayload.employment.qualificationAmharic;
         if (submitPayload.academic) {
-          submitPayload.academic.academicRankAmharic = submitPayload.academic.academicRankAmharic || submitPayload.academic.academicRank;
-          submitPayload.academic.fieldOfSpecializationAmharic = submitPayload.academic.fieldOfSpecializationAmharic || submitPayload.academic.fieldOfSpecialization;
+          if (!submitPayload.academic.academicRank) submitPayload.academic.academicRank = submitPayload.academic.academicRankAmharic;
+          if (!submitPayload.academic.fieldOfSpecialization) submitPayload.academic.fieldOfSpecialization = submitPayload.academic.fieldOfSpecializationAmharic;
+        }
+
+        delete submitPayload.personal.firstNameAmharic;
+        delete submitPayload.personal.middleNameAmharic;
+        delete submitPayload.personal.lastNameAmharic;
+        delete submitPayload.personal.emergencyContactNameAmharic;
+        delete submitPayload.employment.qualificationAmharic;
+        if (submitPayload.academic) {
+          delete submitPayload.academic.academicRankAmharic;
+          delete submitPayload.academic.fieldOfSpecializationAmharic;
         }
       }
       
@@ -408,11 +458,11 @@ const EmployeeWizard = ({ onClose, onSuccess, editEmployeeId }) => {
                         <label>{t('forms.hireDate', 'Hire Date')} <span className="req">*</span></label>
                         <div className="premium-input-wrap">
                           <Calendar size={18} className="input-icon" />
-                          <input 
-                            type="date" 
-                            value={formData.hireDate} 
-                            onChange={e => updateBase('hireDate', e.target.value)} 
-                            required 
+                          <EthiopianDateInput
+                            value={formData.hireDate}
+                            onChange={(gregDate) => updateBase('hireDate', gregDate)}
+                            language={i18n.language}
+                            required
                           />
                         </div>
                       </div>
@@ -660,10 +710,14 @@ const EmployeeWizard = ({ onClose, onSuccess, editEmployeeId }) => {
                       </div>
 
                       <div className="premium-form-group">
-                        <label>Gender <span className="req">*</span></label>
+                        <label>{i18n.language === 'am' ? 'ፆታ' : 'Gender'} <span className="req">*</span></label>
                         <div className="gender-toggle-group">
-                          <button type="button" className={`gender-btn ${formData.personal.gender === 'MALE' ? 'active' : ''}`} onClick={() => updateNested('personal', 'gender', 'MALE')}>Male</button>
-                          <button type="button" className={`gender-btn ${formData.personal.gender === 'FEMALE' ? 'active' : ''}`} onClick={() => updateNested('personal', 'gender', 'FEMALE')}>Female</button>
+                          <button type="button" className={`gender-btn ${formData.personal.gender === 'MALE' ? 'active' : ''}`} onClick={() => updateNested('personal', 'gender', 'MALE')}>
+                            {i18n.language === 'am' ? 'ወንድ' : 'Male'}
+                          </button>
+                          <button type="button" className={`gender-btn ${formData.personal.gender === 'FEMALE' ? 'active' : ''}`} onClick={() => updateNested('personal', 'gender', 'FEMALE')}>
+                            {i18n.language === 'am' ? 'ሴት' : 'Female'}
+                          </button>
                         </div>
                       </div>
 
@@ -671,7 +725,12 @@ const EmployeeWizard = ({ onClose, onSuccess, editEmployeeId }) => {
                         <label>Date of Birth <span className="req">*</span></label>
                         <div className="premium-input-wrap">
                           <Calendar size={18} className="input-icon" />
-                          <input type="date" value={formData.personal.dateOfBirth} onChange={e => updateNested('personal', 'dateOfBirth', e.target.value)} required />
+                          <EthiopianDateInput
+                            value={formData.personal.dateOfBirth}
+                            onChange={(gregDate) => updateNested('personal', 'dateOfBirth', gregDate)}
+                            language={i18n.language}
+                            required
+                          />
                         </div>
                       </div>
 
@@ -825,7 +884,11 @@ const EmployeeWizard = ({ onClose, onSuccess, editEmployeeId }) => {
                               <label>Contract End Date</label>
                               <div className="premium-input-wrap">
                                 <Calendar size={18} className="input-icon" />
-                                <input type="date" value={formData.outsource.contractEndDate} onChange={e => updateNested('outsource', 'contractEndDate', e.target.value)} />
+                                <EthiopianDateInput
+                                  value={formData.outsource.contractEndDate}
+                                  onChange={(gregDate) => updateNested('outsource', 'contractEndDate', gregDate)}
+                                  language={i18n.language}
+                                />
                               </div>
                             </div>
                           </>
@@ -894,14 +957,23 @@ const EmployeeWizard = ({ onClose, onSuccess, editEmployeeId }) => {
                            <label>Start Date <span className="req">*</span></label>
                            <div className="premium-input-wrap">
                               <Calendar size={18} className="input-icon" />
-                              <input type="date" required value={ed.startDate} onChange={e => updateEducation(idx, 'startDate', e.target.value)} />
+                              <EthiopianDateInput
+                                value={ed.startDate}
+                                onChange={(gregDate) => updateEducation(idx, 'startDate', gregDate)}
+                                language={i18n.language}
+                                required
+                              />
                            </div>
                          </div>
                          <div className="premium-form-group">
                            <label>End Date</label>
                            <div className="premium-input-wrap">
                               <Calendar size={18} className="input-icon" />
-                              <input type="date" value={ed.endDate} onChange={e => updateEducation(idx, 'endDate', e.target.value)} />
+                              <EthiopianDateInput
+                                value={ed.endDate}
+                                onChange={(gregDate) => updateEducation(idx, 'endDate', gregDate)}
+                                language={i18n.language}
+                              />
                             </div>
                           </div>
                         </div>
@@ -924,7 +996,11 @@ const EmployeeWizard = ({ onClose, onSuccess, editEmployeeId }) => {
                             <label>Graduation Date</label>
                             <div className="premium-input-wrap">
                                <Calendar size={18} className="input-icon" />
-                               <input type="date" value={ed.graduationDate} onChange={e => updateEducation(idx, 'graduationDate', e.target.value)} />
+                               <EthiopianDateInput
+                                 value={ed.graduationDate}
+                                 onChange={(gregDate) => updateEducation(idx, 'graduationDate', gregDate)}
+                                 language={i18n.language}
+                               />
                             </div>
                           </div>
                         </div>
@@ -988,7 +1064,11 @@ const EmployeeWizard = ({ onClose, onSuccess, editEmployeeId }) => {
                                <label>Issue Date</label>
                                <div className="premium-input-wrap">
                                  <Calendar size={18} className="input-icon" />
-                                 <input type="date" value={doc.issueDate} onChange={e => updateDocumentField(idx, 'issueDate', e.target.value)} />
+                                 <EthiopianDateInput
+                                   value={doc.issueDate}
+                                   onChange={(gregDate) => updateDocumentField(idx, 'issueDate', gregDate)}
+                                   language={i18n.language}
+                                 />
                                </div>
                              </div>
                              <div className="premium-form-group">
@@ -1001,13 +1081,34 @@ const EmployeeWizard = ({ onClose, onSuccess, editEmployeeId }) => {
                            </div>
                          </div>
                          <div className="document-uploader" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                           <div className="premium-dashboard-file-upload" style={{ flex: 1, minHeight: '180px' }}>
-                             <div className="upload-icon"><FileUp size={32} /></div>
-                             <div className="upload-text">Upload a File</div>
-                             <div className="upload-subtext">Max size: 5MB</div>
+                           <div className={`premium-dashboard-file-upload ${doc.previewUrl ? 'has-image-preview' : ''}`} style={{ flex: 1, minHeight: '180px' }}>
+                             {doc.previewUrl ? (
+                               <img
+                                 src={doc.previewUrl}
+                                 alt={doc.documentName || 'Document preview'}
+                                 className="upload-image-preview"
+                               />
+                             ) : (
+                               <>
+                                 <div className="upload-icon"><FileUp size={32} /></div>
+                                 <div className="upload-text">Upload a File</div>
+                                 <div className="upload-subtext">Max size: 5MB</div>
+                               </>
+                             )}
                              
                              {doc.file && (
                                 <div className="file-preview-meta">
+                                   <button
+                                     type="button"
+                                     className="upload-clear-btn"
+                                     onClick={(e) => {
+                                       e.stopPropagation();
+                                       clearDocumentFile(idx);
+                                     }}
+                                     title="Remove selected file"
+                                   >
+                                     <X size={12} />
+                                   </button>
                                    <span style={{ fontSize: '0.75rem', color: 'var(--primary-color)', fontWeight: '500', cursor: 'pointer', textDecoration: 'underline' }} 
                                          onClick={(e) => { e.stopPropagation(); openPreview(doc.file); }}>
                                      <File size={12} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} /> 

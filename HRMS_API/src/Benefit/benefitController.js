@@ -9,6 +9,8 @@ const parseMoney = (value) => {
   return Number.isNaN(parsed) ? null : parsed;
 };
 
+import { v4 as uuidv4 } from "uuid";
+
 export const benefitController = {
   enrollEmployee: async (req, res) => {
     const {
@@ -23,6 +25,7 @@ export const benefitController = {
     } = req.body;
 
     try {
+      const newId = uuidv4();
       const [existing] = await pool.query(
         `SELECT id
            FROM employeeBenefits
@@ -41,6 +44,7 @@ export const benefitController = {
 
       const [result] = await pool.query(
         `INSERT INTO employeeBenefits (
+           id,
            employeeId,
            benefitId,
            enrollmentDate,
@@ -52,6 +56,7 @@ export const benefitController = {
          ) VALUES (
            UUID_TO_BIN(?),
            UUID_TO_BIN(?),
+           UUID_TO_BIN(?),
            ?,
            ?,
            ?,
@@ -60,6 +65,7 @@ export const benefitController = {
            ?
          )`,
         [
+          newId,
           employeeId,
           benefitId,
           enrollmentDate,
@@ -75,7 +81,7 @@ export const benefitController = {
         success: true,
         message: "Employee enrolled",
         data: {
-          id: result.insertId,
+          id: newId,
           employeeId,
           benefitId,
           status,
@@ -241,6 +247,55 @@ export const benefitController = {
       res.status(500).json({
         success: false,
         error: "Failed to fetch employee benefits",
+        message: error.message,
+      });
+    }
+  },
+
+  getAllEnrollments: async (req, res) => {
+    try {
+      const { benefitId } = req.query;
+
+      const conditions = [];
+      const params = [];
+
+      if (benefitId) {
+        conditions.push("eb.benefitId = UUID_TO_BIN(?)");
+        params.push(benefitId);
+      }
+
+      const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+
+      const [records] = await pool.query(
+        `SELECT 
+           BIN_TO_UUID(eb.id) as enrollmentId,
+           BIN_TO_UUID(eb.employeeId) as employeeId,
+           BIN_TO_UUID(eb.benefitId) as benefitId,
+           ep.firstName,
+           ep.lastName,
+           ep.firstNameAmharic,
+           ep.lastNameAmharic,
+           b.benefitName,
+           eb.enrollmentDate,
+           eb.status,
+           eb.coverageAmount,
+           eb.endDate
+         FROM employeeBenefits eb
+         JOIN benefits b ON eb.benefitId = b.id
+         JOIN employeePersonal ep ON eb.employeeId = ep.employeeId
+         ${whereClause}
+         ORDER BY eb.enrollmentDate DESC`,
+        params
+      );
+
+      res.json({
+        success: true,
+        data: records,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: "Failed to fetch all enrollments",
         message: error.message,
       });
     }

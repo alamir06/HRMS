@@ -32,21 +32,7 @@ export const designationValidationSchema = {
       .max(2000, "Amharic job description must be less than 200 characters")
       .optional()
       .nullable(),
-    gradeLevel: z
-      .string()
-      .max(50, "Grade level must be less than 50 characters")
-      .optional()
-      .nullable(),
-    minSalary: z
-      .number()
-      .min(0, "Minimum salary cannot be negative")
-      .optional()
-      .nullable(),
-    maxSalary: z
-      .number()
-      .min(0, "Maximum salary cannot be negative")
-      .optional()
-      .nullable(),
+
     status: z.enum(["ACTIVE", "INACTIVE"]).default("ACTIVE"),
   }).strict(),
 
@@ -74,21 +60,7 @@ export const designationValidationSchema = {
       .max(2000, "Amharic job description must be less than 2000 characters")
       .optional()
       .nullable(),
-    gradeLevel: z
-      .string()
-      .max(50, "Grade level must be less than 50 characters")
-      .optional()
-      .nullable(),
-    minSalary: z
-      .number()
-      .min(0, "Minimum salary cannot be negative")
-      .optional()
-      .nullable(),
-    maxSalary: z
-      .number()
-      .min(0, "Maximum salary cannot be negative")
-      .optional()
-      .nullable(),
+
     status: z.enum(["ACTIVE", "INACTIVE"]).optional(),
   }).strict(),
 

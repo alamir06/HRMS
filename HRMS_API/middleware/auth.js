@@ -45,6 +45,14 @@ export const authenticateToken = async (req, res, next) => {
       name: [user.firstName, user.middleName, user.lastName].filter(Boolean).join(" ") || user.username,
     };
 
+    if (
+      req.user.employmentStatus === 'ONLEAVE' &&
+      req.method !== 'GET' &&
+      !req.originalUrl.includes('/auth/change-password')
+    ) {
+      return res.status(403).json({ error: "Access denied. Actions are restricted to view-only while on leave." });
+    }
+
     next();
   } catch (error) {
     return res.status(403).json({ error: "Invalid or Expired Token" });

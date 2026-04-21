@@ -14,10 +14,12 @@ import notificationRouter from "../src/Notification/notificationRouter.js";
 import payrollRouter from "../src/Payroll/payrollRouter.js";
 import authRouter from "../src/Auth/authRouter.js";
 import outsourcingCompanyRouter from "../src/OutsourcingCompany/outsourcingCompanyRouter.js";
+import { dashboardRouter } from "../src/Dashboard/dashboardRoutes.js";
 
 const appRouter=express.Router();
 
 appRouter.use("/test",testRouter);
+appRouter.use("/dashboard", dashboardRouter);
 appRouter.use("/colleges", collegeRouter);
 appRouter.use("/departments", departmentRouter);
 appRouter.use("/designations", designationRouter);

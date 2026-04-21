@@ -124,7 +124,7 @@ export const createCrudRouter = (config) => {
     "/",
     [
       ...applyAuthorization(createRoles),
-      ...middleware.create,
+      ...(middleware?.create || []),
     ],
     controller.create
   );
@@ -135,7 +135,7 @@ export const createCrudRouter = (config) => {
       "/bulk",
       [
         ...applyAuthorization(createRoles),
-        ...middleware.create,
+        ...(middleware?.create || []),
       ],
       controller.bulkCreate
     );
@@ -146,7 +146,7 @@ export const createCrudRouter = (config) => {
     [
       validateInclude,
       ...applyAuthorization(readRoles),
-      ...middleware.list,
+      ...(middleware?.list || []),
     ],
     controller.findAll
   );
@@ -155,7 +155,7 @@ export const createCrudRouter = (config) => {
     "/count",
     [
       ...applyAuthorization(readRoles),
-      ...middleware.count,
+      ...(middleware?.count || []),
     ],
     controller.count
   );
@@ -166,7 +166,7 @@ export const createCrudRouter = (config) => {
       validateId,
       validateInclude,
       ...applyAuthorization(readRoles),
-      ...middleware.read,
+      ...(middleware?.read || []),
     ],
     controller.findById
   );
@@ -176,7 +176,7 @@ export const createCrudRouter = (config) => {
     [
       validateId,
       ...applyAuthorization(readRoles),
-      ...middleware.read,
+      ...(middleware?.read || []),
     ],
     controller.exists
   );
@@ -186,7 +186,7 @@ export const createCrudRouter = (config) => {
     [
       validateId,
       ...applyAuthorization(updateRoles),
-      ...middleware.update,
+      ...(middleware?.update || []),
     ],
     controller.update
   );
@@ -196,7 +196,7 @@ export const createCrudRouter = (config) => {
     [
       validateId,
       ...applyAuthorization(updateRoles),
-      ...middleware.update,
+      ...(middleware?.update || []),
     ],
     controller.update
   );
@@ -206,7 +206,7 @@ export const createCrudRouter = (config) => {
     [
       validateId,
       ...applyAuthorization(deleteRoles),
-      ...middleware.delete,
+      ...(middleware?.delete || []),
     ],
     controller.delete
   );

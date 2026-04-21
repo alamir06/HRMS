@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { authenticateToken } from "../../middleware/auth.js";
 import {
   createRecruitment,
   listRecruitment,
@@ -22,6 +23,7 @@ const router = Router();
 // Recruitment routes
 router.post(
   "/",
+  authenticateToken,
   validateRecruitment(recruitmentValidationSchema.recruitment.create),
   createRecruitment
 );

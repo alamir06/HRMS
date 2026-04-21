@@ -34,6 +34,14 @@ const assetAssignmentRouter = createCrudRouter({
 });
 
 assetRouter.use("/categories", assetCategoryRouter);
+
+assetRouter.get(
+  "/items/available",
+  authenticateToken,
+  authorize("HRMANAGER", "HROFFICER", "HEAD", "EMPLOYEE"),
+  assetController.listAvailableAssets
+);
+
 assetRouter.use("/items", assetCrudRouter);
 assetRouter.use("/assignments", assetAssignmentRouter);
 
@@ -49,13 +57,6 @@ assetRouter.post(
   authenticateToken,
   authorize("HRMANAGER", "HROFFICER", "HEAD"),
   assetController.returnAsset
-);
-
-assetRouter.get(
-  "/items/available",
-  authenticateToken,
-  authorize("HRMANAGER", "HROFFICER", "HEAD", "EMPLOYEE"),
-  assetController.listAvailableAssets
 );
 
 assetRouter.get(

@@ -102,3 +102,8 @@ textarea {
     padding: 0 1rem;
   }
 }
+
+/* Ensure Toasts display above modal overlays */
+.Toastify__toast-container {
+  z-index: 999999 !important;
+}

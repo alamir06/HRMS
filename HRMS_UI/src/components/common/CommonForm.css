@@ -49,6 +49,39 @@
   box-shadow: 0 0 0 3px rgba(11, 130, 85, 0.1);
 }
 
+.ethiopian-date-input {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-secondary);
+  overflow: hidden;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.ethiopian-date-input:focus-within {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(11, 130, 85, 0.1);
+}
+
+.ethiopian-date-select {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 0.75rem 1rem;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  font-family: inherit;
+}
+
+.ethiopian-date-select + .ethiopian-date-select {
+  border-left: 1px solid var(--border-color);
+}
+
 /* File Upload Zone - Dashed Rectangle Design */
 .common-file-upload-wrapper {
   display: flex;

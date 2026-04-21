@@ -14,9 +14,6 @@ const designationCustomController = {
           d.title,
           d.titleAmharic,
           d.jobDescription,
-          d.gradeLevel,
-          d.minSalary,
-          d.maxSalary,
           d.status,
           dep.departmentName,
           dep.departmentNameAmharic,
@@ -95,59 +92,28 @@ const designationCustomController = {
   },
 
   // 2. Designation Statistics
+  // 2. Designation Statistics
   getDesignationStats: async (req, res) => {
     try {
-      const [totalDesignations] = await pool.query(
-        "SELECT COUNT(*) as total FROM designations"
+      const [heads] = await pool.query(
+        "SELECT COUNT(*) as total, SUM(CASE WHEN createdAt >= DATE_SUB(NOW(), INTERVAL 30 DAY) THEN 1 ELSE 0 END) as recent FROM designations WHERE LOWER(title) LIKE '%head%'"
       );
-      const [activeDesignations] = await pool.query(
-        'SELECT COUNT(*) as active FROM designations WHERE status = "ACTIVE"'
+      const [deans] = await pool.query(
+        "SELECT COUNT(*) as total, SUM(CASE WHEN status = 'ACTIVE' THEN 1 ELSE 0 END) as active FROM designations WHERE LOWER(title) LIKE '%dean%' OR LOWER(title) LIKE '%dea%'"
       );
-
-      // Designations per department
-      const [designationsPerDepartment] = await pool.query(`
-        SELECT 
-          dep.departmentName,
-          COUNT(d.id) as designationCount
-        FROM department dep
-        LEFT JOIN designations d ON dep.id = d.departmentId
-        GROUP BY dep.id, dep.departmentName
-        ORDER BY designationCount DESC
-      `);
-
-      // Designations by grade level
-      const [designationsByGrade] = await pool.query(`
-        SELECT 
-          gradeLevel,
-          COUNT(*) as count
-        FROM designations 
-        WHERE gradeLevel IS NOT NULL
-        GROUP BY gradeLevel
-        ORDER BY count DESC
-      `);
-
-      // Salary statistics
-      const [salaryStats] = await pool.query(`
-        SELECT 
-          COUNT(*) as total,
-          AVG(minSalary) as avgMinSalary,
-          AVG(maxSalary) as avgMaxSalary,
-          MIN(minSalary) as minSalaryOverall,
-          MAX(maxSalary) as maxSalaryOverall
-        FROM designations 
-        WHERE minSalary IS NOT NULL AND maxSalary IS NOT NULL
-      `);
+      const [others] = await pool.query(
+        "SELECT COUNT(*) as total, SUM(CASE WHEN status != 'ACTIVE' THEN 1 ELSE 0 END) as inactive FROM designations WHERE LOWER(title) NOT LIKE '%head%' AND LOWER(title) NOT LIKE '%dean%' AND LOWER(title) NOT LIKE '%dea%'"
+      );
 
       res.json({
         success: true,
         data: {
-          totalDesignations: totalDesignations[0].total,
-          activeDesignations: activeDesignations[0].active,
-          inactiveDesignations:
-            totalDesignations[0].total - activeDesignations[0].active,
-          designationsPerDepartment: designationsPerDepartment,
-          designationsByGrade: designationsByGrade,
-          salaryStatistics: salaryStats[0],
+          totalHeads: heads[0].total || 0,
+          newHeads: heads[0].recent || 0,
+          totalDeans: deans[0].total || 0,
+          activeDeans: deans[0].active || 0,
+          totalOthers: others[0].total || 0,
+          othersInactive: others[0].inactive || 0,
         },
       });
     } catch (error) {
@@ -176,29 +142,37 @@ const designationCustomController = {
 
       let sqlQuery = `
         SELECT 
-          BIN_TO_UUID(d.id) as id,
-          BIN_TO_UUID(d.departmentId) as departmentId,
-          d.title,
-          d.titleAmharic,
-          d.gradeLevel,
-          d.minSalary,
-          d.maxSalary,
-          d.status,
-          dep.departmentName,
-          dep.departmentNameAmharic,
-          comp.companyName,
-          d.createdAt
-        FROM designations d
-        LEFT JOIN department dep ON d.departmentId = dep.id
-        LEFT JOIN company comp ON dep.companyId = comp.id
-        WHERE 1=1
+            BIN_TO_UUID(des.id) as id,
+            BIN_TO_UUID(des.employeeId) as employeeId,
+            COALESCE(BIN_TO_UUID(des.departmentId), BIN_TO_UUID(e.departmentId)) as departmentId,
+            COALESCE(BIN_TO_UUID(des.collegeId), BIN_TO_UUID(dep.collegeId), BIN_TO_UUID(empDept.collegeId)) as collegeId,
+            des.title,
+            des.titleAmharic,
+            des.gradeLevel,
+            des.status,
+            COALESCE(dep.departmentName, empDept.departmentName) as departmentName,
+            COALESCE(c.collegeName, dCollege.collegeName, empCollege.collegeName) as collegeName,
+            ep.firstName,
+            ep.lastName,
+            ep.personalEmail,
+            ep.profilePicture,
+            des.createdAt
+          FROM designations des
+          LEFT JOIN department dep ON des.departmentId = dep.id
+          LEFT JOIN college c ON des.collegeId = c.id
+          LEFT JOIN college dCollege ON dep.collegeId = dCollege.id
+          LEFT JOIN employee e ON des.employeeId = e.id
+          LEFT JOIN department empDept ON e.departmentId = empDept.id
+          LEFT JOIN college empCollege ON empDept.collegeId = empCollege.id
+          LEFT JOIN employeePersonal ep ON des.employeeId = ep.employeeId
+          WHERE 1=1
       `;
 
       let countQuery = `
         SELECT COUNT(*) as total
-        FROM designations d
-        LEFT JOIN department dep ON d.departmentId = dep.id
-        LEFT JOIN company comp ON dep.companyId = comp.id
+        FROM designations des
+        LEFT JOIN department dep ON des.departmentId = dep.id
+        LEFT JOIN employeePersonal ep ON des.employeeId = ep.employeeId
         WHERE 1=1
       `;
 
@@ -207,33 +181,29 @@ const designationCustomController = {
 
       if (query && query.trim() !== "") {
         sqlQuery += ` AND (
-          d.title LIKE ? OR 
-          d.titleAmharic LIKE ? OR 
-          d.jobDescription LIKE ? OR
-          d.gradeLevel LIKE ? OR
-          dep.departmentName LIKE ?
+          des.title LIKE ? OR 
+          des.titleAmharic LIKE ? OR 
+          des.jobDescription LIKE ? OR
+          dep.departmentName LIKE ? OR
+          ep.firstName LIKE ? OR
+          ep.lastName LIKE ?
         )`;
         countQuery += ` AND (
-          d.title LIKE ? OR 
-          d.titleAmharic LIKE ? OR 
-          d.jobDescription LIKE ? OR
-          d.gradeLevel LIKE ? OR
-          dep.departmentName LIKE ?
+          des.title LIKE ? OR 
+          des.titleAmharic LIKE ? OR 
+          des.jobDescription LIKE ? OR
+          dep.departmentName LIKE ? OR
+          ep.firstName LIKE ? OR
+          ep.lastName LIKE ?
         )`;
         const searchTerm = `%${query}%`;
-        params.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
-        countParams.push(
-          searchTerm,
-          searchTerm,
-          searchTerm,
-          searchTerm,
-          searchTerm
-        );
+        params.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
+        countParams.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
       }
 
       if (departmentId) {
-        sqlQuery += ` AND d.departmentId = UUID_TO_BIN(?)`;
-        countQuery += ` AND d.departmentId = UUID_TO_BIN(?)`;
+        sqlQuery += ` AND des.departmentId = UUID_TO_BIN(?)`;
+        countQuery += ` AND des.departmentId = UUID_TO_BIN(?)`;
         params.push(departmentId);
         countParams.push(departmentId);
       }
@@ -245,14 +215,28 @@ const designationCustomController = {
         countParams.push(companyId);
       }
 
-      if (status && ["ACTIVE", "INACTIVE"].includes(status)) {
-        sqlQuery += ` AND d.status = ?`;
-        countQuery += ` AND d.status = ?`;
+      if (status && ["ACTIVE", "INACTIVE", "URGENT", "ARCHIVED", "PENDING"].includes(status)) {
+        sqlQuery += ` AND des.status = ?`;
+        countQuery += ` AND des.status = ?`;
         params.push(status);
         countParams.push(status);
       }
 
-      sqlQuery += ` ORDER BY d.title ASC LIMIT ? OFFSET ?`;
+      const period = req.query.period;
+      if (period && period !== "ALL") {
+        let dateCondition = "";
+        if (period === "DAILY") dateCondition = "DATE(des.createdAt) = CURDATE()";
+        else if (period === "WEEKLY") dateCondition = "YEARWEEK(des.createdAt, 1) = YEARWEEK(CURDATE(), 1)";
+        else if (period === "MONTHLY") dateCondition = "YEAR(des.createdAt) = YEAR(CURDATE()) AND MONTH(des.createdAt) = MONTH(CURDATE())";
+        else if (period === "YEARLY") dateCondition = "YEAR(des.createdAt) = YEAR(CURDATE())";
+
+        if (dateCondition) {
+           sqlQuery += ` AND ${dateCondition}`;
+           countQuery += ` AND ${dateCondition}`;
+        }
+      }
+
+      sqlQuery += ` ORDER BY des.title ASC LIMIT ? OFFSET ?`;
       params.push(parseInt(limit), offset);
 
       const [designations] = await pool.query(sqlQuery, params);
