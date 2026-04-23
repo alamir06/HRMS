@@ -394,8 +394,8 @@ const Attendance = () => {
             <thead>
                <tr>
                   <th>EMPLOYEE</th>
-                  <th>M. SHIFT</th>
-                  <th>A. SHIFT</th>
+                  <th>Morning Shift</th>
+                  <th>Afternoon Shift</th>
                   <th>STATUS</th>
                   <th style={{ textAlign: 'right' }}>ACTIONS</th>
                </tr>

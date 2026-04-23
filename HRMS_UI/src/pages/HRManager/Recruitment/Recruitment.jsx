@@ -7,6 +7,7 @@ import { departmentService } from '../../../services/departmentService';
 import SearchableSelect from '../../../components/common/SearchableSelect';
 import '../../../components/common/CommonForm.css';
 import './Recruitment.css';
+import { formatEthiopianDate } from '../../../utils/dateTime';
 
 const Recruitment = () => {
   const { t, i18n } = useTranslation();
@@ -238,7 +239,7 @@ const Recruitment = () => {
                     <td>{rec.departmentName || '-'}</td>
                     <td>{rec.vacancies}</td>
                     <td>{rec.status}</td>
-                    <td>{new Date(rec.createdAt).toLocaleDateString()}</td>
+                    <td>{formatEthiopianDate(rec.createdAt)}</td>
                   </tr>
                 ))
               )}
@@ -351,7 +352,7 @@ const Recruitment = () => {
                                 field={{
                                   name: 'departmentId',
                                   label: 'Department',
-                                  options: filteredDepartments.map(d => ({ value: d.id, label: d.departmentNameAmharic || d.departmentName }))
+                                  options: filteredDepartments.map(d => ({ value: d.id, label: d.departmentName })),
                                 }}
                                 value={job.departmentId}
                                 onChange={(e) => handleJobChange(index, 'departmentId', e.target.value)}
