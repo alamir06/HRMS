@@ -1,6 +1,7 @@
 // File: DocumentService.js
 import pool from "../../config/database.js";
 import { fileUploadService } from "../FileUploadService.js";
+import { translatePairs } from "../../utils/translationService.js";
 
 export class DocumentService {
   constructor() {
@@ -12,6 +13,11 @@ export class DocumentService {
     const connection = await pool.getConnection();
     try {
       await connection.beginTransaction();
+
+      const translatedDocument = await translatePairs(documentData, [
+        { enKey: "documentName", amKey: "documentNameAmharic" },
+        { enKey: "description", amKey: "descriptionAmharic" },
+      ]);
 
       // Validate file as document
       fileUploadService.validateFile(file, 'document');
@@ -43,18 +49,18 @@ export class DocumentService {
 
       const [result] = await connection.query(query, [
         employeeId,
-        documentData.documentType,
-        documentData.documentName,
-        documentData.documentNameAmharic || null,
+        translatedDocument.documentType,
+        translatedDocument.documentName,
+        translatedDocument.documentNameAmharic || null,
         fileInfo.originalName,
         fileInfo.filePath,
         fileInfo.fileSize,
         fileInfo.mimeType,
-        documentData.issueDate || null,
-        documentData.expiryDate || null,
-        documentData.issuingAuthority || null,
-        documentData.description || null,
-        documentData.descriptionAmharic || null
+        translatedDocument.issueDate || null,
+        translatedDocument.expiryDate || null,
+        translatedDocument.issuingAuthority || null,
+        translatedDocument.description || null,
+        translatedDocument.descriptionAmharic || null
       ]);
 
       await connection.commit();
@@ -101,6 +107,10 @@ export class DocumentService {
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         const documentData = documentsData[i];
+        const translatedDocument = await translatePairs(documentData, [
+          { enKey: "documentName", amKey: "documentNameAmharic" },
+          { enKey: "description", amKey: "descriptionAmharic" },
+        ]);
 
         // Validate file
         fileUploadService.validateFile(file, 'document');
@@ -116,18 +126,18 @@ export class DocumentService {
 
         const [result] = await connection.query(query, [
           employeeId,
-          documentData.documentType,
-          documentData.documentName,
-          documentData.documentNameAmharic || null,
+          translatedDocument.documentType,
+          translatedDocument.documentName,
+          translatedDocument.documentNameAmharic || null,
           fileInfo.originalName,
           fileInfo.filePath,
           fileInfo.fileSize,
           fileInfo.mimeType,
-          documentData.issueDate || null,
-          documentData.expiryDate || null,
-          documentData.issuingAuthority || null,
-          documentData.description || null,
-          documentData.descriptionAmharic || null
+          translatedDocument.issueDate || null,
+          translatedDocument.expiryDate || null,
+          translatedDocument.issuingAuthority || null,
+          translatedDocument.description || null,
+          translatedDocument.descriptionAmharic || null
         ]);
 
         results.push({
@@ -238,6 +248,11 @@ export class DocumentService {
     try {
       await connection.beginTransaction();
 
+      const translatedUpdate = await translatePairs(updateData, [
+        { enKey: "documentName", amKey: "documentNameAmharic" },
+        { enKey: "description", amKey: "descriptionAmharic" },
+      ]);
+
       const allowedFields = [
         'documentName', 'documentNameAmharic', 'issueDate', 
         'expiryDate', 'issuingAuthority', 'description', 'descriptionAmharic'
@@ -246,10 +261,10 @@ export class DocumentService {
       const updateFields = [];
       const values = [];
 
-      Object.keys(updateData).forEach(key => {
+      Object.keys(translatedUpdate).forEach(key => {
         if (allowedFields.includes(key)) {
           updateFields.push(`${key} = ?`);
-          values.push(updateData[key]);
+          values.push(translatedUpdate[key]);
         }
       });
 

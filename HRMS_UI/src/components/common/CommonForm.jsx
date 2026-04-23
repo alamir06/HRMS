@@ -1,18 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Upload, Image as ImageIcon, Video } from 'lucide-react';
+import { Upload, Image as ImageIcon, Video, Search, ChevronDown, Check } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import EthiopianDateInput from './EthiopianDateInput';
 import './CommonForm.css';
 
-/**
- * Reusable dynamic form generator
- * @param {Array} fields - Array of field objects { name, label, type, required, options }
- * @param {Function} onSubmit - Payload callback
- * @param {Function} onCancel - Optional cancel callback to render a Cancel button on the left
- * @param {Object} initialData - Optional
- * @param {String} submitText - Optional
- * @param {String} cancelText - Optional
- * @param {Boolean} isLoading - Optional
- * @param {Boolean} twoColumns - Display form in 2 columns on desktop
- */
+import SearchableSelect from './SearchableSelect';
 const CommonForm = ({ 
   fields = [], 
   onSubmit, 
@@ -24,6 +16,7 @@ const CommonForm = ({
   isLoading = false,
   twoColumns = false
 }) => {
+  const { i18n } = useTranslation();
   const [formData, setFormData] = useState(initialData);
 
   // Sync initialData if it changes externally
@@ -57,18 +50,11 @@ const CommonForm = ({
     switch (field.type) {
       case 'select':
         return (
-          <select
-            className="common-form-select"
-            name={field.name}
-            value={formData[field.name] || ''}
-            onChange={handleChange}
-            required={field.required}
-          >
-            <option value="" disabled>Select {field.label}</option>
-            {field.options?.map((opt, i) => (
-              <option key={i} value={opt.value || opt}>{opt.label || opt}</option>
-            ))}
-          </select>
+          <SearchableSelect 
+             field={field} 
+             value={formData[field.name]} 
+             onChange={handleChange} 
+          />
         );
       case 'file':
         const isVideo = field.accept?.includes('video');
@@ -121,6 +107,18 @@ const CommonForm = ({
         );
       default:
         // text, email, password, date, number, tel
+        if (field.type === 'date') {
+          return (
+            <EthiopianDateInput
+              value={formData[field.name]}
+              onChange={(val) => handleChange({ target: { name: field.name, value: val } })}
+              required={field.required}
+              disabled={field.disabled || false}
+              language={i18n.language}
+            />
+          );
+        }
+        
         return (
           <input
             className="common-form-input"

@@ -4,6 +4,7 @@ import { toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
 import { leaveService } from '../../../services/leaveService';
 import ConfirmModal from '../../../components/common/ConfirmModal';
+import { formatEthiopianDate, formatEthiopianDateTime } from '../../../utils/dateTime';
 
 // Ensure we import the sibling css + the generic Employees CSS for full layout styling
 
@@ -34,6 +35,12 @@ const LeaveRequests = () => {
     request: null,
     reason: '',
   });
+  const [isSubmittingAction, setIsSubmittingAction] = useState(false);
+
+  const displayEthDate = (ethValue, gregValue) => {
+    if (ethValue) return ethValue;
+    return formatEthiopianDate(gregValue);
+  };
 
   // Search Debounce Effect
   useEffect(() => {
@@ -152,11 +159,16 @@ const LeaveRequests = () => {
     const requestId = actionModal.request?.id;
     if (!requestId) return;
 
+    setIsSubmittingAction(true);
     let ok = false;
-    if (actionModal.action === 'approve') {
-      ok = await handleApprove(requestId, reason);
-    } else {
-      ok = await handleReject(requestId, reason);
+    try {
+      if (actionModal.action === 'approve') {
+        ok = await handleApprove(requestId, reason);
+      } else {
+        ok = await handleReject(requestId, reason);
+      }
+    } finally {
+      setIsSubmittingAction(false);
     }
 
     if (ok) {
@@ -175,7 +187,7 @@ const LeaveRequests = () => {
       styles += el.outerHTML;
     });
 
-    const dateStr = new Date().toLocaleDateString();
+    const dateStr = formatEthiopianDateTime(new Date());
 
     printWindow.document.write(`
       <html>
@@ -354,7 +366,7 @@ const LeaveRequests = () => {
                     </td>
                     <td>{req.totalDays} {req.totalDays === 1 ? 'Day' : 'Days'}</td>
                     <td>
-                      {new Date(req.startDate).toLocaleDateString()} - {new Date(req.endDate).toLocaleDateString()}
+                      {displayEthDate(req.startDateEth, req.startDate)} - {displayEthDate(req.endDateEth, req.endDate)}
                     </td>
                     <td>
                       <span className={`hr-leave-request-badge ${statusClass}`}>
@@ -437,7 +449,7 @@ const LeaveRequests = () => {
                     <div className="hr-leave-request-detail-item">
                        <label>{i18n.language === 'am' ? 'ቀናት' : 'Dates'}</label>
                        <p>
-                          {new Date(viewRequest.startDate).toLocaleDateString()} to {new Date(viewRequest.endDate).toLocaleDateString()}
+                          {displayEthDate(viewRequest.startDateEth, viewRequest.startDate)} to {displayEthDate(viewRequest.endDateEth, viewRequest.endDate)}
                        </p>
                     </div>
                     <div className="hr-leave-request-detail-item">
@@ -448,6 +460,16 @@ const LeaveRequests = () => {
                           </span>
                        </p>
                     </div>
+                      <div className="hr-leave-request-detail-item">
+                        <label>{i18n.language === 'am' ? 'የተጠየቀበት ጊዜ' : 'Requested At'}</label>
+                        <p>{formatEthiopianDateTime(viewRequest.createdAt) || 'N/A'}</p>
+                      </div>
+                      {viewRequest.approvedAt && (
+                       <div className="hr-leave-request-detail-item">
+                         <label>{i18n.language === 'am' ? 'የጸደቀበት ጊዜ' : 'Approved At'}</label>
+                         <p>{formatEthiopianDateTime(viewRequest.approvedAt) || 'N/A'}</p>
+                       </div>
+                      )}
                  </div>
 
                  <div className="hr-leave-request-detail-item" style={{ marginBottom: '0.5rem' }}>
@@ -553,6 +575,7 @@ const LeaveRequests = () => {
         confirmDisabled={!actionModal.reason.trim()}
         onConfirm={confirmAction}
         onCancel={closeActionModal}
+        isSubmitting={isSubmittingAction}
       />
 
     </div>

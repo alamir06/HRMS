@@ -33,6 +33,13 @@ employeeRouter.get(
   employeeController.findAll);
 
 employeeRouter.get(
+  "/terminated",
+  authenticateToken,
+  authorize("HRMANAGER", "HROFFICER", "RECRUITER"),
+  employeeController.findTerminated
+);
+
+employeeRouter.get(
   "/:id",
   authenticateToken,
   authorize("HRMANAGER", "HROFFICER","RECRUITER", "EMPLOYEE"),

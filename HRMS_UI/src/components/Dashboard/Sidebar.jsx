@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import injLogo from '../../assets/inj-logo.jpg';
+import injLogo from '../../assets/Landing images/logo.jpg';
 import { 
   LayoutDashboard, 
   Users, 
@@ -17,8 +17,9 @@ import {
   UsersRound, 
   Component, 
   FileSearch,
-  ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  ChevronDown,
+  ChevronLeft
 } from 'lucide-react';
 import './Sidebar.css';
 
@@ -26,6 +27,8 @@ const Sidebar = ({ onOpenProfile, mobileOpen = false, onCloseMobile }) => {
   const [authUser, setAuthUser] = useState(null);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileViewport, setIsMobileViewport] = useState(window.innerWidth <= 768);
+  const [expandedMenus, setExpandedMenus] = useState({});
+  const location = useLocation();
 
   useEffect(() => {
     try {
@@ -52,10 +55,24 @@ const Sidebar = ({ onOpenProfile, mobileOpen = false, onCloseMobile }) => {
     { name: t('sidebar.departments', 'Departments'), path: '/dashboard/departments', icon: <Building2 size={20} /> },
     { name: t('sidebar.colleges', 'Colleges'), path: '/dashboard/colleges', icon: <GraduationCap size={20} /> },
     { name: t('sidebar.attendance', 'Attendance'), path: '/dashboard/attendance', icon: <Clock size={20} /> },
-    { name: t('sidebar.payroll', 'Payroll'), path: '/dashboard/payroll', icon: <Banknote size={20} /> },
     { name: t('sidebar.leave', 'Leave'), path: '/dashboard/leave', icon: <CalendarOff size={20} /> },
-    { name: t('sidebar.benefits', 'Benefits'), path: '/dashboard/benefits', icon: <Gift size={20} /> },
-    { name: t('sidebar.assets', 'Assets'), path: '/dashboard/asset', icon: <Component size={20} /> },
+    { name: t('sidebar.payroll', 'Payroll'), path: '/dashboard/payroll', icon: <Banknote size={20} /> },
+    { 
+      name: t('sidebar.benefits', 'Benefits'), 
+      icon: <Gift size={20} />,
+      subItems: [
+        { name: t('sidebar.benefitList', 'Benefit List'), path: '/dashboard/benefit/list' },
+        { name: t('sidebar.benefitAssignment', 'Benefit Assignment'), path: '/dashboard/benefit/assignment' }
+      ]
+    },
+    { 
+      name: t('sidebar.assets', 'Assets'), 
+      icon: <Component size={20} />,
+      subItems: [
+        { name: t('sidebar.assetList', 'Asset List'), path: '/dashboard/asset/list' },
+        { name: t('sidebar.assetAssignment', 'Asset Assignment'), path: '/dashboard/asset/assignment' }
+      ]
+    },
     { name: t('sidebar.recruitment', 'Recruitment'), path: '/dashboard/recruitment', icon: <FileSearch size={20} /> },
     { name: t('sidebar.designations', 'Designations'), path: '/dashboard/designation', icon: <Briefcase size={20} /> },
     { name: t('sidebar.outsourcing', 'Outsourcing'), path: '/dashboard/outsourcing', icon: <UsersRound size={20} /> },
@@ -85,16 +102,53 @@ const Sidebar = ({ onOpenProfile, mobileOpen = false, onCloseMobile }) => {
         <ul>
           {navItems.map((item, index) => (
             <li key={index}>
-              <NavLink 
-                to={item.path} 
-                end={item.path === '/dashboard'} 
-                className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}
-                title={shouldCollapse ? item.name : undefined}
-                onClick={() => onCloseMobile && onCloseMobile()}
-              >
-                <div className="nav-icon-wrapper">{item.icon}</div>
-                {!shouldCollapse && <span className="nav-text">{item.name}</span>}
-              </NavLink>
+              {item.subItems ? (
+                <>
+                  <div 
+                    className={`nav-link ${item.subItems.some(sub => location.pathname.startsWith(sub.path)) ? 'active' : ''}`}
+                    onClick={() => {
+                       setExpandedMenus(prev => ({ ...prev, [item.name]: !prev[item.name] }));
+                       if (shouldCollapse) setIsCollapsed(false);
+                    }}
+                    title={shouldCollapse ? item.name : undefined}
+                    style={{ cursor: 'pointer', justifyContent: 'space-between' }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                      <div className="nav-icon-wrapper">{item.icon}</div>
+                      {!shouldCollapse && <span className="nav-text">{item.name}</span>}
+                    </div>
+                    {!shouldCollapse && (
+                      expandedMenus[item.name] ? <ChevronDown size={16} /> : <ChevronRight size={16} />
+                    )}
+                  </div>
+                  {(!shouldCollapse && expandedMenus[item.name]) && (
+                    <ul className="nav-sub-items">
+                      {item.subItems.map((subItem, idx) => (
+                        <li key={idx}>
+                          <NavLink
+                            to={subItem.path}
+                            className={({ isActive }) => isActive ? 'nav-sub-link active' : 'nav-sub-link'}
+                            onClick={() => onCloseMobile && onCloseMobile()}
+                          >
+                            {subItem.name}
+                          </NavLink>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </>
+              ) : (
+                <NavLink 
+                  to={item.path} 
+                  end={item.path === '/dashboard'} 
+                  className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}
+                  title={shouldCollapse ? item.name : undefined}
+                  onClick={() => onCloseMobile && onCloseMobile()}
+                >
+                  <div className="nav-icon-wrapper">{item.icon}</div>
+                  {!shouldCollapse && <span className="nav-text">{item.name}</span>}
+                </NavLink>
+              )}
             </li>
           ))}
         </ul>

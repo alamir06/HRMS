@@ -11,6 +11,17 @@ const generatePassword = () => {
 };
 
 export const findUserByIdentifier = async (identifier) => {
+  let alt1 = identifier;
+  let alt2 = identifier;
+  let alt3 = identifier;
+
+  const ethPhoneMatch = identifier.match(/^(?:\+251|0)?(9\d{8})$/);
+  if (ethPhoneMatch) {
+    alt1 = `+251${ethPhoneMatch[1]}`;
+    alt2 = `0${ethPhoneMatch[1]}`;
+    alt3 = `${ethPhoneMatch[1]}`;
+  }
+
   const [rows] = await pool.execute(
     `SELECT 
        BIN_TO_UUID(u.id) AS id,
@@ -29,13 +40,25 @@ export const findUserByIdentifier = async (identifier) => {
        ep.profilePicture,
        ep.firstName,
        ep.middleName,
-       ep.lastName
+       ep.lastName,
+       d.departmentName AS department,
+       col.collegeName AS collegeName,
+       ee.salary AS salary,
+       COALESCE(des.title, ea.academicRank, e.employeeRole) AS position,
+       e.hireDate AS hireDate
      FROM users u
      JOIN employee e ON u.employeeId = e.id
-     LEFT JOIN employeePersonal ep ON e.id = ep.employeeId  
-     WHERE u.username = ? OR ep.personalEmail = ? OR ep.personalPhone = ?        
+     LEFT JOIN employeePersonal ep ON e.id = ep.employeeId
+     LEFT JOIN department d ON e.departmentId = d.id
+     LEFT JOIN college col ON d.collegeId = col.id
+     LEFT JOIN employeeEmployment ee ON e.id = ee.employeeId
+     LEFT JOIN designations des ON e.id = des.employeeId AND des.status = true
+     LEFT JOIN employeeAcademic ea ON e.id = ea.employeeId
+     WHERE u.username = ? 
+        OR ep.personalEmail = ? 
+        OR ep.personalPhone IN (?, ?, ?)       
      LIMIT 1`,
-    [identifier, identifier, identifier]
+    [identifier, identifier, alt1, alt2, alt3]
   );
 
   return rows.length ? rows[0] : null;

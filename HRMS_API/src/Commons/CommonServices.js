@@ -35,6 +35,8 @@ const resolveFetch = async () => {
   }
 };
 
+import { generateRecruitmentImage } from "../utils/RecruitmentTemplate.js";
+
 export const buildJobAnnouncement = (job) => {
   if (!job?.title) {
     return null;
@@ -67,7 +69,8 @@ export const createTelegramNotifier = () => {
   const enabled = Boolean(botToken && chatId);
 
   return {
-    async notifyJobPosting(job) {
+    async notifyJobPosting(jobs) {
+      const job = Array.isArray(jobs) ? jobs[0] : jobs;
       if (!enabled) {
         return;
       }
@@ -83,17 +86,19 @@ export const createTelegramNotifier = () => {
       }
 
       try {
-        await fetchImpl(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+        const imageBuffer = await generateRecruitmentImage(Array.isArray(jobs) ? jobs : [jobs]);
+        
+        const formData = new FormData();
+        formData.append("chat_id", chatId);
+        formData.append("caption", message);
+        formData.append("photo", new Blob([imageBuffer], { type: "image/png" }), "vacancy.png");
+
+        await fetchImpl(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            chatId: chatId,
-            text: message,
-            disableWebPagePreview: true,
-          }),
+          body: formData,
         });
       } catch (error) {
-        console.error("Telegram notification failed", error);
+        console.error("Telegram exact Image notification failed", error);
       }
     },
   };
@@ -305,7 +310,12 @@ export class CrudService {
 
     try {
       const setClause = Object.keys(data)
-        .map((key) => `${key} = ?`)
+        .map((key) => {
+          if (this.uuidFields.includes(key) && data[key] !== null && data[key] !== undefined) {
+            return `${key} = UUID_TO_BIN(?)`;
+          }
+          return `${key} = ?`;
+        })
         .join(", ");
       const values = [...Object.values(data)];
 

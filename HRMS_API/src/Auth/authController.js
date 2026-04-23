@@ -68,6 +68,11 @@ export const login = async (req, res, next) => {
           email: user.personalEmail,
           phone: user.personalPhone,
           profilePicture: user.profilePicture,
+          department: user.department,
+          collegeName: user.collegeName,
+          salary: user.salary,
+          position: user.position,
+          hireDate: user.hireDate,
         },
       },
     });

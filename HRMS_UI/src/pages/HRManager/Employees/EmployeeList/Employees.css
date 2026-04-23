@@ -300,6 +300,32 @@
 }
 
 .employees-table-card .badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem 0.6rem;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.badge-academic {
+  background-color: rgba(16, 163, 108, 0.1);
+  color: #10a36c;
+}
+
+.badge-administrative {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+}
+
+.badge-outsource {
+  background-color: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+}
+
+.badge-active {
   font-size: 0.65rem;
   padding: 0.25em 0.5em;
 }
