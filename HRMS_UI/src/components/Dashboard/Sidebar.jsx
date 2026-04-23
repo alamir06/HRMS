@@ -76,7 +76,7 @@ const Sidebar = ({ onOpenProfile, mobileOpen = false, onCloseMobile }) => {
     { name: t('sidebar.recruitment', 'Recruitment'), path: '/dashboard/recruitment', icon: <FileSearch size={20} /> },
     { name: t('sidebar.designations', 'Designations'), path: '/dashboard/designation', icon: <Briefcase size={20} /> },
     { name: t('sidebar.outsourcing', 'Outsourcing'), path: '/dashboard/outsourcing', icon: <UsersRound size={20} /> },
-    { name: t('sidebar.noticeBoard', 'Notice Board'), path: '/dashboard/notice', icon: <Megaphone size={20} /> },
+    { name: t('sidebar.noticeBoard', 'Notice Board'), path: '/dashboard/notices', icon: <Megaphone size={20} /> },
     { name: t('sidebar.notifications', 'Notifications'), path: '/dashboard/notification', icon: <Bell size={20} /> },
   ];
 
