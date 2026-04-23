@@ -774,6 +774,6 @@
   }
 }
 
-.ethiopian-date-input { display: flex; alignItems: center; flex: 1; }
+.ethiopian-date-input { display: flex; align-items: center; flex: 1; }
 .ethiopian-date-select { border: none; background: transparent; padding: 8px 4px; font-size: 0.95rem; color: var(--text-primary); outline: none; appearance: none; cursor: pointer; }
 .ethiopian-date-select + .ethiopian-date-select { margin-left: 4px; border-left: 1px solid var(--border-color); padding-left: 8px; }
