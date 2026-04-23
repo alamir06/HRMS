@@ -97,129 +97,153 @@ const mapInterviewRecord = (record) => ({
 export const createRecruitment = async (req, res, next) => {
   const connection = await pool.getConnection();
   try {
-    const id = uuidv4();
-    const {
-      jobTitle,
-      jobTitleAmharic,
-      departmentId,
-      designationId,
-      level,
-      referenceNumber,
-      educationLevel,
-      recruitmentType = 'ADMINISTRATIVE',
-      specialization,
-      specializationAmharic,
-      academicRank,
-      academicRankAmharic,
-      remark,
-      remarkAmharic,
-      jobDescription,
-      jobDescriptionAmharic,
-      requirements,
-      requirementsAmharic,
-      vacancies,
-      experienceRequired,
-      salaryRange,
-      status = "DRAFT",
-      postedDate,
-      closingDate,
-    } = req.body;
-
+    const payloads = Array.isArray(req.body) ? req.body : [req.body];
     const createdBy = req.user.id;
+    const insertedIds = [];
 
     await connection.beginTransaction();
 
-    const [deptRows] = await connection.query(
-      "SELECT departmentType FROM department WHERE id = UUID_TO_BIN(?)",
-      [departmentId]
-    );
+    for (const payload of payloads) {
+      const id = uuidv4();
+      const {
+        jobTitle,
+        jobTitleAmharic,
+        departmentId,
+        designationId,
+        level,
+        referenceNumber,
+        educationLevel,
+        recruitmentType = 'ADMINISTRATIVE',
+        specialization,
+        specializationAmharic,
+        academicRank,
+        academicRankAmharic,
+        remark,
+        remarkAmharic,
+        jobDescription,
+        jobDescriptionAmharic,
+        requirements,
+        requirementsAmharic,
+        vacancies,
+        experienceRequired,
+        salaryRange,
+        status = "DRAFT",
+        postedDate,
+        closingDate,
+        notes,
+        notesAmharic
+      } = payload;
 
-    if (deptRows.length === 0) {
-      await connection.rollback();
-      return res.status(404).json({ success: false, message: "Department not found" });
+      if (departmentId) {
+        const [deptRows] = await connection.query(
+          "SELECT departmentType FROM department WHERE id = UUID_TO_BIN(?)",
+          [departmentId]
+        );
+
+        if (deptRows.length === 0) {
+          throw new Error(`Department not found for id ${departmentId}`);
+        }
+
+        if (deptRows[0].departmentType !== recruitmentType) {
+          throw new Error(`Type mismatch: Cannot post an ${recruitmentType} vacancy to an ${deptRows[0].departmentType} department.`);
+        }
+      } else if (recruitmentType === 'ACADEMIC') {
+        throw new Error(`Department is required for ACADEMIC vacancies.`);
+      }
+
+      const insertQuery = `
+        INSERT INTO recruitment (
+          id, jobTitle, jobTitleAmharic, departmentId, designationId,
+          level, referenceNumber, educationLevel,
+          recruitmentType, specialization, specializationAmharic, academicRank, academicRankAmharic, remark, remarkAmharic,
+          jobDescription, jobDescriptionAmharic, requirements, requirementsAmharic,
+          vacancies, experienceRequired, salaryRange, status, postedDate, closingDate,
+          createdBy, notes, notesAmharic
+        ) VALUES (UUID_TO_BIN(?), ?, ?, UUID_TO_BIN(?), UUID_TO_BIN(?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, UUID_TO_BIN(?), ?, ?)
+      `;
+
+      await connection.execute(insertQuery, [
+        id,
+        jobTitle || null,
+        jobTitleAmharic || null,
+        departmentId || null,
+        designationId || null,
+        level || null,
+        referenceNumber || null,
+        educationLevel || null,
+        recruitmentType,
+        specialization || null,
+        specializationAmharic || null,
+        academicRank || null,
+        academicRankAmharic || null,
+        remark || null,
+        remarkAmharic || null,
+        jobDescription || null,
+        jobDescriptionAmharic || null,
+        requirements || null,
+        requirementsAmharic || null,
+        vacancies,
+        experienceRequired || null,
+        salaryRange || null,
+        status,
+        postedDate || null,
+        closingDate || null,
+        createdBy,
+        notes || null,
+        notesAmharic || null
+      ]);
+
+      insertedIds.push(id);
     }
-
-    if (deptRows[0].departmentType !== recruitmentType) {
-      await connection.rollback();
-      return res.status(400).json({
-        success: false,
-        message: `Type mismatch: Cannot post an ${recruitmentType} vacancy to an ${deptRows[0].departmentType} department.`,
-      });
-    }
-
-    const insertQuery = `
-      INSERT INTO recruitment (
-        id, jobTitle, jobTitleAmharic, departmentId, designationId,
-        level, referenceNumber, educationLevel,
-        recruitmentType, specialization, specializationAmharic, academicRank, academicRankAmharic, remark, remarkAmharic,
-        jobDescription, jobDescriptionAmharic, requirements, requirementsAmharic,
-        vacancies, experienceRequired, salaryRange, status, postedDate, closingDate,
-        createdBy
-      ) VALUES (UUID_TO_BIN(?), ?, ?, UUID_TO_BIN(?), UUID_TO_BIN(?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, UUID_TO_BIN(?))
-    `;
-
-    await connection.execute(insertQuery, [
-      id,
-      jobTitle || null,
-      jobTitleAmharic || null,
-      departmentId,
-      designationId || null,
-      level || null,
-      referenceNumber || null,
-      educationLevel || null,
-      recruitmentType,
-      specialization || null,
-      specializationAmharic || null,
-      academicRank || null,
-      academicRankAmharic || null,
-      remark || null,
-      remarkAmharic || null,
-      jobDescription || null,
-      jobDescriptionAmharic || null,
-      requirements || null,
-      requirementsAmharic || null,
-      vacancies,
-      experienceRequired || null,
-      salaryRange || null,
-      status,
-      postedDate || null,
-      closingDate || null,
-      createdBy,
-    ]);
 
     await connection.commit();
 
-    if (status === "OPEN") {
-      await telegramNotifier.notifyJobPosting({
-        id,
-        title: jobTitle,
-        description: jobDescription,
-        requirements,
-        closingDate: closingDate,
-        vacancies,
-      });
+    const openPayloads = payloads.filter(p => p.status === "OPEN");
+    if (openPayloads.length > 0) {
+      const idPlaceholders = insertedIds.map(() => 'UUID_TO_BIN(?)').join(', ');
+      
+      const [records] = await pool.query(
+        `SELECT r.*, d.departmentName, c.collegeName 
+         FROM recruitment r 
+         LEFT JOIN department d ON r.departmentId = d.id 
+         LEFT JOIN college c ON d.collegeId = c.id
+         WHERE r.id IN (${idPlaceholders}) AND r.status = 'OPEN'`,
+        insertedIds
+      );
+
+      if (records.length > 0) {
+        const jobs = records.map(record => ({
+          ...record,
+          id: record.id,
+          title: record.jobTitle || record.specialization || 'New Vacancy',
+          description: record.jobDescription,
+          requirements: record.requirements,
+          closingDate: record.closingDate,
+          vacancies: record.vacancies,
+        }));
+        await telegramNotifier.notifyJobPosting(jobs);
+      }
     }
 
     res.status(201).json({
       success: true,
-      data: { id },
-      message: "Recruitment created successfully",
+      data: { ids: insertedIds },
+      message: "Recruitment(s) created successfully",
     });
   } catch (error) {
-    await connection.rollback();
+    if (connection) await connection.rollback();
     next(error);
   } finally {
-    connection.release();
+    if (connection) connection.release();
   }
 };
-
 export const listRecruitment = async (_req, res, next) => {
   try {
     const query = `
-      SELECT r.*, BIN_TO_UUID(r.id) as id, BIN_TO_UUID(r.departmentId) as departmentId, BIN_TO_UUID(r.designationId) as designationId, BIN_TO_UUID(r.createdBy) as createdBy, d.name AS departmentName, ds.name AS designationName
+      SELECT r.*, BIN_TO_UUID(r.id) as id, BIN_TO_UUID(r.departmentId) as departmentId, BIN_TO_UUID(r.designationId) as designationId, BIN_TO_UUID(r.createdBy) as createdBy, d.departmentName, ds.title AS designationName
       FROM recruitment r
       LEFT JOIN department d ON d.id = r.departmentId
-      LEFT JOIN designation ds ON ds.id = r.designationId
+      LEFT JOIN designations ds ON ds.id = r.designationId
       ORDER BY r.createdAt DESC
     `;
 
@@ -237,10 +261,10 @@ export const getRecruitmentById = async (req, res, next) => {
   const { id } = req.params;
   try {
     const query = `
-      SELECT r.*, BIN_TO_UUID(r.id) as id, BIN_TO_UUID(r.departmentId) as departmentId, BIN_TO_UUID(r.designationId) as designationId, BIN_TO_UUID(r.createdBy) as createdBy, d.name AS departmentName, ds.name AS designationName
+      SELECT r.*, BIN_TO_UUID(r.id) as id, BIN_TO_UUID(r.departmentId) as departmentId, BIN_TO_UUID(r.designationId) as designationId, BIN_TO_UUID(r.createdBy) as createdBy, d.departmentName, ds.title AS designationName
       FROM recruitment r
       LEFT JOIN department d ON d.id = r.departmentId
-      LEFT JOIN designation ds ON ds.id = r.designationId
+      LEFT JOIN designations ds ON ds.id = r.designationId
       WHERE r.id = UUID_TO_BIN(?)
     `;
 
@@ -326,20 +350,27 @@ export const updateRecruitment = async (req, res, next) => {
 
     if (fields.status === "OPEN") {
       const [records] = await pool.query(
-        `SELECT jobTitle, jobDescription, requirements, closingDate, vacancies FROM recruitment WHERE id = ?`,
+        `SELECT r.*, d.departmentName 
+         FROM recruitment r 
+         LEFT JOIN department d ON r.departmentId = d.id 
+         WHERE r.id = UUID_TO_BIN(?)`,
         [id]
       );
 
       if (records.length > 0) {
         const record = records[0];
-        await telegramNotifier.notifyJobPosting({
+        // Note: The template builder checks 'title', but mostly reads custom record parameters we send. 
+        // We inject the original database row directly into the notification mapping:
+        await telegramNotifier.notifyJobPosting([{
+
+          ...record,
           id,
-          title: record.jobTitle,
+          title: record.jobTitle || record.specialization || 'New Vacancy',
           description: record.jobDescription,
           requirements: record.requirements,
           closingDate: record.closingDate,
           vacancies: record.vacancies,
-        });
+        }]);
       }
     }
 
@@ -396,27 +427,27 @@ export const createApplicant = async (req, res, next) => {
         id, recruitmentId, firstName, firstNameAmharic, lastName, lastNameAmharic,
         email, phone, resumeUrl, coverLetter, coverLetterAmharic, currentCompany,
         currentPosition, totalExperience, currentSalary, expectedSalary, noticePeriod, status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     await connection.execute(insertQuery, [
       id,
       recruitmentId,
       firstName,
-      firstNameAmharic,
+      firstNameAmharic || null,
       lastName,
-      lastNameAmharic,
+      lastNameAmharic || null,
       email,
-      phone,
-      resumeUrl,
-      coverLetter,
-      coverLetterAmharic,
-      currentCompany,
-      currentPosition,
-      totalExperience,
-      currentSalary,
-      expectedSalary,
-      noticePeriod,
+      phone || null,
+      resumeUrl || null,
+      coverLetter || null,
+      coverLetterAmharic || null,
+      currentCompany || null,
+      currentPosition || null,
+      totalExperience || null,
+      currentSalary || null,
+      expectedSalary || null,
+      noticePeriod || null,
       status,
     ]);
 
@@ -439,10 +470,10 @@ export const listApplicants = async (req, res, next) => {
   const { recruitmentId } = req.query;
   try {
     const query = `
-      SELECT a.*, r.jobTitle AS recruitmentJobTitle
+      SELECT a.*, BIN_TO_UUID(a.id) as id, BIN_TO_UUID(a.recruitmentId) as recruitmentId, r.jobTitle AS recruitmentJobTitle
       FROM applicant a
       LEFT JOIN recruitment r ON r.id = a.recruitmentId
-      WHERE (? IS NULL OR a.recruitmentId = ?)
+      WHERE (? IS NULL OR a.recruitmentId = UUID_TO_BIN(?))
       ORDER BY a.createdAt DESC
     `;
 
@@ -466,7 +497,7 @@ export const updateApplicantStatus = async (req, res, next) => {
     return res.status(400).json({ success: false, message: "Status is required" });
   }
 
-  const query = `UPDATE applicant SET status = ?, updatedAt = NOW() WHERE id = ?`;
+  const query = `UPDATE applicant SET status = ?, updatedAt = NOW() WHERE id = UUID_TO_BIN(?)`;
 
   try {
     const [result] = await pool.execute(query, [status, id]);
@@ -504,7 +535,7 @@ export const createInterview = async (req, res, next) => {
       INSERT INTO interview (
         id, applicantId, interviewDate, interviewTime, interviewType, interviewers,
         location, locationAmharic, status, feedback, feedbackAmharic, rating
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     await connection.execute(insertQuery, [
@@ -514,12 +545,12 @@ export const createInterview = async (req, res, next) => {
       interviewTime,
       interviewType,
       interviewers ? JSON.stringify(interviewers) : null,
-      location,
-      locationAmharic,
-      status,
-      feedback,
-      feedbackAmharic,
-      rating,
+      location || null,
+      locationAmharic || null,
+      status || null,
+      feedback || null,
+      feedbackAmharic || null,
+      rating || null,
     ]);
 
     await connection.commit();
@@ -541,10 +572,10 @@ export const listInterviews = async (req, res, next) => {
   const { applicantId } = req.query;
   try {
     const query = `
-      SELECT i.*, a.firstName, a.lastName
+      SELECT i.*, BIN_TO_UUID(i.id) as id, BIN_TO_UUID(i.applicantId) as applicantId, a.firstName, a.lastName
       FROM interview i
       LEFT JOIN applicant a ON a.id = i.applicantId
-      WHERE (? IS NULL OR i.applicantId = ?)
+      WHERE (? IS NULL OR i.applicantId = UUID_TO_BIN(?))
       ORDER BY i.interviewDate DESC, i.interviewTime DESC
     `;
 
@@ -609,7 +640,7 @@ export const updateInterview = async (req, res, next) => {
 
   values.push(id);
 
-  const query = `UPDATE interview SET ${setClauses.join(", ")}, updatedAt = NOW() WHERE id = ?`;
+  const query = `UPDATE interview SET ${setClauses.join(", ")}, updatedAt = NOW() WHERE id = UUID_TO_BIN(?)`;
 
   try {
     const [result] = await pool.execute(query, values);
