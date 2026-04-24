@@ -183,6 +183,7 @@ function App() {
           <Route path="asset/assignment" element={<AssetAssignment />} />
           <Route path="recruitment" element={<Recruitment />} />
           <Route path="notices" element={<HRManagerNotices />} />
+          <Route path="notifications" element={<MyNotifications />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Route>
 

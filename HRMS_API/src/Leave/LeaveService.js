@@ -175,6 +175,20 @@ export class LeaveService extends CrudService {
         [approvedBy, comments || null, commentsAmharic || null, requestId]
       );
 
+      // Create Notification
+      const [userRows] = await connection.query(
+        `SELECT BIN_TO_UUID(id) as userId FROM users WHERE employeeId = UUID_TO_BIN(?)`, 
+        [employeeId]
+      );
+      if (userRows.length > 0) {
+        await connection.query(
+          `INSERT INTO notifications (
+            id, userId, title, message, notificationType, relatedModule, relatedId
+          ) VALUES (UUID_TO_BIN(UUID()), UUID_TO_BIN(?), ?, ?, 'SUCCESS', 'leave', UUID_TO_BIN(?))`,
+          [userRows[0].userId, "Leave Approved", `Your ${leaveType} request has been approved.`, requestId]
+        );
+      }
+
       // Prepare HTML email payload (actual sending happens after successful commit)
       const [empRows] = await connection.query(
         `SELECT ep.firstName, ep.lastName, ee.officialEmail, ep.personalEmail, d.departmentName, ds.title, ee.salary, e.hireDate, c.collegeName, e.employeeCode, e.employeeRole AS role
@@ -264,7 +278,7 @@ export class LeaveService extends CrudService {
       await connection.beginTransaction();
 
       const [requestRows] = await connection.query(
-        `SELECT status FROM leaveRequest WHERE id = UUID_TO_BIN(?)`,
+        `SELECT BIN_TO_UUID(employeeId) as employeeId, leaveType, status FROM leaveRequest WHERE id = UUID_TO_BIN(?)`,
         [requestId]
       );
 
@@ -280,6 +294,21 @@ export class LeaveService extends CrudService {
          WHERE id = UUID_TO_BIN(?)`,
         [approvedBy, comments || null, commentsAmharic || null, requestId]
       );
+
+      // Create Notification
+      const { employeeId, leaveType } = requestRows[0];
+      const [userRows] = await connection.query(
+        `SELECT BIN_TO_UUID(id) as userId FROM users WHERE employeeId = UUID_TO_BIN(?)`, 
+        [employeeId]
+      );
+      if (userRows.length > 0) {
+        await connection.query(
+          `INSERT INTO notifications (
+            id, userId, title, message, notificationType, relatedModule, relatedId
+          ) VALUES (UUID_TO_BIN(UUID()), UUID_TO_BIN(?), ?, ?, 'ERROR', 'leave', UUID_TO_BIN(?))`,
+          [userRows[0].userId, "Leave Rejected", `Your ${leaveType} request has been rejected.`, requestId]
+        );
+      }
 
       await connection.commit();
       return { success: true, message: "Leave request rejected successfully" };

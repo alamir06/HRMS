@@ -104,7 +104,7 @@ const departmentCrudRouter = createCrudRouter({
   entityLabel: "DEPARTMENT",
   uuidFields: ["id", "companyId", "collegeId", "managerId", "parentDepartmentId"],
   createRoles: ["HRMANAGER"],
-  readRoles: ["HRMANAGER"],
+  readRoles: ["HRMANAGER", "EMPLOYEE", "DEAN", "HEAD"],
   updateRoles: ["HRMANAGER"],
   deleteRoles: ["HRMANAGER"],
   middleware: {

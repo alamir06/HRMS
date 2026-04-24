@@ -61,7 +61,7 @@ const collegeCrudRouter = createCrudRouter({
   entityLabel: "college",
   uuidFields: ["id", "companyId"],
   createRoles: ["HRMANAGER"],
-  readRoles: ["HRMANAGER","EMPLOYEE","DEAN"],
+  readRoles: ["HRMANAGER", "EMPLOYEE", "DEAN", "HEAD"],
   updateRoles: ["HRMANAGER"],
   deleteRoles: ["HRMANAGER"],
   middleware: {
