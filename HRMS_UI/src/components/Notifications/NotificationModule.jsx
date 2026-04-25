@@ -14,7 +14,7 @@ const NotificationModule = () => {
   // Modal states
   const [selectedNotification, setSelectedNotification] = useState(null);
   
-  const user = JSON.parse(localStorage.getItem('user'));
+  const user = JSON.parse((localStorage.getItem('user') || sessionStorage.getItem('user')));
   const userId = user?.id;
 
   const fetchNotifications = async () => {

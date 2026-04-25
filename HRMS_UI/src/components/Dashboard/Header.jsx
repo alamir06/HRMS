@@ -17,7 +17,7 @@ const Header = ({ onOpenProfile, onToggleSidebar, isSidebarOpen = false }) => {
   const { i18n } = useTranslation();
   const navigate = useNavigate();
 
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const user = JSON.parse((localStorage.getItem('user') || sessionStorage.getItem('user')) || '{}');
 
   const fetchNotifications = async () => {
     if (!user?.id) return;
@@ -50,24 +50,25 @@ const Header = ({ onOpenProfile, onToggleSidebar, isSidebarOpen = false }) => {
     localStorage.setItem('i18nextLng', newLang);
   };
 
-  const getPageTitle = (path) => {
-    if (path === '/dashboard') return 'Dashboard Overview';
-    const parts = path.split('/');
-    const rawModule = parts[parts.length - 1];
-    return rawModule.charAt(0).toUpperCase() + rawModule.slice(1);
+  const generateBreadcrumbs = () => {
+    const pathParts = location.pathname.split('/').filter(Boolean);
+    
+    let rootName = 'Dashboard';
+    if (user?.role === 'EMPLOYEE') rootName = 'Employee Portal';
+    if (user?.role === 'HEAD') rootName = 'Head Portal';
+    if (user?.role === 'DEAN') rootName = 'Dean Portal';
+    
+    return pathParts.map((part, index) => {
+      const path = `/${pathParts.slice(0, index + 1).join('/')}`;
+      let text = part.charAt(0).toUpperCase() + part.slice(1).replace(/-/g, ' ');
+      
+      if (index === 0) text = rootName;
+      
+      return { text, path };
+    });
   };
 
-  const getPageSubtitle = (path) => {
-    if (path === '/dashboard') return "Welcome back, here's what's happening today";
-    if (path.includes('/employees')) return "Manage your workforce and view employee directories";
-    if (path.includes('/departments')) return "Organize and manage institutional departments";
-    if (path.includes('/colleges')) return "Manage academic colleges and faculties";
-    if (path.includes('/attendance')) return "Track employee presence and timesheets";
-    return "Manage your HR operations";
-  };
-
-  const title = getPageTitle(location.pathname);
-  const subtitle = getPageSubtitle(location.pathname);
+  const breadcrumbs = generateBreadcrumbs();
 
   // Toggle global theme exactly like in Login.jsx
   const toggleTheme = () => {
@@ -80,6 +81,9 @@ const Header = ({ onOpenProfile, onToggleSidebar, isSidebarOpen = false }) => {
   // Perform secure logout
   const handleLogout = () => {
     localStorage.removeItem('adminToken');
+    localStorage.removeItem('user');
+    sessionStorage.removeItem('adminToken');
+    sessionStorage.removeItem('user');
     window.location.href = '/login';
   };
 
@@ -108,9 +112,18 @@ const Header = ({ onOpenProfile, onToggleSidebar, isSidebarOpen = false }) => {
         >
           {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
         </button>
-        <div className="header-title-group">
-          <h1 className="header-title">{title}</h1>
-          <p className="header-subtitle">{subtitle}</p>
+        <div className="header-breadcrumbs">
+          {breadcrumbs.map((crumb, index) => (
+            <React.Fragment key={crumb.path}>
+              <span 
+                className={`breadcrumb-item ${index === breadcrumbs.length - 1 ? 'active' : ''}`}
+                onClick={() => navigate(crumb.path)}
+              >
+                {crumb.text}
+              </span>
+              {index < breadcrumbs.length - 1 && <span className="breadcrumb-separator">›</span>}
+            </React.Fragment>
+          ))}
         </div>
       </div>
 

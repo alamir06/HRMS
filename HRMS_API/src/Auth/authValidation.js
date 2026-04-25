@@ -47,6 +47,24 @@ export const authValidation = {
         });
       }
     }),
+  forgotPassword: z.object({
+    email: z.string().email("Invalid email address"),
+  }).strict(),
+  resetPassword: z
+    .object({
+      token: z.string().min(1, "Token is required"),
+      newPassword: passwordSchema,
+      confirmPassword: z.string().min(1, "Confirm password is required"),
+    })
+    .superRefine((data, ctx) => {
+      if (data.newPassword !== data.confirmPassword) {
+        ctx.addIssue({
+          path: ["confirmPassword"],
+          code: z.ZodIssueCode.custom,
+          message: "Passwords do not match",
+        });
+      }
+    }),
 };
 
 export const validate = (schema, source = "body") => (req, res, next) => {

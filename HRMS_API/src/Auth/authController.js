@@ -6,6 +6,8 @@ import {
   findUserByIdentifier,
   getEmployeeContact,
   recordSuccessfulLogin,
+  generatePasswordResetToken,
+  resetPasswordWithToken
 } from "./authService.js";
 import { sendEmail } from "../../utils/emailService.js";
 
@@ -395,6 +397,30 @@ export const changePassword = async (req, res, next) => {
     await changeUserPassword({ userId, newPassword: newPassword, mustChange: false });
 
     res.json({ success: true, message: "Password updated" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const forgotPassword = async (req, res, next) => {
+  const { email } = req.body;
+  try {
+    await generatePasswordResetToken(email);
+    // Always return success to prevent email enumeration attacks
+    res.json({ success: true, message: "If an account exists with that email, a password reset link has been sent." });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const resetPassword = async (req, res, next) => {
+  const { token, newPassword } = req.body;
+  try {
+    const success = await resetPasswordWithToken(token, newPassword);
+    if (!success) {
+      return res.status(400).json({ success: false, error: "Invalid or expired token" });
+    }
+    res.json({ success: true, message: "Password has been successfully reset" });
   } catch (error) {
     next(error);
   }

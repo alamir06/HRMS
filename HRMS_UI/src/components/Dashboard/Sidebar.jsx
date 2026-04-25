@@ -32,7 +32,7 @@ const Sidebar = ({ onOpenProfile, mobileOpen = false, onCloseMobile }) => {
 
   useEffect(() => {
     try {
-      const storedUser = localStorage.getItem('user');
+      const storedUser = (localStorage.getItem('user') || sessionStorage.getItem('user'));
       if (storedUser) {
         setAuthUser(JSON.parse(storedUser));
       }
@@ -56,7 +56,7 @@ const Sidebar = ({ onOpenProfile, mobileOpen = false, onCloseMobile }) => {
     { name: t('sidebar.colleges', 'Colleges'), path: '/dashboard/colleges', icon: <GraduationCap size={20} /> },
     { name: t('sidebar.attendance', 'Attendance'), path: '/dashboard/attendance', icon: <Clock size={20} /> },
     { name: t('sidebar.leave', 'Leave'), path: '/dashboard/leave', icon: <CalendarOff size={20} /> },
-    { name: t('sidebar.payroll', 'Payroll'), path: '/dashboard/payroll', icon: <Banknote size={20} /> },
+    // { name: t('sidebar.payroll', 'Payroll'), path: '/dashboard/payroll', icon: <Banknote size={20} /> },
     { 
       name: t('sidebar.benefits', 'Benefits'), 
       icon: <Gift size={20} />,
