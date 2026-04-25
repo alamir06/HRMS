@@ -5,6 +5,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import LandingPage from './pages/LandingPage';
 import Attendance from './pages/HRManager/Attendance/Attendance.jsx';
 import AdminLogin from './pages/Admin/Login';
+import ResetPassword from './pages/Admin/ResetPassword';
 import DashboardLayout from './layouts/DashboardLayout';
 import DashboardOverview from './pages/Admin/DashboardOverview';
 import BenefitList from './pages/HRManager/Benefits/BenefitList/BenefitList';
@@ -35,14 +36,14 @@ import './index.css';
 
 // Admin Protected Route Component
 const AdminProtectedRoute = ({ children }) => {
-  const token = localStorage.getItem('adminToken');
-  const userStr = localStorage.getItem('user');
+  const token = (localStorage.getItem('adminToken') || sessionStorage.getItem('adminToken'));
+  const userStr = (localStorage.getItem('user') || sessionStorage.getItem('user'));
   let isAuthorized = false;
   
   if (token && userStr) {
     try {
       const user = JSON.parse(userStr);
-      if (user.role === 'HRMANAGER' || user.role === 'ADMIN' || user.role === 'SUPERADMIN' || !user.role) {
+      if (user.role === 'HRMANAGER') {
         isAuthorized = true;
       }
     } catch(e) {}
@@ -56,8 +57,8 @@ const AdminProtectedRoute = ({ children }) => {
 
 // Employee Protected Route Component
 const EmployeeProtectedRoute = ({ children }) => {
-  const token = localStorage.getItem('adminToken');
-  const userStr = localStorage.getItem('user');
+  const token = (localStorage.getItem('adminToken') || sessionStorage.getItem('adminToken'));
+  const userStr = (localStorage.getItem('user') || sessionStorage.getItem('user'));
   let isAuthorized = false;
   
   if (token && userStr) {
@@ -77,8 +78,8 @@ const EmployeeProtectedRoute = ({ children }) => {
 
 // Head Protected Route Component
 const HeadProtectedRoute = ({ children }) => {
-  const token = localStorage.getItem('adminToken');
-  const userStr = localStorage.getItem('user');
+  const token = (localStorage.getItem('adminToken') || sessionStorage.getItem('adminToken'));
+  const userStr = (localStorage.getItem('user') || sessionStorage.getItem('user'));
   let isAuthorized = false;
   
   if (token && userStr) {
@@ -98,8 +99,8 @@ const HeadProtectedRoute = ({ children }) => {
 
 // Dean Protected Route Component
 const DeanProtectedRoute = ({ children }) => {
-  const token = localStorage.getItem('adminToken');
-  const userStr = localStorage.getItem('user');
+  const token = (localStorage.getItem('adminToken') || sessionStorage.getItem('adminToken'));
+  const userStr = (localStorage.getItem('user') || sessionStorage.getItem('user'));
   let isAuthorized = false;
   
   if (token && userStr) {
@@ -119,8 +120,8 @@ const DeanProtectedRoute = ({ children }) => {
 
 // Public Route Component
 const PublicRoute = ({ children }) => {
-  const token = localStorage.getItem('adminToken');
-  const userStr = localStorage.getItem('user');
+  const token = (localStorage.getItem('adminToken') || sessionStorage.getItem('adminToken'));
+  const userStr = (localStorage.getItem('user') || sessionStorage.getItem('user'));
   
   if (token && userStr) {
     try {
@@ -158,6 +159,14 @@ function App() {
             </PublicRoute>
           } 
         />
+        <Route 
+          path="/reset-password" 
+          element={
+            <PublicRoute>
+              <ResetPassword />
+            </PublicRoute>
+          } 
+        />
 
         {/* Admin Dashboard Routes */}
         <Route 
@@ -183,6 +192,7 @@ function App() {
           <Route path="asset/assignment" element={<AssetAssignment />} />
           <Route path="recruitment" element={<Recruitment />} />
           <Route path="notices" element={<HRManagerNotices />} />
+          <Route path="notifications" element={<MyNotifications />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Route>
 

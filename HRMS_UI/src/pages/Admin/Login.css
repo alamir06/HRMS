@@ -229,24 +229,35 @@
 }
 
 .checkbox-container {
-  display: flex;
-  align-items: center;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: flex-start;
   gap: 0.5rem;
   cursor: pointer;
 }
 
 .checkbox-container input {
-  display: none;
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
 }
 
 .checkmark {
   width: 18px;
   height: 18px;
-  border: 1px solid #d1d5db;
-  border-radius: 50%;
+  border: 2px solid #d1d5db;
+  border-radius: 4px;
   position: relative;
   background-color: #ffffff;
   transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  vertical-align: middle;
 }
 
 [data-theme='dark'] .checkmark {
@@ -262,10 +273,10 @@
 .checkbox-container input:checked + .checkmark::after {
   content: '';
   position: absolute;
-  left: 6px;
-  top: 3px;
-  width: 4px;
-  height: 8px;
+  left: 5px;
+  top: 2px;
+  width: 5px;
+  height: 9px;
   border: solid white;
   border-width: 0 2px 2px 0;
   transform: rotate(45deg);
@@ -274,6 +285,8 @@
 .checkbox-label-text {
   font-size: 0.9rem;
   color: #4b5563;
+  white-space: nowrap;
+  vertical-align: middle;
 }
 
 [data-theme='dark'] .checkbox-label-text {
@@ -349,4 +362,100 @@
   .login-right-panel {
     padding: 3rem 2rem;
   }
+}
+
+/* --- FORGOT PASSWORD MODAL --- */
+.forgot-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.forgot-modal-container {
+  background-color: #ffffff;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 450px;
+  padding: 32px;
+  position: relative;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  animation: slideUp 0.3s ease-out;
+}
+
+[data-theme='dark'] .forgot-modal-container {
+  background-color: #1f2937;
+  border: 1px solid #374151;
+}
+
+.forgot-modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: transparent;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.forgot-modal-close:hover {
+  background-color: #f3f4f6;
+  color: #4b5563;
+}
+
+[data-theme='dark'] .forgot-modal-close:hover {
+  background-color: #374151;
+  color: #d1d5db;
+}
+
+.forgot-modal-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 8px;
+}
+
+[data-theme='dark'] .forgot-modal-title {
+  color: #f9fafb;
+}
+
+.forgot-modal-subtitle {
+  font-size: 0.95rem;
+  color: #6b7280;
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+
+[data-theme='dark'] .forgot-modal-subtitle {
+  color: #9ca3af;
+}
+
+.forgot-modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }

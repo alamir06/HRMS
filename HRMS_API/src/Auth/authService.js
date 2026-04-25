@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { v4 as uuidv4 } from "uuid";
 import pool from "../../config/database.js";
+import { sendEmail } from "../../utils/emailService.js";
 
 const SALT_ROUNDS = Number(process.env.BCRYPT_SALT_ROUNDS);
 
@@ -615,4 +616,90 @@ export const getEmployeeContact = async (employeeId) => {
     .join(" ");
 
   return { email, name: name || null };
+};
+
+export const generatePasswordResetToken = async (email) => {
+  // Find user by email (checking both personal and official)
+  const [rows] = await pool.execute(`
+    SELECT BIN_TO_UUID(u.id) as userId, ep.firstName
+    FROM users u
+    JOIN employee e ON u.employeeId = e.id
+    LEFT JOIN employeePersonal ep ON e.id = ep.employeeId
+    LEFT JOIN employeeEmployment ee ON e.id = ee.employeeId
+    WHERE ep.personalEmail = ? OR ee.officialEmail = ?
+  `, [email, email]);
+
+  if (!rows || rows.length === 0) {
+    // Return silently to prevent email enumeration
+    return;
+  }
+
+  const user = rows[0];
+  
+  // Generate a random token
+  const resetToken = crypto.randomBytes(32).toString('hex');
+  
+  // Hash it for the database
+  const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+  
+  // Set expiry to 1 hour from now
+  const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+
+  // Update user record
+  await pool.execute(
+    'UPDATE users SET resetPasswordToken = ?, resetPasswordExpires = ? WHERE id = UUID_TO_BIN(?)',
+    [hashedToken, expiresAt, user.userId]
+  );
+
+  // Send email
+  const resetUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/reset-password?token=${resetToken}`;
+  
+  const subject = "Password Reset Request - HRMS";
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2>Password Reset Request</h2>
+      <p>Hello ${user.firstName || 'User'},</p>
+      <p>We received a request to reset your HRMS password. Click the button below to set a new password:</p>
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="${resetUrl}" style="background-color: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">Reset Password</a>
+      </div>
+      <p>If the button doesn't work, copy and paste this link into your browser:</p>
+      <p><a href="${resetUrl}">${resetUrl}</a></p>
+      <p>This link will expire in 1 hour.</p>
+      <p>If you didn't request this, you can safely ignore this email.</p>
+    </div>
+  `;
+
+  await sendEmail({
+    to: email,
+    subject,
+    text: `Reset your password here: ${resetUrl}`,
+    html
+  });
+};
+
+export const resetPasswordWithToken = async (token, newPassword) => {
+  // Hash the incoming token to match the DB
+  const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+  // Find user with matching valid token
+  const [rows] = await pool.execute(
+    'SELECT BIN_TO_UUID(id) as id FROM users WHERE resetPasswordToken = ? AND resetPasswordExpires > NOW()',
+    [hashedToken]
+  );
+
+  if (!rows || rows.length === 0) {
+    return false;
+  }
+
+  const userId = rows[0].id;
+  const newHash = await bcrypt.hash(newPassword, SALT_ROUNDS);
+
+  // Update password and clear reset tokens
+  await pool.execute(
+    'UPDATE users SET passwordHash = ?, resetPasswordToken = NULL, resetPasswordExpires = NULL, passwordChangedAt = NOW() WHERE id = UUID_TO_BIN(?)',
+    [newHash, userId]
+  );
+
+  return true;
 };

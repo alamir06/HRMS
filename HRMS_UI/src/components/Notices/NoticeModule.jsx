@@ -136,7 +136,7 @@ const NoticeModule = ({ allowedAudiences, isEmployeeView = false }) => {
       <div className="notice-top-toolbar">
         <label className="notice-search-wrapper" htmlFor="searchNotice">
           <Search size={18} color="var(--text-secondary)" />
-          <input className="notice-form-input" 
+          <input 
             id="searchNotice" 
             type="text" 
             placeholder={i18n.language === 'am' ? "ፈልግ..." : "Search notices..."} 
