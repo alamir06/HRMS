@@ -365,6 +365,10 @@ export const attendanceController = {
         [...params, limitInt, offset]
       );
 
+      console.log("== DEBUG GET EMPLOYEE ATTENDANCE ==");
+      console.log("EMPLOYEE ID:", employeeId);
+      console.log("RECORDS FETCHED:", records);
+
       const [countResult] = await pool.query(
         `SELECT COUNT(*) as total FROM attendance a ${whereClause}`,
         params

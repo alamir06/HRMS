@@ -36,6 +36,9 @@ const DashboardOverview = () => {
   const [period, setPeriod] = useState('DAILY');
   const [liveTime, setLiveTime] = useState(new Date());
   
+  const [showAllAppointments, setShowAllAppointments] = useState(false);
+  const [showAllTransfers, setShowAllTransfers] = useState(false);
+  
   const [isPeriodMenuOpen, setIsPeriodMenuOpen] = useState(false);
   const periodMenuRef = useRef(null);
 
@@ -387,14 +390,16 @@ const DashboardOverview = () => {
          <div className="recent-appointments-card">
             <div className="card-header-split">
                <h3>{isAmharic ? 'የቅርብ ጊዜ ቀጠሮዎች' : 'Recent Academic Appointments'}</h3>
-               <button className="text-btn">VIEW ALL</button>
+               <button className="text-btn" onClick={() => setShowAllAppointments(!showAllAppointments)}>
+                  {showAllAppointments ? (isAmharic ? 'ትንሽ አሳይ' : 'VIEW LESS') : (isAmharic ? 'ሁሉንም አሳይ' : 'VIEW ALL')}
+               </button>
             </div>
             
             <div className="appointments-list">
                {recentAppointments.length === 0 ? (
                   <p className="no-data-msg">No recent appointments</p>
                ) : (
-                  recentAppointments.map(app => (
+                  (showAllAppointments ? recentAppointments : recentAppointments.slice(0, 5)).map(app => (
                      <div className="appointment-item" key={app.id}>
                         <img src={app.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(app.firstName)}+${encodeURIComponent(app.lastName)}&background=0B8255&color=fff`} className="app-avatar" alt="avatar" />
                         <div className="app-details">
@@ -414,14 +419,16 @@ const DashboardOverview = () => {
          <div className="recent-appointments-card">
             <div className="card-header-split">
                <h3>{isAmharic ? 'የቅርብ ጊዜ ዝውውሮች' : 'Recent Transfers'}</h3>
-               <button className="text-btn">VIEW ALL</button>
+               <button className="text-btn" onClick={() => setShowAllTransfers(!showAllTransfers)}>
+                  {showAllTransfers ? (isAmharic ? 'ትንሽ አሳይ' : 'VIEW LESS') : (isAmharic ? 'ሁሉንም አሳይ' : 'VIEW ALL')}
+               </button>
             </div>
             
             <div className="appointments-list">
                {recentTransfers.length === 0 ? (
                   <p className="no-data-msg">No recent transfer activity found</p>
                ) : (
-                  recentTransfers.map(app => (
+                  (showAllTransfers ? recentTransfers : recentTransfers.slice(0, 5)).map(app => (
                      <div className="appointment-item" key={app.id}>
                         <img src={app.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(app.firstName)}+${encodeURIComponent(app.lastName)}&background=0B8255&color=fff`} className="app-avatar" alt="avatar" />
                         <div className="app-details">

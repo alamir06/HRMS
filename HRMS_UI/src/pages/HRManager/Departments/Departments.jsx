@@ -214,6 +214,7 @@ const Departments = () => {
 
       // Default company mapped generically if omitted by backend, but we'll let EnsureDefaultCompany handle it
       // if it strictly needs it in body, EnsureDefaultCompany will append it!
+      payload.departmentStatus = 'ACTIVE';
 
       if (payload.departmentType === 'ACADEMIC') {
         payload.parentDepartmentId = null;
@@ -297,23 +298,12 @@ const Departments = () => {
           { value: 'ACADEMIC', label: i18n.language === 'am' ? 'አካዳሚክ' : 'Academic' },
           { value: 'ADMINISTRATIVE', label: i18n.language === 'am' ? 'አስተዳደር' : 'Administrative' }
         ]
-      },
-      {
-        name: 'departmentStatus',
-        label: i18n.language === 'am' ? 'ሁኔታ' : 'Status',
-        type: 'select',
-        required: true,
-        options: [
-          { value: 'ACTIVE', label: i18n.language === 'am' ? 'ገባሪ' : 'Active' },
-          { value: 'INACTIVE', label: i18n.language === 'am' ? 'የማይሰራ' : 'Inactive' }
-        ]
-      },
-      ...textFields
+      }
     ];
 
-    // Conditionally splice in the unique relational bindings based on the LIVE monitored form type
+    // Conditionally append the unique relational bindings based on the LIVE monitored form type
     if (activeFormType === 'ACADEMIC') {
-      baseFields.splice(2, 0, {
+      baseFields.push({
         name: 'collegeId',
         label: i18n.language === 'am' ? 'የተሳሰረበት ኮሌጅ' : 'Linked College',
         type: 'select',
@@ -321,7 +311,7 @@ const Departments = () => {
         options: colleges.map(c => ({ value: c.id, label: i18n.language === 'am' ? (c.collegeNameAmharic || c.collegeName) : c.collegeName }))
       });
     } else if (activeFormType === 'ADMINISTRATIVE') {
-      baseFields.splice(2, 0, {
+      baseFields.push({
         name: 'parentDepartmentId',
         type: 'custom',
         render: ({ value, onChange }) => {
@@ -387,6 +377,7 @@ const Departments = () => {
       });
     }
 
+    baseFields.push(...textFields);
     return baseFields;
   };
 

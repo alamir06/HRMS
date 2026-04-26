@@ -24,7 +24,7 @@ const Employees = () => {
   const [sortBy, setSortBy] = useState('createdAt');
   const [sortOrder, setSortOrder] = useState('DESC');
   const [summary, setSummary] = useState({
-    activeNow: 0,
+    totalEmployees: 0,
     academic: 0,
     administrative: 0,
     outsource: 0,
@@ -127,7 +127,7 @@ const Employees = () => {
       if (res.success) {
         setEmployees(res.data || []);
         setPagination(res.pagination || { total: 0, pages: 1 });
-        setSummary(res.summary || { activeNow: 0, academic: 0, administrative: 0, outsource: 0 });
+        setSummary(res.summary || { totalEmployees: 0, academic: 0, administrative: 0, outsource: 0 });
       } else {
         toast.error("Failed to load employees");
       }
@@ -296,8 +296,8 @@ const Employees = () => {
         <div className="employees-summary-card">
           <div className="employees-summary-icon"><Users size={18} /></div>
           <div className="employees-summary-content">
-            <span className="employees-summary-kicker">{isAmharic ? 'አሁን ገባሪ' : 'ACTIVE NOW'}</span>
-            <div className="employees-summary-value">{summary.activeNow}</div>
+            <span className="employees-summary-kicker">{isAmharic ? 'አጠቃላይ' : 'All Employees'}</span>
+            <div className="employees-summary-value">{summary.totalEmployees}</div>
             <span className="employees-summary-label">{isAmharic ? 'ጠቅላላ ሰራተኞች' : 'Total Employees'}</span>
           </div>
         </div>

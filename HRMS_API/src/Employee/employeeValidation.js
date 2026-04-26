@@ -183,9 +183,38 @@ const employeeBaseSchema = z.object({
     })
     .optional()
     .nullable(),
+  surety: z.object({
+    name: z.string().min(1, "Surety name is required"),
+    phone: z.string().min(1, "Surety phone is required"),
+    email: z.string().email("Invalid email format").optional().nullable(),
+  }).optional().nullable(),
   documents: z.array(documentSchema).optional().nullable(),
   education: z.array(educationSchema).optional().nullable(),
-}).strict();
+}).strict()
+.superRefine((data, ctx) => {
+  if (data.employeeType === "ACADEMIC") {
+    const rank = ((data.academic?.academicRank || "") + " " + (data.academic?.academicRankAmharic || "")).toLowerCase();
+    const eduCount = data.education?.length || 0;
+    
+    let requiredEdu = 1;
+    
+    if (rank.includes("professor") || rank.includes("phd") || rank.includes("doctor") || rank.includes("prof")) {
+      requiredEdu = 3;
+    } else if (rank.includes("msc") || rank.includes("master") || rank.includes("lecturer")) {
+      requiredEdu = 2;
+    } else if (rank.includes("bsc") || rank.includes("bachelor") || rank.includes("degree") || rank.includes("ga") || rank.includes("graduate")) {
+      requiredEdu = 1;
+    }
+    
+    if (eduCount < requiredEdu) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `Academic Rank requires at least ${requiredEdu} educational record(s)`,
+        path: ["education"],
+      });
+    }
+  }
+});
 
 export const employeeValidationSchema = {
   create: employeeBaseSchema,

@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import "./Attendance.css";
-import { Search, Download, Users, CheckCircle2, Clock, Umbrella, Plus, X, Sun, Cloud, CalendarDays, Lock, Check, ChevronDown, ChevronLeft, ChevronRight, Eye } from "lucide-react";
-import { toast } from "react-toastify";
-import EthiopianDateInput from "../../../components/common/EthiopianDateInput";
+import { Search, Download, Users, CheckCircle2, Clock, Umbrella, ChevronDown, ChevronLeft, ChevronRight, Eye, Lock } from "lucide-react";
 import AttendanceDetailsModal from "./AttendanceDetailsModal";
 import { employeeService } from "../../../services/employeeService";
 import { attendanceService } from "../../../services/attendanceService";
@@ -11,9 +9,6 @@ import { formatEthiopianDateTime, formatEthiopianDate } from "../../../utils/dat
 const statusOptions = ["Present", "Late", "On Leave", "Absent"];
 
 const Attendance = () => {
-  const [isNewRecordOpen, setIsNewRecordOpen] = useState(false);
-  const [stampTime, setStampTime] = useState("");
-  
   // Data States
   const [employeesData, setEmployeesData] = useState([]);
   const [attendanceData, setAttendanceData] = useState([]);
@@ -22,10 +17,7 @@ const Attendance = () => {
   const [limit, setLimit] = useState(10);
   const [pagination, setPagination] = useState({ total: 0, pages: 1 });
   const [isLoading, setIsLoading] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [summary, setSummary] = useState({ totalStaff: 0, presentToday: 0, lateArrival: 0, onLeave: 0 });
-  const [employeeSearch, setEmployeeSearch] = useState("");
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [timeFilter, setTimeFilter] = useState("DAILY");
   const periodMenuRef = useRef(null);
   const [isPeriodMenuOpen, setIsPeriodMenuOpen] = useState(false);
@@ -51,72 +43,6 @@ const Attendance = () => {
   ];
   const selectedPeriodLabel = periodOptions.find((item) => item.value === timeFilter)?.label || 'Daily';
 
-  const getLocalDate = () => {
-    const today = new Date();
-    const tzOffset = today.getTimezoneOffset() * 60000;
-    return new Date(today.getTime() - tzOffset).toISOString().split('T')[0];
-  };
-
-  const [record, setRecord] = useState({
-    employee: "",
-    date: getLocalDate(),
-    morningCheckIn: null,
-    morningCheckOut: null,
-    morningStatus: "Present",
-    afternoonCheckIn: null,
-    afternoonCheckOut: null,
-    afternoonStatus: "Present",
-    remarks: "",
-  });
-
-  useEffect(() => {
-    let timerId;
-    if (isNewRecordOpen) {
-      setStampTime(new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase().replace(" ", ""));
-      timerId = setInterval(() => {
-        setStampTime(new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase().replace(" ", ""));
-      }, 1000);
-    }
-    return () => clearInterval(timerId);
-  }, [isNewRecordOpen]);
-
-  useEffect(() => {
-    const fetchExistingRecord = async () => {
-      // Always reset the shift fields when employee or date changes
-      setRecord(prev => ({
-        ...prev,
-        morningCheckIn: null, morningCheckOut: null,
-        afternoonCheckIn: null, afternoonCheckOut: null,
-        remarks: ""
-      }));
-
-      if (!isNewRecordOpen || !record.employee || !record.date) {
-        return;
-      }
-      
-      try {
-         const res = await attendanceService.getEmployeeAttendance(record.employee, { limit: 50 });
-         if (res.success && res.data) {
-           const dayRecords = res.data.filter(r => r.date === record.date);
-           const morningRec = dayRecords.find(r => r.shiftName && r.shiftName.toLowerCase().includes("morning")) || dayRecords.find(r => r.shiftId === "1"); 
-           const afternoonRec = dayRecords.find(r => r.shiftName && r.shiftName.toLowerCase().includes("afternoon")) || dayRecords.find(r => r.shiftId === "2");
-           
-           setRecord(prev => ({
-             ...prev,
-             morningCheckIn: morningRec?.checkIn ? morningRec.checkIn.slice(0,5) : null,
-             morningCheckOut: morningRec?.checkOut ? morningRec.checkOut.slice(0,5) : null,
-             afternoonCheckIn: afternoonRec?.checkIn ? afternoonRec.checkIn.slice(0,5) : null,
-             afternoonCheckOut: afternoonRec?.checkOut ? afternoonRec.checkOut.slice(0,5) : null,
-             remarks: morningRec?.notes || afternoonRec?.notes || ""
-           }));
-         }
-      } catch (error) {
-         // API might return 404 if no records exist, which is fine, we remain reset.
-      }
-    };
-
-    fetchExistingRecord();
-  }, [isNewRecordOpen, record.employee, record.date]);
 
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
@@ -184,46 +110,6 @@ const Attendance = () => {
      }
   };
 
-  const handleRecordChange = (field, value) => {
-    setRecord((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleDirectStamp = async (fieldKey, shiftName, type, isDependentOn = null) => {
-    if (!record.employee || !record.date) {
-      toast.error("Employee and Date are required to stamp!");
-      return;
-    }
-    
-    setIsSaving(true);
-    try {
-      const payload = {
-        date: record.date,
-        time: stampTime,
-        shiftName: shiftName,
-        notes: record.remarks,
-      };
-
-      let res;
-      if (type === "checkIn") {
-        res = await attendanceService.checkIn(record.employee, payload);
-      } else {
-        res = await attendanceService.checkOut(record.employee, payload);
-      }
-
-      if(res.success) {
-        toast.success(`${fieldKey.replace(/([A-Z])/g, ' $1').trim()} logged successfully!`);
-        handleRecordChange(fieldKey, stampTime);
-        loadGridData();
-      } else {
-        toast.error(res.error || "Failed to save stamp");
-      }
-    } catch (e) {
-      toast.error(e?.response?.data?.error || "Error saving stamp");
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
   const handleExportPdf = () => {
      const printContent = document.getElementById("attendance-table-container");
      if (!printContent) return;
@@ -262,29 +148,6 @@ const Attendance = () => {
      }, 500);
    };
 
-   const getStampButton = (fieldKey, shiftName, type, isDependentOn = null) => {
-     const val = record[fieldKey];
-     if (val) {
-        return (
-           <div className="hr-attendance-stamp-btn hr-attendance-stamped" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 16px', borderRadius: '8px', border: '1px solid #9ae6b4', background: '#f0fff4', color: '#276749', fontWeight: 600 }}>
-              <Check size={16} /> {val}
-           </div>
-        )
-     }
-     if (isDependentOn && !record[isDependentOn]) {
-       return (
-         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 16px', borderRadius: '8px', border: '1px dashed #e2e8f0', background: '#f7fafc', color: '#a0aec0', fontWeight: 600 }}>
-            <Lock size={16} /> PENDING
-         </div>
-       )
-     }
-     return (
-       <button type="button" disabled={isSaving} className="hr-attendance-stamp-btn" onClick={() => handleDirectStamp(fieldKey, shiftName, type, isDependentOn)} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 16px', borderRadius: '8px', border: '1px solid #38a169', background: 'white', color: '#38a169', cursor: 'pointer', fontWeight: 600 }}>
-           <Clock size={16} /> {stampTime}
-       </button>
-     )
-  };
-
   return (
     <div className="hr-attendance-container">
       <div className="hr-attendance-summary-header">
@@ -317,24 +180,6 @@ const Attendance = () => {
             </div>
           )}
         </div>
-        <button className="hr-attendance-export-btn" style={{ marginLeft: '10px' }} onClick={() => {
-           setRecord({
-              employee: "",
-              date: getLocalDate(),
-              morningCheckIn: null,
-              morningCheckOut: null,
-              morningStatus: "Present",
-              afternoonCheckIn: null,
-              afternoonCheckOut: null,
-              afternoonStatus: "Present",
-              remarks: "",
-           });
-           setEmployeeSearch("");
-           setIsNewRecordOpen(true);
-        }}>
-          <Plus size={18} style={{ marginRight: '6px' }} /> 
-          New Record
-        </button>
       </div>
 
       <div className="hr-attendance-summary-grid">
@@ -515,135 +360,6 @@ const Attendance = () => {
           </div>
         </div>
       </div>
-
-      {isNewRecordOpen && (
-        <div className="hr-attendance-modal-overlay" onClick={() => setIsNewRecordOpen(false)}>
-          <div className="hr-attendance-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="hr-attendance-modal-header">
-               <h2>New Attendance Record</h2>
-               <button className="hr-attendance-modal-close" onClick={() => setIsNewRecordOpen(false)}>
-                  <X size={20} />
-               </button>
-            </div>
-
-            <div className="hr-attendance-modal-body">
-               <div className="hr-attendance-detail-grid">
-                 <div className="hr-attendance-detail-item">
-                    <label>Employee Name</label>
-                    <div style={{ position: 'relative' }}>
-                        <label htmlFor="modalEmployeeSearch" style={{ margin: 0, width: '100%', padding: '0 12px', minHeight: '40px', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid var(--border-color)', borderRadius: '8px', background: 'var(--bg-primary)' }}>
-                          <Search size={18} color="var(--text-secondary)" />
-                          <input 
-                            id="modalEmployeeSearch"
-                            type="text"
-                            style={{ border: 'none', outline: 'none', background: 'transparent', width: '100%', padding: '8px 0' }}
-                            placeholder="Type to search..."
-                            value={employeeSearch}
-                            onChange={e => {
-                               setEmployeeSearch(e.target.value);
-                               if(!isDropdownOpen) setIsDropdownOpen(true);
-                               if (e.target.value === '') handleRecordChange("employee", "");
-                            }}
-                            onFocus={() => setIsDropdownOpen(true)}
-                            onBlur={() => setTimeout(() => setIsDropdownOpen(false), 200)}
-                          />
-                        </label>
-                       {isDropdownOpen && (
-                         <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'var(--bg-primary)', border: '1px solid var(--border-color)', borderRadius: '8px', zIndex: 10, maxHeight: '200px', overflowY: 'auto', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
-                            {employeesData.filter(emp => {
-                               const isNotOnLeave = !(emp.employmentStatus && String(emp.employmentStatus).trim().toUpperCase().replace(/\s+/g, '') === 'ONLEAVE');
-                               const matchesSearch = `${emp.firstName} ${emp.lastName}`.toLowerCase().includes(employeeSearch.toLowerCase());
-                               return isNotOnLeave && matchesSearch;
-                            }).map((emp) => (
-                               <div 
-                                 key={emp.id} 
-                                 style={{ padding: '10px 12px', cursor: 'pointer', borderBottom: '1px solid var(--border-color)', color: 'var(--text-primary)' }}
-                                 onMouseDown={() => {
-                                    handleRecordChange("employee", emp.id);
-                                    setEmployeeSearch(`${emp.firstName} ${emp.lastName}`);
-                                    setIsDropdownOpen(false);
-                                 }}
-                               >
-                                  {emp.firstName} {emp.lastName}
-                               </div>
-                            ))}
-                            {employeesData.filter(emp => `${emp.firstName} ${emp.lastName}`.toLowerCase().includes(employeeSearch.toLowerCase())).length === 0 && (
-                               <div style={{ padding: '10px 12px', color: 'var(--text-secondary)' }}>No matches found...</div>
-                            )}
-                         </div>
-                       )}
-                    </div>
-                 </div>
-                 <div className="hr-attendance-detail-item">
-                    <label>Entry Date</label>
-                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px', borderRadius: '8px', border: '1px solid #e2e8f0', background: '#f8fafc', color: '#4a5568', fontWeight: 600, width: '100%', cursor: 'not-allowed', height: '40px' }}>
-                        <CalendarDays size={18} /> {formatEthiopianDate(record.date)}
-                     </div>
-                  </div>
-               </div>
-
-               <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                     <Sun size={20} color="#0b8255" />
-                     <h3 style={{ margin: 0, fontSize: '1rem', color: 'var(--text-primary)' }}>Morning Shift</h3>
-                  </div>
-                  <div className="hr-attendance-detail-grid" style={{ gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)' }}>
-                     <div className="hr-attendance-detail-item">
-                        <label>CHECK-IN</label>
-                        {getStampButton("morningCheckIn", "Morning", "checkIn")}
-                     </div>
-                     <div className="hr-attendance-detail-item">
-                        <label>CHECK-OUT</label>
-                        {getStampButton("morningCheckOut", "Morning", "checkOut", "morningCheckIn")}
-                     </div>
-                  </div>
-               </div>
-
-               <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                     <Cloud size={20} color="#0b8255" />
-                     <h3 style={{ margin: 0, fontSize: '1rem', color: 'var(--text-primary)' }}>Afternoon Shift</h3>
-                  </div>
-                  <div className="hr-attendance-detail-grid" style={{ gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)' }}>
-                     <div className="hr-attendance-detail-item">
-                        <label>CHECK-IN</label>
-                        {getStampButton("afternoonCheckIn", "Afternoon", "checkIn")}
-                     </div>
-                     <div className="hr-attendance-detail-item">
-                        <label>CHECK-OUT</label>
-                        {getStampButton("afternoonCheckOut", "Afternoon", "checkOut", "afternoonCheckIn")}
-                     </div>
-                  </div>
-               </div>
-
-               <div className="hr-attendance-detail-item">
-                  <label>Internal Remarks</label>
-                  <textarea 
-                     className="hr-attendance-action-modal-input"
-                     placeholder="Any notable observations for this entry..."
-                     value={record.remarks}
-                     onChange={e => handleRecordChange("remarks", e.target.value)}
-                     rows={3}
-                  ></textarea>
-               </div>
-            </div>
-            
-            <div className="hr-attendance-modal-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-               <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Lock size={14} /> Secure Ledger Entry
-               </div>
-               <div style={{ display: 'flex', gap: '12px' }}>
-                 <button 
-                    style={{ padding: '8px 24px', background: 'transparent', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '6px', fontWeight: '600', cursor: 'pointer' }}
-                    onClick={() => setIsNewRecordOpen(false)}
-                 >
-                    Done
-                 </button>
-               </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {viewDetailsEmp && (
          <AttendanceDetailsModal employee={viewDetailsEmp} onClose={() => setViewDetailsEmp(null)} />

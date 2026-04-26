@@ -93,6 +93,16 @@ employeeRouter.post(
   employeeController.uploadDocument
 );
 
+// Surety document upload
+employeeRouter.post(
+  "/:id/surety-document",
+  authenticateToken,
+  authorize("HRMANAGER", "HROFFICER"),
+  validateEmployee(employeeIdSchema),
+  fileUploadService.uploadSingleDocument("document"),
+  employeeController.uploadSuretyDocument
+);
+
 // Multiple documents upload
 employeeRouter.post(
   "/:id/documents/bulk",

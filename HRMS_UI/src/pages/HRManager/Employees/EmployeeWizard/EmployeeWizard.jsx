@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
   X, ArrowRight, ChevronLeft, Plus, Trash2, 
-  User, Calendar, Phone, Briefcase, Building, Info, FileUp, File, ZoomIn, ZoomOut
+  User, Calendar, Phone, Briefcase, Building, Info, FileUp, File, ZoomIn, ZoomOut,
+  FileText
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
@@ -57,6 +58,7 @@ const EmployeeWizard = ({ onClose, onSuccess, editEmployeeId }) => {
   const [outsourceCompanies, setOutsourceCompanies] = useState([]);
   const [adminHierarchy, setAdminHierarchy] = useState([]);
   const [adminChildrenOptions, setAdminChildrenOptions] = useState({});
+  const [recruitmentType, setRecruitmentType] = useState('NEW');
 
   // Form State
   const [formData, setFormData] = useState({
@@ -107,6 +109,12 @@ const EmployeeWizard = ({ onClose, onSuccess, editEmployeeId }) => {
       contractStartDate: '',
       contractEndDate: '',
       serviceType: 'SECURITY'
+    },
+    surety: {
+      name: '',
+      phone: '',
+      email: '',
+      documentFile: null
     },
     education: [],
     documents: []
@@ -173,6 +181,61 @@ const EmployeeWizard = ({ onClose, onSuccess, editEmployeeId }) => {
     loadLookups();
     if (editEmployeeId) loadEditData();
   }, [editEmployeeId]);
+
+  // Auto-populate required education and document forms for Academic staff
+  useEffect(() => {
+    if (formData.employeeType === 'ACADEMIC' && !editEmployeeId) {
+      const rank = (formData.academic.academicRank || formData.academic.academicRankAmharic || '').toLowerCase();
+      let requiredEdu = 1;
+      let requiredDoc = 1;
+      
+      if (rank.includes('professor') || rank.includes('phd') || rank.includes('doctor') || rank.includes('prof')) {
+        requiredEdu = 3;
+        requiredDoc = 3;
+      } else if (rank.includes('msc') || rank.includes('master') || rank.includes('lecturer')) {
+        requiredEdu = 2;
+        requiredDoc = 2;
+      } else if (rank.includes('bsc') || rank.includes('bachelor') || rank.includes('degree') || rank.includes('ga') || rank.includes('graduate')) {
+        requiredEdu = 1;
+        requiredDoc = 1;
+      }
+
+      setFormData(prev => {
+        let needsUpdate = false;
+        const newEd = [...prev.education];
+        const newDocs = [...prev.documents];
+
+        while (newEd.length < requiredEdu) {
+          newEd.push({ 
+            institutionName: '', institutionNameAmharic: '', qualification: '', qualificationAmharic: '',
+            fieldOfStudy: '', fieldOfStudyAmharic: '', grade: '',
+            startDate: '', endDate: '', graduationDate: '', 
+            description: '', descriptionAmharic: ''
+          });
+          needsUpdate = true;
+        }
+
+        while (newDocs.length < requiredDoc) {
+          newDocs.push({ 
+            documentType: 'EDUCATION', 
+            documentName: '', 
+            documentNameAmharic: '', 
+            issueDate: '', 
+            issuingAuthority: '', 
+            description: '', 
+            file: null,
+            previewUrl: null,
+          });
+          needsUpdate = true;
+        }
+
+        if (needsUpdate) {
+          return { ...prev, education: newEd, documents: newDocs };
+        }
+        return prev;
+      });
+    }
+  }, [formData.employeeType, formData.academic.academicRank, formData.academic.academicRankAmharic, editEmployeeId]);
 
   const updateBase = (field, value) => {
     if (field === 'employeeType') {
@@ -292,6 +355,35 @@ const EmployeeWizard = ({ onClose, onSuccess, editEmployeeId }) => {
 
   const handleSubmit = async () => {
     try {
+      if (formData.employeeType === 'ACADEMIC') {
+        const rank = (formData.academic.academicRank || formData.academic.academicRankAmharic || '').toLowerCase();
+        const eduCount = formData.education.length;
+        const docCount = formData.documents.filter(d => d.file || d.previewUrl || (editEmployeeId && d.id)).length;
+        
+        let requiredEdu = 1;
+        let requiredDoc = 1;
+        
+        if (rank.includes('professor') || rank.includes('phd') || rank.includes('doctor') || rank.includes('prof')) {
+          requiredEdu = 3;
+          requiredDoc = 3;
+        } else if (rank.includes('msc') || rank.includes('master') || rank.includes('lecturer')) {
+          requiredEdu = 2;
+          requiredDoc = 2;
+        } else if (rank.includes('bsc') || rank.includes('bachelor') || rank.includes('degree') || rank.includes('ga') || rank.includes('graduate')) {
+          requiredEdu = 1;
+          requiredDoc = 1;
+        }
+
+        if (eduCount < requiredEdu) {
+          toast.error(`Academic Rank requires at least ${requiredEdu} educational record(s).`);
+          return;
+        }
+        if (docCount < requiredDoc) {
+          toast.error(`Academic Rank requires at least ${requiredDoc} document record(s).`);
+          return;
+        }
+      }
+
       setIsSubmitting(true);
       
       const payload = { ...formData };
@@ -307,7 +399,10 @@ const EmployeeWizard = ({ onClose, onSuccess, editEmployeeId }) => {
       if (!payload.personal.dateOfBirth) delete payload.personal.dateOfBirth;
 
       if (payload.employeeType !== 'ACADEMIC') delete payload.academic;
-      if (payload.employeeType !== 'ADMINISTRATIVE') delete payload.hr;
+      if (payload.employeeType !== 'ADMINISTRATIVE') {
+        delete payload.hr;
+        delete payload.surety;
+      }
       if (payload.employeeType !== 'OUTSOURCE') delete payload.outsource;
 
       if (payload.education.length === 0) {
@@ -316,6 +411,12 @@ const EmployeeWizard = ({ onClose, onSuccess, editEmployeeId }) => {
       
       const documentsToUpload = payload.documents;
       delete payload.documents;
+      
+      let suretyDocumentToUpload = null;
+      if (payload.surety) {
+        suretyDocumentToUpload = payload.surety.documentFile;
+        delete payload.surety.documentFile;
+      }
       
       const submitPayload = { 
         ...payload,
@@ -396,6 +497,17 @@ const EmployeeWizard = ({ onClose, onSuccess, editEmployeeId }) => {
             }
          }
          
+         if (formData.employeeType === 'ADMINISTRATIVE' && suretyDocumentToUpload && !editEmployeeId) {
+            toast.info(`Uploading surety verification document...`);
+            const suretyDocFormData = new FormData();
+            suretyDocFormData.append('document', suretyDocumentToUpload);
+            const suretyRes = await employeeService.uploadSuretyDocument(newEmployeeId, suretyDocFormData);
+            if (!suretyRes.success) {
+              console.error("Surety doc upload failed", suretyRes.message);
+              toast.warn(`Failed to upload surety document.`);
+            }
+         }
+         
          toast.success(`Employee ${editEmployeeId ? 'Updated' : 'Registration'} completed successfully!`);
          onSuccess();
       } else {
@@ -455,8 +567,24 @@ const EmployeeWizard = ({ onClose, onSuccess, editEmployeeId }) => {
                       </div>
                       
                       <div className="premium-form-group">
+                        <label>Recruitment Type <span className="req">*</span></label>
+                        <div className="premium-input-wrap select-wrap">
+                          <Briefcase size={18} className="input-icon" />
+                          <select value={recruitmentType} onChange={e => {
+                            setRecruitmentType(e.target.value);
+                            if (e.target.value === 'NEW') {
+                              updateBase('hireDate', getAddisTodayGregorian());
+                            }
+                          }}>
+                            <option value="NEW">New</option>
+                            <option value="TRANSFERRED">Transferred</option>
+                          </select>
+                        </div>
+                      </div>
+                      
+                      <div className="premium-form-group">
                         <label>{t('forms.hireDate', 'Hire Date')} <span className="req">*</span></label>
-                        <div className="premium-input-wrap">
+                        <div className="premium-input-wrap" style={{ opacity: recruitmentType === 'NEW' ? 0.7 : 1, pointerEvents: recruitmentType === 'NEW' ? 'none' : 'auto' }}>
                           <Calendar size={18} className="input-icon" />
                           <EthiopianDateInput
                             value={formData.hireDate}
@@ -479,18 +607,6 @@ const EmployeeWizard = ({ onClose, onSuccess, editEmployeeId }) => {
                         </div>
                       </div>
 
-                      <div className="premium-form-group">
-                        <label>{t('forms.status', 'Status')} <span className="req">*</span></label>
-                        <div className="premium-input-wrap select-wrap">
-                          <Info size={18} className="input-icon" />
-                          <select value={formData.employmentStatus} onChange={e => updateBase('employmentStatus', e.target.value)}>
-                            <option value="ACTIVE">{t('forms.active', 'Active')}</option>
-                            <option value="ONLEAVE">{t('forms.onLeave', 'On Leave')}</option>
-                            <option value="TERMINATED">{t('forms.terminated', 'Terminated')}</option>
-                            <option value="RESIGNED">{t('forms.resigned', 'Resigned')}</option>
-                          </select>
-                        </div>
-                      </div>
                     </div>
                   </div>
 
@@ -782,6 +898,55 @@ const EmployeeWizard = ({ onClose, onSuccess, editEmployeeId }) => {
                         </div>
                       </div>
                     </div>
+
+                    {/* Surety Information for Administrative Employees */}
+                    {formData.employeeType === 'ADMINISTRATIVE' && (
+                      <div className="premium-card" style={{ marginTop: '1.5rem' }}>
+                        <h4 style={{marginBottom: '1rem', color: 'var(--primary-color)'}}>Surety Information <span className="req">*</span></h4>
+                        <div className="premium-form-group">
+                          <label>Surety Name <span className="req">*</span></label>
+                          <div className="premium-input-wrap">
+                            <User size={18} className="input-icon" />
+                            <input type="text" required value={formData.surety.name} onChange={e => updateNested('surety', 'name', e.target.value)} placeholder="Full Name" />
+                          </div>
+                        </div>
+                        <div className="premium-form-group">
+                          <label>Surety Phone <span className="req">*</span></label>
+                          <div className="premium-input-wrap">
+                            <Phone size={18} className="input-icon" />
+                            <input type="text" required value={formData.surety.phone} onChange={e => updateNested('surety', 'phone', e.target.value)} placeholder="+251..." />
+                          </div>
+                        </div>
+                        <div className="premium-form-group">
+                          <label>Surety Email</label>
+                          <div className="premium-input-wrap">
+                            <User size={18} className="input-icon" />
+                            <input type="email" value={formData.surety.email} onChange={e => updateNested('surety', 'email', e.target.value)} placeholder="email@example.com" />
+                          </div>
+                        </div>
+                        <div className="premium-form-group">
+                          <label>Verification Document <span className="req">*</span></label>
+                          <div className="premium-dashboard-file-upload">
+                            <input
+                              type="file"
+                              required
+                              id="suretyDocumentFile"
+                              style={{ display: 'none' }}
+                              onChange={(e) => {
+                                if (e.target.files && e.target.files[0]) {
+                                  updateNested('surety', 'documentFile', e.target.files[0]);
+                                }
+                              }}
+                              accept=".pdf,.jpg,.jpeg,.png"
+                            />
+                            <label htmlFor="suretyDocumentFile" className="upload-label" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)' }}>
+                              <FileText size={18} />
+                              {formData.surety.documentFile ? formData.surety.documentFile.name : 'Click to Upload Surety Document'}
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </>
@@ -834,6 +999,13 @@ const EmployeeWizard = ({ onClose, onSuccess, editEmployeeId }) => {
                                 </div>
                               </div>
                             )}
+                            <div className="premium-form-group">
+                        <label>Base Salary (Monthly)</label>
+                        <div className="premium-input-wrap">
+                          <Briefcase size={18} className="input-icon" />
+                          <input type="number" min="0" value={formData.employment.salary} onChange={e => updateNested('employment', 'salary', e.target.value)} placeholder="0.00" />
+                        </div>
+                      </div>
                           </>
                         )}
 
@@ -875,7 +1047,7 @@ const EmployeeWizard = ({ onClose, onSuccess, editEmployeeId }) => {
                                 <select value={formData.outsource.serviceType} onChange={e => updateNested('outsource', 'serviceType', e.target.value)}>
                                   <option value="SECURITY">Security</option>
                                   <option value="CLEANING">Cleaning</option>
-                                  <option value="IT">IT Support</option>
+                                  <option value="MECHANICAL">Mechanical</option>
                                   <option value="OTHER">Other</option>
                                 </select>
                               </div>
@@ -914,13 +1086,6 @@ const EmployeeWizard = ({ onClose, onSuccess, editEmployeeId }) => {
                           <input type="text" value={formData.employment.officialPhone} onChange={e => updateNested('employment', 'officialPhone', e.target.value)} placeholder="+251..." />
                         </div>
                       </div>
-                      <div className="premium-form-group">
-                        <label>Base Salary (Monthly)</label>
-                        <div className="premium-input-wrap">
-                          <Briefcase size={18} className="input-icon" />
-                          <input type="number" min="0" value={formData.employment.salary} onChange={e => updateNested('employment', 'salary', e.target.value)} placeholder="0.00" />
-                        </div>
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -933,7 +1098,7 @@ const EmployeeWizard = ({ onClose, onSuccess, editEmployeeId }) => {
                 </div>
                 
                 {formData.education.length === 0 ? (
-                  <p className="empty-text">No education records added. Optional.</p>
+                  <p className="empty-text">No education records added. {formData.employeeType === 'ACADEMIC' ? <span className="req">Required</span> : 'Optional.'}</p>
                 ) : (
                   formData.education.map((ed, idx) => (
                     <div key={idx} className="premium-card array-item-card">
@@ -943,14 +1108,14 @@ const EmployeeWizard = ({ onClose, onSuccess, editEmployeeId }) => {
                            <label>{i18n.language === 'en' ? 'Institution Name' : 'የትምህርት ተቋም ስም'} <span className="req">*</span></label>
                            <div className="premium-input-wrap">
                               <Building size={18} className="input-icon" />
-                              <input required value={i18n.language === 'en' ? ed.institutionName : ed.institutionNameAmharic} onChange={e => updateEducation(idx, i18n.language === 'en' ? 'institutionName' : 'institutionNameAmharic', e.target.value)} />
+                              <input required value={i18n.language === 'en' ? ed.institutionName : ed.institutionNameAmharic} onChange={e => updateEducation(idx, i18n.language === 'en' ? 'institutionName' : 'institutionNameAmharic', e.target.value)} placeholder="e.g. Injibara University" />
                            </div>
                          </div>
                          <div className="premium-form-group">
                            <label>Qualification <span className="req">*</span></label>
                            <div className="premium-input-wrap">
                               <Briefcase size={18} className="input-icon" />
-                              <input required value={ed.qualification} onChange={e => updateEducation(idx, 'qualification', e.target.value)} placeholder="e.g. BSc Computer Science" />
+                              <input required value={ed.qualification} onChange={e => updateEducation(idx, 'qualification', e.target.value)} placeholder={idx === 0 ? "e.g. BSc Computer Science" : idx === 1 ? "e.g. MSc Computer Science" : "e.g. Doctor of Philosophy (PhD)"} />
                            </div>
                          </div>
                          <div className="premium-form-group">
@@ -986,10 +1151,10 @@ const EmployeeWizard = ({ onClose, onSuccess, editEmployeeId }) => {
                             </div>
                           </div>
                           <div className="premium-form-group">
-                            <label>Grade / GPA</label>
+                            <label>{idx === 0 ? 'GPA' : idx === 1 ? 'Thesis Result' : 'Defense Status'}</label>
                             <div className="premium-input-wrap">
                                <Info size={18} className="input-icon" />
-                               <input value={ed.grade} onChange={e => updateEducation(idx, 'grade', e.target.value)} placeholder="e.g. 3.8 / Great Distinction" />
+                               <input value={ed.grade} onChange={e => updateEducation(idx, 'grade', e.target.value)} placeholder={idx === 0 ? "e.g. 3.8" : idx === 1 ? "e.g. Excellent / Very Good" : "e.g. Pass / Successful"} />
                             </div>
                           </div>
                           <div className="premium-form-group">
@@ -1031,7 +1196,7 @@ const EmployeeWizard = ({ onClose, onSuccess, editEmployeeId }) => {
                   <div className="premium-card" style={{ textAlign: 'center', padding: '3rem' }}>
                     <FileUp size={48} color="var(--border-color)" style={{ margin: '0 auto 1rem', opacity: 0.5 }} />
                     <h4 style={{ color: 'var(--text-secondary)' }}>No documents added yet</h4>
-                    <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Click "Add Document" to begin uploading required files like ID, Certificates, and Contracts.</p>
+                    <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Click "Add Document" to begin uploading required files like ID, Certificates, and Contracts. {formData.employeeType === 'ACADEMIC' && <span className="req" style={{display: 'block', marginTop: '0.5rem'}}>Required for Academic employees</span>}</p>
                   </div>
                 ) : (
                   formData.documents.map((doc, idx) => (
@@ -1056,29 +1221,10 @@ const EmployeeWizard = ({ onClose, onSuccess, editEmployeeId }) => {
                              <label>Document Name <span className="req">*</span></label>
                              <div className="premium-input-wrap">
                                <Info size={18} className="input-icon" />
-                               <input required value={doc.documentName} onChange={e => updateDocumentField(idx, 'documentName', e.target.value)} placeholder="e.g. Master's Degree Certificate" />
+                               <input required value={doc.documentName} onChange={e => updateDocumentField(idx, 'documentName', e.target.value)} placeholder={idx === 0 ? "e.g. Bachelor's Degree Certificate" : idx === 1 ? "e.g. Master's Degree Certificate" : "e.g. PhD Certificate"} />
                              </div>
                            </div>
-                           <div className="wizard-split-layout" style={{ gap: '1rem', marginTop: '1rem' }}>
-                             <div className="premium-form-group">
-                               <label>Issue Date</label>
-                               <div className="premium-input-wrap">
-                                 <Calendar size={18} className="input-icon" />
-                                 <EthiopianDateInput
-                                   value={doc.issueDate}
-                                   onChange={(gregDate) => updateDocumentField(idx, 'issueDate', gregDate)}
-                                   language={i18n.language}
-                                 />
-                               </div>
-                             </div>
-                             <div className="premium-form-group">
-                               <label>Issuing Authority</label>
-                               <div className="premium-input-wrap">
-                                 <Building size={18} className="input-icon" />
-                                 <input type="text" value={doc.issuingAuthority} onChange={e => updateDocumentField(idx, 'issuingAuthority', e.target.value)} placeholder="e.g. Addis Ababa University" />
-                               </div>
-                             </div>
-                           </div>
+
                          </div>
                          <div className="document-uploader" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
                            <div className={`premium-dashboard-file-upload ${doc.previewUrl ? 'has-image-preview' : ''}`} style={{ flex: 1, minHeight: '180px' }}>

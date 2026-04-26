@@ -78,6 +78,12 @@ export const employeeService = {
     }));
   },
 
+  uploadSuretyDocument: async (id, formData) => {
+    return handleResponse(() => api.post(`/employees/${id}/surety-document`, formData, {
+       headers: { 'Content-Type': 'multipart/form-data' }
+    }));
+  },
+
   getDocuments: async (id) => {
     return handleResponse(() => api.get(`/employees/${id}/documents`));
   },
