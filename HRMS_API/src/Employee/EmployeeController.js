@@ -241,6 +241,39 @@ export class EmployeeController {
     }
   };
 
+  uploadSuretyDocument = async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      // Validate employee ID
+      employeeValidationSchema.id.parse({ id });
+
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          error: "No file uploaded",
+        });
+      }
+
+      const result = await employeeService.uploadSuretyDocument(id, req.file);
+
+      res.json({
+        success: true,
+        message: result.message,
+        data: {
+          documentPath: result.documentPath,
+        },
+      });
+    } catch (error) {
+      if (req.file) {
+        await fileUploadService
+          .deleteFile(req.file.filename, "document")
+          .catch(console.error);
+      }
+      this.handleError(res, error, "Upload surety document failed");
+    }
+  };
+
   // Upload multiple documents
   // In EmployeeController.js - update the uploadMultipleDocuments method
 

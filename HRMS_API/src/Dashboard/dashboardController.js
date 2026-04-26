@@ -31,9 +31,10 @@ class DashboardController {
             COUNT(*) as totalEmployees,
             SUM(CASE WHEN employeeType = 'ACADEMIC' THEN 1 ELSE 0 END) as totalAcademic,
             SUM(CASE WHEN employeeType = 'ADMINISTRATIVE' THEN 1 ELSE 0 END) as totalAdministrative,
-            SUM(CASE WHEN employmentType = 'OUTSOURCED' THEN 1 ELSE 0 END) as totalOutsourced
+            SUM(CASE WHEN employeeType = 'OUTSOURCE' THEN 1 ELSE 0 END) as totalOutsourced
           FROM employee 
-          WHERE employmentStatus = 'ACTIVE'
+          WHERE employmentStatus <> 'TERMINATED' 
+            AND (employeeRole != 'HRMANAGER' OR employeeRole IS NULL)
         `);
 
         // 2. Total Colleges
@@ -91,7 +92,7 @@ class DashboardController {
           LEFT JOIN department dept ON d.departmentId = dept.id
           WHERE d.title IN ('HEAD', 'DEAN') OR d.title LIKE '%head%' OR d.title LIKE '%dean%'
           ORDER BY d.createdAt DESC 
-          LIMIT 5
+          LIMIT 50
         `);
 
         // 8. Recent Transfers (Approximated by recently updated employees)
@@ -108,14 +109,14 @@ class DashboardController {
           LEFT JOIN employeePersonal ep ON e.id = ep.employeeId
           LEFT JOIN department dept ON e.departmentId = dept.id
           ORDER BY e.updatedAt DESC 
-          LIMIT 5
+          LIMIT 50
         `);
 
         res.json({
           success: true,
           data: {
             metrics: {
-              totalEmployees: empStats[0].totalEmployees || 0,
+              totalEmployees: Number(empStats[0].totalEmployees) || 0,
               totalAcademic: Number(empStats[0].totalAcademic) || 0,
               totalAdministrative: Number(empStats[0].totalAdministrative) || 0,
               totalOutsourced: Number(empStats[0].totalOutsourced) || 0,

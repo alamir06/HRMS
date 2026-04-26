@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { Bell, Settings, Moon, Sun, User, Globe, LogOut, Menu, X, CheckCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
+import api from '../../services/api';
 import { notificationService } from '../../services/notificationService';
 import './Header.css';
 
@@ -79,12 +80,18 @@ const Header = ({ onOpenProfile, onToggleSidebar, isSidebarOpen = false }) => {
   };
 
   // Perform secure logout
-  const handleLogout = () => {
-    localStorage.removeItem('adminToken');
-    localStorage.removeItem('user');
-    sessionStorage.removeItem('adminToken');
-    sessionStorage.removeItem('user');
-    window.location.href = '/login';
+  const handleLogout = async () => {
+    try {
+      await api.post('/auth/logout');
+    } catch (e) {
+      console.error("Logout API failed, proceeding with local logout", e);
+    } finally {
+      localStorage.removeItem('adminToken');
+      localStorage.removeItem('user');
+      sessionStorage.removeItem('adminToken');
+      sessionStorage.removeItem('user');
+      window.location.href = '/login';
+    }
   };
 
   // Close dropdown on outside clicks

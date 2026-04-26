@@ -34,7 +34,6 @@ const attendanceCrudRouter = createCrudRouter({
   }
 });
 
-attendanceRouter.use("/", attendanceCrudRouter);
 
 attendanceRouter.post(
   "/employees/:employeeId/check-in",
@@ -67,5 +66,7 @@ attendanceRouter.get(
   attendanceAuthGuard,
   attendanceController.getEmployeeSummary
 );
+
+attendanceRouter.use("/", attendanceCrudRouter);
 
 export default attendanceRouter;

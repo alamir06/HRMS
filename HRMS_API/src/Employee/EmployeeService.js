@@ -131,7 +131,7 @@ export class EmployeeService extends CrudService {
 
   async createEmployee(fullData) {
     const translatedData = await this.applyEmployeeTranslations(fullData);
-    const { personal, employment, academic, outsource, ...employeeData } = translatedData;
+    const { personal, employment, academic, outsource, surety, ...employeeData } = translatedData;
     const connection = await pool.getConnection();
     if (employeeData.employeeCode) {
       delete employeeData.employeeCode;
@@ -338,6 +338,21 @@ export class EmployeeService extends CrudService {
           VALUES (${outsourcePlaceholders.join(", ")})
         `;
         await connection.query(outsourceQuery, outsourceValues);
+      }
+      
+      //Group one 4.5. Insert surety data if present (usually for ADMINISTRATIVE)
+      if (surety && surety.name && surety.phone) {
+        const suretyQuery = `
+          INSERT INTO employee_surety (
+            id, employeeId, suretyName, suretyPhone, suretyEmail
+          ) VALUES (UUID_TO_BIN(UUID()), UUID_TO_BIN(?), ?, ?, ?)
+        `;
+        await connection.query(suretyQuery, [
+          employeeUUID,
+          surety.name,
+          surety.phone,
+          surety.email || null
+        ]);
       }
       
       //Group one 5. Auto-generate leave balances for the current year
@@ -589,6 +604,58 @@ export class EmployeeService extends CrudService {
       return {
         profilePicture: fileUrl,
         message: "Profile picture uploaded successfully",
+      };
+    } catch (error) {
+      await connection.rollback();
+
+      // Delete uploaded file if transaction failed
+      if (file) {
+        await fileUploadService.deleteFile(file.filename).catch(console.error);
+      }
+
+      throw error;
+    } finally {
+      connection.release();
+    }
+  }
+
+  // Upload surety document
+  async uploadSuretyDocument(employeeId, file) {
+    const connection = await pool.getConnection();
+
+    try {
+      await connection.beginTransaction();
+
+      // Validate file
+      fileUploadService.validateFile(file);
+
+      // Generate file URL
+      const fileUrl = fileUploadService.generateFileUrl(file);
+
+      // Update employee_surety table
+      const updateQuery = `
+        UPDATE employee_surety 
+        SET documentPath = ?, documentName = ?, mimeType = ?, fileSize = ?
+        WHERE employeeId = UUID_TO_BIN(?)
+      `;
+
+      const [result] = await connection.query(updateQuery, [
+        fileUrl,
+        file.originalname || file.name || 'surety_document',
+        file.mimetype || null,
+        file.size || null,
+        employeeId,
+      ]);
+
+      if (result.affectedRows === 0) {
+        throw new Error("Surety record not found for this employee");
+      }
+
+      await connection.commit();
+
+      return {
+        documentPath: fileUrl,
+        message: "Surety document uploaded successfully",
       };
     } catch (error) {
       await connection.rollback();
@@ -1109,7 +1176,7 @@ export class EmployeeService extends CrudService {
 
     const summaryQuery = `
       SELECT
-        SUM(CASE WHEN e.employmentStatus = 'ACTIVE' THEN 1 ELSE 0 END) AS activeNow,
+        COUNT(*) AS totalEmployees,
         SUM(CASE WHEN e.employeeType = 'ACADEMIC' THEN 1 ELSE 0 END) AS academic,
         SUM(CASE WHEN e.employeeType = 'ADMINISTRATIVE' THEN 1 ELSE 0 END) AS administrative,
         SUM(CASE WHEN e.employeeType = 'OUTSOURCE' THEN 1 ELSE 0 END) AS outsource
@@ -1129,7 +1196,7 @@ export class EmployeeService extends CrudService {
         pages: Math.ceil(countResult[0].total / limit),
       },
       summary: {
-        activeNow: Number(summaryRow.activeNow || 0),
+        totalEmployees: Number(summaryRow.totalEmployees || 0),
         academic: Number(summaryRow.academic || 0),
         administrative: Number(summaryRow.administrative || 0),
         outsource: Number(summaryRow.outsource || 0),
