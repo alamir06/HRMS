@@ -4,6 +4,7 @@ import { Search, Download, Users, CheckCircle2, Clock, Umbrella, ChevronDown, Ch
 import AttendanceDetailsModal from "./AttendanceDetailsModal";
 import { employeeService } from "../../../services/employeeService";
 import { attendanceService } from "../../../services/attendanceService";
+import { leaveService } from "../../../services/leaveService";
 import { formatEthiopianDateTime, formatEthiopianDate } from "../../../utils/dateTime";
 
 const statusOptions = ["Present", "Late", "On Leave", "Absent"];
@@ -12,6 +13,7 @@ const Attendance = () => {
   // Data States
   const [employeesData, setEmployeesData] = useState([]);
   const [attendanceData, setAttendanceData] = useState([]);
+  const [leaveData, setLeaveData] = useState([]);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
@@ -63,8 +65,17 @@ const Attendance = () => {
         const globalEmps = systemEmpRes.success ? systemEmpRes.data.data || systemEmpRes.data : [];
         const validSystemEmps = globalEmps.filter(e => !e.employmentStatus || String(e.employmentStatus).trim().toUpperCase() !== 'TERMINATED');
 
-        const attRes = await attendanceService.getAllAttendance({ period: timeFilter });
+        const attRes = await attendanceService.getAllAttendance({ period: timeFilter, limit: 10000 });
         const atts = attRes.success ? attRes.data : [];
+
+        // Fetch leave data to accurately calculate "On Leave" days
+        let leaves = [];
+        try {
+           const leaveRes = await leaveService.getAllLeaveRequests({ status: 'APPROVED', limit: 10000 });
+           leaves = leaveRes.success ? leaveRes.data : [];
+        } catch (e) {
+           console.error("Failed fetching leaves", e);
+        }
 
         let calcPresent = 0;
         let calcLate = 0;
@@ -86,15 +97,18 @@ const Attendance = () => {
              if (empRecords.length > 0) {
                dailyStatus = morningRec.status || afternoonRec.status || "Present";
              }
-             if (dailyStatus === "Absent" || empRecords.length === 0) calcAbsent++;
-             else if (dailyStatus === "Late" || morningRec.lateMinutes > 0 || afternoonRec.lateMinutes > 0) calcLate++;
-             else if (dailyStatus === "On Leave" || dailyStatus === "Leave") calcLeave++;
+             
+             const normalizedStatus = String(dailyStatus).trim().toUpperCase();
+             if (normalizedStatus === "ABSENT" || empRecords.length === 0) calcAbsent++;
+             else if (normalizedStatus === "LATE" || morningRec.lateMinutes > 0 || afternoonRec.lateMinutes > 0) calcLate++;
+             else if (normalizedStatus === "ON LEAVE" || normalizedStatus === "LEAVE") calcLeave++;
              else calcPresent++;
           }
         });
 
         setEmployeesData(activeEmps);
         setAttendanceData(atts);
+        setLeaveData(leaves);
 
         setSummary({
            totalStaff: empRes.pagination ? empRes.pagination.total : activeEmps.length,
@@ -117,24 +131,83 @@ const Attendance = () => {
      let styles = '';
      document.querySelectorAll('style, link[rel="stylesheet"]').forEach(el => { styles += el.outerHTML; });
      const dateStr = formatEthiopianDateTime(new Date());
+     
+     const periodText = timeFilter === 'DAILY' ? 'Daily' : timeFilter === 'WEEKLY' ? 'Weekly' : timeFilter === 'MONTHLY' ? 'Monthly' : 'Yearly';
+
      printWindow.document.write(`
        <html>
          <head>
-           <title>Attendance Ledger Export</title>
+           <title>Attendance Report</title>
            ${styles}
            <style>
-             body { padding: 40px; background: white; font-family: Inter, sans-serif; }
-             .hr-attendance-table-actions { display: none !important; }
-             table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-             th, td { border: 1px solid #e2e8f0; padding: 12px; text-align: left; }
-             th { border-bottom: 2px solid #cbd5e1; }
-             h1 { font-family: Inter, sans-serif; color: #2d3748; margin-bottom: 10px; }
+             @page { size: landscape; margin: 15mm; }
+             body { 
+               padding: 0; 
+               background: white; 
+               font-family: 'Inter', sans-serif; 
+               color: #1e293b;
+               -webkit-print-color-adjust: exact;
+               print-color-adjust: exact;
+             }
+             /* Hide irrelevant details */
+             .hr-attendance-table-footer, 
+             .hr-attendance-table-actions,
+             .hr-attendance-page-limit-selector,
+             .hr-attendance-pagination-controls { 
+               display: none !important; 
+             }
+             /* Hide Actions column entirely */
+             th:last-child, td:last-child { display: none !important; }
+             
+             /* Clean up table style */
+             table { 
+               width: 100%; 
+               border-collapse: collapse; 
+               margin-top: 15px; 
+             }
+             th, td { 
+               border: 1px solid #cbd5e1 !important; 
+               padding: 10px 12px !important; 
+               text-align: left !important; 
+               font-size: 10pt !important;
+               vertical-align: middle !important;
+             }
+             th { 
+               background-color: #f8fafc !important; 
+               color: #334155 !important; 
+               font-weight: 700 !important; 
+               text-transform: uppercase !important; 
+               font-size: 9pt !important;
+             }
+             
+             .hr-attendance-avatar { display: none !important; }
+             .hr-attendance-col-primary-text { gap: 2px !important; }
+             
+             h1 { font-family: 'Inter', sans-serif; color: #0f172a; margin: 0 0 5px 0; font-size: 20pt; }
+             .report-header { margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; }
+             .report-meta { color: #64748b; font-size: 10pt; margin: 0; display: flex; justify-content: space-between; }
+             
+             /* Ensure responsive layout in print */
+             .hr-attendance-responsive-wrapper {
+               overflow: visible !important;
+               width: 100% !important;
+             }
+             .hr-attendance-table-card {
+               box-shadow: none !important;
+               border: none !important;
+               background: transparent !important;
+             }
+             
+             td strong { color: #0f172a !important; }
            </style>
          </head>
          <body>
-           <div>
-             <h1>Attendance Ledger Report</h1>
-             <p>Generated on: ${dateStr}</p>
+           <div class="report-header">
+             <h1>Attendance Report (${periodText})</h1>
+             <div class="report-meta">
+               <span>Generated on: ${dateStr}</span>
+               <span>Total Records: ${employeesData.length}</span>
+             </div>
            </div>
            ${printContent.innerHTML}
          </body>
@@ -145,7 +218,7 @@ const Attendance = () => {
      setTimeout(() => {
        printWindow.print();
        printWindow.close();
-     }, 500);
+     }, 800);
    };
 
   return (
@@ -238,10 +311,21 @@ const Attendance = () => {
          <table className="hr-attendance-data-table">
             <thead>
                <tr>
-                  <th>EMPLOYEE</th>
-                  <th>Morning Shift</th>
-                  <th>Afternoon Shift</th>
-                  <th>STATUS</th>
+                   <th>EMPLOYEE (Leaves: {leaveData?.length || 0})</th>
+                   {timeFilter === 'DAILY' ? (
+                     <>
+                       <th>Morning Shift</th>
+                       <th>Afternoon Shift</th>
+                       <th>STATUS</th>
+                     </>
+                   ) : (
+                     <>
+                       <th>PRESENT DAYS</th>
+                       <th>LATE DAYS</th>
+                       <th>ABSENT DAYS</th>
+                       <th>ON LEAVE</th>
+                     </>
+                   )}
                   <th style={{ textAlign: 'right' }}>ACTIONS</th>
                </tr>
             </thead>
@@ -260,7 +344,14 @@ const Attendance = () => {
                    const morningRec = empRecords.find(a => a.shiftName?.toLowerCase().includes("morning") || a.shiftId === "1") || {};
                    const afternoonRec = empRecords.find(a => a.shiftName?.toLowerCase().includes("afternoon") || a.shiftId === "2") || {};
 
-                   const isEmpOnLeave = emp.employmentStatus && String(emp.employmentStatus).trim().toUpperCase().replace(/\s+/g, '') === 'ONLEAVE';
+                   const todayStr = new Date().toISOString().slice(0, 10);
+                   const empLeavesForStatus = leaveData.filter(l => l.employeeId === emp.id);
+                   const hasActiveLeaveToday = empLeavesForStatus.some(l => {
+                       const start = l.startDate ? l.startDate.slice(0, 10) : '';
+                       const end = l.endDate ? l.endDate.slice(0, 10) : '';
+                       return start && end && todayStr >= start && todayStr <= end;
+                   });
+                   const isEmpOnLeave = (emp.employmentStatus && String(emp.employmentStatus).trim().toUpperCase().replace(/\s+/g, '') === 'ONLEAVE') || hasActiveLeaveToday;
                    
                    let displayStatus = "Absent";
                    if (isEmpOnLeave) {
@@ -268,10 +359,13 @@ const Attendance = () => {
                    } else if (empRecords.length > 0) {
                       const mStatus = String(morningRec.status || "").toUpperCase();
                       const aStatus = String(afternoonRec.status || "").toUpperCase();
+                      
                       if (mStatus === "LATE" || aStatus === "LATE" || morningRec.lateMinutes > 0 || afternoonRec.lateMinutes > 0) {
                          displayStatus = "Late";
-                      } else {
+                      } else if (mStatus === "PRESENT" || aStatus === "PRESENT") {
                          displayStatus = "Present";
+                      } else {
+                         displayStatus = "Absent";
                       }
                    }
                    
@@ -290,31 +384,154 @@ const Attendance = () => {
                               </div>
                            </div>
                         </td>
-                        <td>
-                           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                                 In: <strong style={{ color: 'var(--text-primary)' }}>{isEmpOnLeave ? '--:--' : morningRec.checkIn || '--:--'}</strong>
-                              </span>
-                              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                                 Out: <strong style={{ color: 'var(--text-primary)' }}>{isEmpOnLeave ? '--:--' : morningRec.checkOut || '--:--'}</strong>
-                              </span>
-                           </div>
-                        </td>
-                        <td>
-                           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                                 In: <strong style={{ color: 'var(--text-primary)' }}>{isEmpOnLeave ? '--:--' : afternoonRec.checkIn || '--:--'}</strong>
-                              </span>
-                              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                                 Out: <strong style={{ color: 'var(--text-primary)' }}>{isEmpOnLeave ? '--:--' : afternoonRec.checkOut || '--:--'}</strong>
-                              </span>
-                           </div>
-                        </td>
-                        <td>
-                           <span className={`hr-attendance-badge ${displayStatus === 'On Leave' ? 'hr-attendance-badge-pending' : displayStatus === 'Late' ? 'hr-attendance-badge-info' : displayStatus === 'Present' ? 'hr-attendance-badge-approved' : 'hr-attendance-badge-rejected'}`}>
-                              {displayStatus}
-                           </span>
-                        </td>
+                        {timeFilter === 'DAILY' ? (
+                          <>
+                             <td>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                   <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                      In: <strong style={{ color: 'var(--text-primary)' }}>{isEmpOnLeave ? '--:--' : morningRec.checkIn || '--:--'}</strong>
+                                   </span>
+                                   <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                      Out: <strong style={{ color: 'var(--text-primary)' }}>{isEmpOnLeave ? '--:--' : morningRec.checkOut || '--:--'}</strong>
+                                   </span>
+                                </div>
+                             </td>
+                             <td>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                   <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                      In: <strong style={{ color: 'var(--text-primary)' }}>{isEmpOnLeave ? '--:--' : afternoonRec.checkIn || '--:--'}</strong>
+                                   </span>
+                                   <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                      Out: <strong style={{ color: 'var(--text-primary)' }}>{isEmpOnLeave ? '--:--' : afternoonRec.checkOut || '--:--'}</strong>
+                                   </span>
+                                </div>
+                             </td>
+                             <td>
+                                <span className={`hr-attendance-badge ${displayStatus === 'On Leave' ? 'hr-attendance-badge-pending' : displayStatus === 'Late' ? 'hr-attendance-badge-info' : displayStatus === 'Present' ? 'hr-attendance-badge-approved' : 'hr-attendance-badge-rejected'}`}>
+                                   {displayStatus}
+                                </span>
+                             </td>
+                          </>
+                        ) : (
+                          (() => {
+                             let presentDays = 0;
+                             let lateDays = 0;
+                             let absentDays = 0;
+                             let leaveDays = 0;
+
+                             
+                             const groupedByDate = {};
+empRecords.forEach(r => {
+                               const date = r.Date || r.date;
+                               if (!groupedByDate[date]) groupedByDate[date] = [];
+                               groupedByDate[date].push(r);
+                             });
+
+                             const todayDate = new Date();
+const empLeaves = leaveData.filter(l => l.employeeId === emp.id);
+let periodStart = new Date(todayDate); // initialize with todayDate, will be adjusted based on timeFilter
+
+// Calculate leave days for approved leave
+if (isEmpOnLeave && empLeaves.length > 0) {
+   const activeLeave = empLeaves.sort((a,b) => new Date(b.startDate) - new Date(a.startDate))[0];
+   if (activeLeave) {
+      const start = new Date(activeLeave.startDate);
+      const end = todayDate < new Date(activeLeave.endDate) ? todayDate : new Date(activeLeave.endDate);
+      let lDays = 0;
+      let curr = new Date(start);
+      while (curr <= end) {
+         const dayOfWeek = curr.getDay();
+         if (dayOfWeek !== 0 && dayOfWeek !== 6) lDays++;
+         curr.setDate(curr.getDate() + 1);
+      }
+      leaveDays = lDays;
+   }
+}
+
+                             const datesSet = new Set(Object.keys(groupedByDate));
+                             
+                             
+                             
+                             if (timeFilter === 'WEEKLY') {
+                               const day = todayDate.getDay();
+                               const diff = todayDate.getDate() - day + (day === 0 ? -6 : 1);
+                               periodStart.setDate(diff);
+                             } else if (timeFilter === 'MONTHLY') {
+                               periodStart = new Date(todayDate.getFullYear(), todayDate.getMonth(), 1);
+                             } else if (timeFilter === 'YEARLY') {
+                               periodStart = new Date(todayDate.getFullYear(), 0, 1);
+                             }
+                             
+                             // Generate all local dates from periodStart to today
+                             const getLocalDateString = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+                             
+                             let currDate = new Date(periodStart);
+                             while (currDate <= todayDate) {
+                               const dayOfWeek = currDate.getDay();
+                               if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Only count weekdays for potential attendance
+                                  datesSet.add(getLocalDateString(currDate));
+                               }
+                               currDate.setDate(currDate.getDate() + 1);
+                             }
+
+                             // Evaluate each date for Present, Late, Absent
+                             datesSet.forEach(dateStr => {
+                               // Check if this date falls within the leave we just calculated
+                               let isThisDateOnLeave = false;
+                               if (empLeaves.length > 0) {
+                                  const d = dateStr.slice(0, 10);
+                                  isThisDateOnLeave = empLeaves.some(l => {
+                                     const start = l.startDate ? l.startDate.slice(0, 10) : '';
+                                     const end = l.endDate ? l.endDate.slice(0, 10) : '';
+                                     return start && end && d >= start && d <= end;
+                                  });
+                               }
+
+                               if (isThisDateOnLeave) {
+                                  if (!isEmpOnLeave) leaveDays++; // count historical leave days if not actively on leave
+                                  return; // Skip attendance checks if they were on approved leave
+                               }
+                               
+                               const dayRecs = groupedByDate[dateStr];
+                               if (dayRecs && dayRecs.length > 0) {
+                                 const mRec = dayRecs.find(a => a.shiftName?.toLowerCase().includes("morning") || a.shiftId === "1") || {};
+                                 const aRec = dayRecs.find(a => a.shiftName?.toLowerCase().includes("afternoon") || a.shiftId === "2") || {};
+
+                                 const mStatus = String(mRec.status || "").toUpperCase();
+                                 const aStatus = String(aRec.status || "").toUpperCase();
+
+                                 if (mStatus === 'ON LEAVE' || aStatus === 'ON LEAVE') {
+                                    // If we didn't catch it via the active leave request, but the DB says ON LEAVE,
+                                    // increment it here to be safe (fallback).
+                                    if (!isEmpOnLeave) leaveDays++;
+                                 }
+                                 else if (mStatus === 'LATE' || aStatus === 'LATE' || mRec.lateMinutes > 0 || aRec.lateMinutes > 0) lateDays++;
+                                 else if (mStatus === 'PRESENT' || aStatus === 'PRESENT') presentDays++;
+                                 else absentDays++;
+                               } else {
+                                  // No attendance record for this weekday means the employee was absent
+                                  absentDays++;
+                               }
+                             });
+
+                             return (
+                               <>
+                                 <td style={{ textAlign: 'center' }}>
+                                   <strong style={{ color: '#0b8255', fontSize: '1.1rem' }}>{presentDays}</strong>
+                                 </td>
+                                 <td style={{ textAlign: 'center' }}>
+                                   <strong style={{ color: lateDays > 0 ? '#c53030' : 'inherit', fontSize: '1.1rem' }}>{lateDays}</strong>
+                                 </td>
+                                 <td style={{ textAlign: 'center' }}>
+                                   <strong style={{ color: absentDays > 0 ? '#c53030' : 'inherit', fontSize: '1.1rem' }}>{absentDays}</strong>
+                                 </td>
+                                 <td style={{ textAlign: 'center' }}>
+                                   <strong style={{ color: leaveDays > 0 ? '#c66a2f' : 'inherit', fontSize: '1.1rem' }}>{leaveDays}</strong>
+                                 </td>
+                               </>
+                             );
+                          })()
+                        )}
                         <td style={{ textAlign: 'right' }}>
                           <div className="hr-attendance-table-actions" style={{ display: 'flex', justifyContent: 'flex-end' }}>
                              {isEmpOnLeave ? (
