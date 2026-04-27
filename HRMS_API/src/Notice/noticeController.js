@@ -11,6 +11,8 @@ const mapNoticeRecord = (record) => ({
   targetAudience: record.targetAudience,
   targetDepartmentId: record.targetDepartmentId,
   targetDepartmentName: record.targetDepartmentName,
+  targetCollegeId: record.targetCollegeId,
+  targetCollegeName: record.targetCollegeName,
   targetEmployeeId: record.targetEmployeeId,
   targetEmployeeName: record.targetEmployeeName,
   publishDate: record.publishDate,
@@ -35,10 +37,11 @@ export const createNotice = async (req, res, next) => {
       targetAudience = "ALL",
       targetDepartmentId,
       targetEmployeeId,
+      targetCollegeId,
       publishDate,
       expiryDate,
       isPublished = false,
-      createdBy,
+      // createdBy will be derived from authentication token
     } = req.body;
 
     await connection.beginTransaction();
@@ -54,6 +57,7 @@ export const createNotice = async (req, res, next) => {
         targetAudience,
         targetDepartmentId,
         targetEmployeeId,
+        targetCollegeId,
         publishDate,
         expiryDate,
         isPublished,
@@ -68,6 +72,7 @@ export const createNotice = async (req, res, next) => {
         ?,
         ${targetDepartmentId ? "UUID_TO_BIN(?)" : "NULL"},
         ${targetEmployeeId ? "UUID_TO_BIN(?)" : "NULL"},
+        ${targetCollegeId ? "UUID_TO_BIN(?)" : "NULL"},
         ?,
         ?,
         ?,
@@ -93,10 +98,15 @@ export const createNotice = async (req, res, next) => {
       values.push(targetEmployeeId);
     }
 
+    if (targetCollegeId) {
+      values.push(targetCollegeId);
+    }
+
     values.push(publishDate);
     values.push(expiryDate || null);
     values.push(isPublished ? 1 : 0);
-    values.push(createdBy);
+    // Use authenticated user ID as creator
+    values.push(req.user.id);
 
     await connection.execute(insertQuery, values);
     await connection.commit();
@@ -121,12 +131,27 @@ export const listNotices = async (req, res, next) => {
       targetAudience,
       departmentId,
       employeeId,
+      collegeId,
       isPublished,
       activeOnly,
     } = req.query;
 
     const conditions = [];
     const params = [];
+
+    // Role-based visibility logic
+    if (req.user.role !== "HR_MANAGER") {
+      conditions.push(`
+        (
+          n.createdBy = UUID_TO_BIN(?) 
+          OR n.targetAudience = 'ALL'
+          OR n.targetEmployeeId = UUID_TO_BIN(?)
+          OR (n.targetAudience = 'DEPARTMENT' AND n.targetDepartmentId = (SELECT departmentId FROM employee WHERE id = UUID_TO_BIN(?)))
+          OR (n.targetAudience = 'COLLEGE' AND n.targetCollegeId = (SELECT d.collegeId FROM employee e JOIN department d ON e.departmentId = d.id WHERE e.id = UUID_TO_BIN(?)))
+        )
+      `);
+      params.push(req.user.id, req.user.employeeId, req.user.employeeId, req.user.employeeId);
+    }
 
     if (noticeType) {
       conditions.push("n.noticeType = ?");
@@ -153,6 +178,11 @@ export const listNotices = async (req, res, next) => {
       params.push(employeeId);
     }
 
+    if (collegeId) {
+      conditions.push("n.targetCollegeId = UUID_TO_BIN(?)");
+      params.push(collegeId);
+    }
+
     if (activeOnly) {
       conditions.push(
         "(n.isPublished = TRUE AND n.publishDate <= CURDATE() AND (n.expiryDate IS NULL OR n.expiryDate >= CURDATE()))"
@@ -172,6 +202,7 @@ export const listNotices = async (req, res, next) => {
         n.targetAudience,
         BIN_TO_UUID(n.targetDepartmentId) AS targetDepartmentId,
         BIN_TO_UUID(n.targetEmployeeId) AS targetEmployeeId,
+        BIN_TO_UUID(n.targetCollegeId) AS targetCollegeId,
         n.publishDate,
         n.expiryDate,
         n.isPublished,
@@ -179,10 +210,12 @@ export const listNotices = async (req, res, next) => {
         n.createdAt,
         n.updatedAt,
         d.departmentName AS targetDepartmentName,
+        c.collegeName AS targetCollegeName,
         CONCAT_WS(' ', ep.firstName, ep.middleName, ep.lastName) AS targetEmployeeName,
         u.username AS createdByUsername
       FROM notices n
       LEFT JOIN department d ON n.targetDepartmentId = d.id
+      LEFT JOIN college c ON n.targetCollegeId = c.id
       LEFT JOIN employeePersonal ep ON n.targetEmployeeId = ep.employeeId
       LEFT JOIN users u ON n.createdBy = u.id
       ${whereClause}
@@ -214,6 +247,7 @@ export const getNoticeById = async (req, res, next) => {
         n.targetAudience,
         BIN_TO_UUID(n.targetDepartmentId) AS targetDepartmentId,
         BIN_TO_UUID(n.targetEmployeeId) AS targetEmployeeId,
+        BIN_TO_UUID(n.targetCollegeId) AS targetCollegeId,
         n.publishDate,
         n.expiryDate,
         n.isPublished,
@@ -221,10 +255,12 @@ export const getNoticeById = async (req, res, next) => {
         n.createdAt,
         n.updatedAt,
         d.departmentName AS targetDepartmentName,
+        c.collegeName AS targetCollegeName,
         CONCAT_WS(' ', ep.firstName, ep.middleName, ep.lastName) AS targetEmployeeName,
         u.username AS createdByUsername
       FROM notices n
       LEFT JOIN department d ON n.targetDepartmentId = d.id
+      LEFT JOIN college c ON n.targetCollegeId = c.id
       LEFT JOIN employeePersonal ep ON n.targetEmployeeId = ep.employeeId
       LEFT JOIN users u ON n.createdBy = u.id
       WHERE n.id = UUID_TO_BIN(?)
@@ -258,6 +294,7 @@ export const updateNotice = async (req, res, next) => {
     "targetAudience",
     "targetDepartmentId",
     "targetEmployeeId",
+    "targetCollegeId",
     "publishDate",
     "expiryDate",
     "isPublished",
@@ -271,7 +308,7 @@ export const updateNotice = async (req, res, next) => {
       continue;
     }
 
-    if (key === "targetDepartmentId" || key === "targetEmployeeId") {
+    if (key === "targetDepartmentId" || key === "targetEmployeeId" || key === "targetCollegeId") {
       if (value) {
         setClauses.push(`${key} = UUID_TO_BIN(?)`);
         values.push(value);

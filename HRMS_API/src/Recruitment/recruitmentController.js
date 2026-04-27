@@ -203,7 +203,7 @@ export const createRecruitment = async (req, res, next) => {
       const idPlaceholders = insertedIds.map(() => 'UUID_TO_BIN(?)').join(', ');
       
       const [records] = await pool.query(
-        `SELECT r.*, d.departmentName, c.collegeName 
+        `SELECT r.*, BIN_TO_UUID(r.id) as id, d.departmentName, c.collegeName 
          FROM recruitment r 
          LEFT JOIN department d ON r.departmentId = d.id 
          LEFT JOIN college c ON d.collegeId = c.id
@@ -222,6 +222,18 @@ export const createRecruitment = async (req, res, next) => {
           vacancies: record.vacancies,
         }));
         await telegramNotifier.notifyJobPosting(jobs);
+
+        // Broadcast in-app notification to all active employees
+        for (const record of records) {
+          const title = record.jobTitle || record.specialization || 'New Vacancy';
+          const message = `A new vacancy for ${title} is now open.`;
+          
+          await pool.query(`
+            INSERT INTO notifications (id, userId, title, message, notificationType, relatedModule, relatedId)
+            SELECT UUID_TO_BIN(UUID()), id, ?, ?, 'INFO', 'recruitment', UUID_TO_BIN(?)
+            FROM users WHERE isActive = TRUE
+          `, ['New Job Posting', message, record.id]);
+        }
       }
     }
 
@@ -350,7 +362,7 @@ export const updateRecruitment = async (req, res, next) => {
 
     if (fields.status === "OPEN") {
       const [records] = await pool.query(
-        `SELECT r.*, d.departmentName 
+        `SELECT r.*, BIN_TO_UUID(r.id) as id, d.departmentName 
          FROM recruitment r 
          LEFT JOIN department d ON r.departmentId = d.id 
          WHERE r.id = UUID_TO_BIN(?)`,

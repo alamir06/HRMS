@@ -75,7 +75,7 @@ const EmployeeProfileModal = ({ employeeId, onClose }) => {
     return isAmharic ? map[value]?.am || value : map[value]?.en || value;
   };
 
-  const storedUser = localStorage.getItem('user');
+  const storedUser = (localStorage.getItem('user') || sessionStorage.getItem('user'));
   let loggedUserId = null;
   let loggedUserRole = null;
   try {
@@ -135,7 +135,7 @@ const EmployeeProfileModal = ({ employeeId, onClose }) => {
         fetchEmployeeData();
         
         try {
-          const userObj = JSON.parse(localStorage.getItem('user'));
+          const userObj = JSON.parse((localStorage.getItem('user') || sessionStorage.getItem('user')));
           if (res.data?.profilePicture) {
             userObj.profilePicture = res.data.profilePicture;
             localStorage.setItem('user', JSON.stringify(userObj));

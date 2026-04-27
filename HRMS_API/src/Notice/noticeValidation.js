@@ -5,7 +5,7 @@ const dateSchema = z
   .string()
   .regex(/^[0-9]{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[01])$/, "Date must be in YYYY-MM-DD format");
 
-const targetAudienceEnum = z.enum(["ALL", "DEPARTMENT", "INDIVIDUAL"]);
+const targetAudienceEnum = z.enum(["ALL", "DEPARTMENT", "INDIVIDUAL", "COLLEGE", "HR_MANAGER"]);
 const noticeTypeEnum = z.enum(["GENERAL", "POLICY", "EVENT", "URGENT"]);
 
 const audienceConstraint = (schema) =>
@@ -27,6 +27,15 @@ const audienceConstraint = (schema) =>
         path: ["targetEmployeeId"],
         code: z.ZodIssueCode.custom,
         message: "Employee target is required for individual audience",
+      });
+    }
+
+    const collegeId = data.targetCollegeId ?? null;
+    if (audience === "COLLEGE" && !collegeId) {
+      ctx.addIssue({
+        path: ["targetCollegeId"],
+        code: z.ZodIssueCode.custom,
+        message: "College target is required for college audience",
       });
     }
 
@@ -57,10 +66,11 @@ const noticeBase = audienceConstraint(
     targetAudience: targetAudienceEnum.optional().default("ALL"),
     targetDepartmentId: uuidSchema.optional().nullable(),
     targetEmployeeId: uuidSchema.optional().nullable(),
+    targetCollegeId: uuidSchema.optional().nullable(),
     publishDate: dateSchema,
     expiryDate: dateSchema.optional().nullable(),
     isPublished: z.boolean().optional().default(false),
-    createdBy: uuidSchema,
+    createdBy: uuidSchema.optional(),
   }).strict()
 );
 
@@ -75,6 +85,7 @@ const noticeUpdate = audienceConstraint(
       targetAudience: targetAudienceEnum.optional(),
       targetDepartmentId: uuidSchema.optional().nullable(),
       targetEmployeeId: uuidSchema.optional().nullable(),
+      targetCollegeId: uuidSchema.optional().nullable(),
       publishDate: dateSchema.optional(),
       expiryDate: dateSchema.optional().nullable(),
       isPublished: z.boolean().optional(),
@@ -101,14 +112,23 @@ const noticePublish = z
   });
 
 const noticeIdSchema = z.object({ id: uuidSchema }).strict();
+const emptyToUndefined = (val) => (val === "" ? undefined : val);
+const booleanPreprocess = (val) => {
+  if (val === "true") return true;
+  if (val === "false") return false;
+  if (val === "") return undefined;
+  return val;
+};
+
 const noticeQuerySchema = z
   .object({
-    noticeType: noticeTypeEnum.optional(),
-    targetAudience: targetAudienceEnum.optional(),
-    departmentId: uuidSchema.optional(),
-    employeeId: uuidSchema.optional(),
-    isPublished: z.enum(["true", "false"]).transform((val) => val === "true").optional(),
-    activeOnly: z.enum(["true", "false"]).transform((val) => val === "true").optional(),
+    noticeType: z.preprocess(emptyToUndefined, noticeTypeEnum.optional()),
+    targetAudience: z.preprocess(emptyToUndefined, targetAudienceEnum.optional()),
+    departmentId: z.preprocess(emptyToUndefined, uuidSchema.optional()),
+    employeeId: z.preprocess(emptyToUndefined, uuidSchema.optional()),
+    collegeId: z.preprocess(emptyToUndefined, uuidSchema.optional()),
+    isPublished: z.preprocess(booleanPreprocess, z.boolean().optional()),
+    activeOnly: z.preprocess(booleanPreprocess, z.boolean().optional()),
   })
   .passthrough();
 
@@ -126,12 +146,20 @@ export const validateNotice = (schema, source = "body") => {
   return (req, res, next) => {
     try {
       const result = schema.parse(req[source]);
-      req[source] = result;
+      if (source === "body") {
+        req[source] = result;
+      } else {
+        // req.query and req.params are getters in Express, so mutate the existing object
+        Object.keys(req[source]).forEach(key => delete req[source][key]);
+        Object.assign(req[source], result);
+      }
       next();
     } catch (error) {
+      console.error("Validation error:", error);
       res.status(400).json({
         success: false,
         error: "Validation failed",
+        message: error.message,
         details: error.errors?.map((err) => ({
           field: err.path.join("."),
           message: err.message,

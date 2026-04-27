@@ -117,7 +117,7 @@ const AssetAssignment = () => {
   const handleAssignSubmit = async (formData) => {
     try {
       setIsSubmitting(true);
-      const authUser = JSON.parse(localStorage.getItem('user'));
+      const authUser = JSON.parse((localStorage.getItem('user') || sessionStorage.getItem('user')));
       
       const payload = {
         ...formData,

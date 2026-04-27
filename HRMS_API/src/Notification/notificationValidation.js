@@ -104,12 +104,18 @@ export const validateNotification = (schema, source = "body") => {
   return (req, res, next) => {
     try {
       const result = schema.parse(req[source]);
-      req[source] = result;
+      if (source === "body") {
+        req[source] = result;
+      } else {
+        Object.keys(req[source]).forEach((key) => delete req[source][key]);
+        Object.assign(req[source], result);
+      }
       next();
     } catch (error) {
       res.status(400).json({
         success: false,
         error: "Validation failed",
+        message: error.message,
         details: error.errors?.map((err) => ({
           field: err.path.join("."),
           message: err.message,

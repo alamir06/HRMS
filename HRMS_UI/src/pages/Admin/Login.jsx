@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Moon } from 'lucide-react';
+import { Eye, EyeOff, Moon, X } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { authService } from '../../services/authService';
 import './Login.css';
@@ -10,7 +10,10 @@ const AdminLogin = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [keepSignedIn, setKeepSignedIn] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -28,8 +31,19 @@ const AdminLogin = () => {
       const response = await authService.login({ identifier, password: password.trim() });
 
       if (response.success && response.data?.token) {
-        localStorage.setItem('adminToken', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
+        // Clear any previous session data fully to prevent stale user data cross-contamination
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('user');
+        sessionStorage.removeItem('adminToken');
+        sessionStorage.removeItem('user');
+
+        if (keepSignedIn) {
+          localStorage.setItem('adminToken', response.data.token);
+          localStorage.setItem('user', JSON.stringify(response.data.user));
+        } else {
+          sessionStorage.setItem('adminToken', response.data.token);
+          sessionStorage.setItem('user', JSON.stringify(response.data.user));
+        }
         toast.success("Login successful!");
         const role = response.data.user?.role;
         if (role === 'EMPLOYEE') {
@@ -41,7 +55,28 @@ const AdminLogin = () => {
         toast.error("Login failed. Please try again.");
       }
     } catch (error) {
-      toast.error(error.response?.data?.error || "Session validation error");
+      toast.error(error.response?.data?.error || "Invalid credentials. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleForgotPasswordSubmit = async (e) => {
+    e.preventDefault();
+    if (!forgotEmail) {
+      toast.error("Please enter your email address");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const response = await authService.forgotPassword(forgotEmail);
+      if (response.success) {
+        toast.success(response.message || "Password reset link sent to your email!");
+        setShowForgotModal(false); // close modal
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.error || "Failed to send reset link. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -52,8 +87,7 @@ const AdminLogin = () => {
     const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
     document.documentElement.setAttribute('data-theme', newTheme);
   };
-  // dfghjhk
-  // jsdfchsvdmc
+
   return (
     <div className="login-master-container">
       <div className="login-split-card">
@@ -141,7 +175,7 @@ const AdminLogin = () => {
               <div className="form-group">
                 <div className="label-row">
                   <label className="input-label">PASSWORD <span className="star">*</span></label>
-                  <a href="#" className="forgot-link">Forgot?</a>
+                  <a href="#" className="forgot-link" onClick={(e) => { e.preventDefault(); setShowForgotModal(true); }}>Forgot?</a>
                 </div>
                 <div className="composite-input password-input">
                   <input
@@ -167,7 +201,11 @@ const AdminLogin = () => {
               {/* Checkbox */}
               <div className="form-group checkbox-group">
                 <label className="checkbox-container">
-                  <input type="checkbox" />
+                  <input 
+                    type="checkbox" 
+                    checked={keepSignedIn}
+                    onChange={(e) => setKeepSignedIn(e.target.checked)}
+                  />
                   <span className="checkmark"></span>
                   <span className="checkbox-label-text">Keep me signed in</span>
                 </label>
@@ -181,6 +219,43 @@ const AdminLogin = () => {
           </div>
         </div>
       </div>
+
+      {/* Forgot Password Modal Overlay */}
+      {showForgotModal && (
+        <div className="forgot-modal-overlay">
+          <div className="forgot-modal-container">
+            <button className="forgot-modal-close" onClick={() => setShowForgotModal(false)}>
+              <X size={20} />
+            </button>
+            <div className="forgot-modal-content">
+              <h2 className="forgot-modal-title">Forgot Password</h2>
+              <p className="forgot-modal-subtitle">
+                Enter your registered email address below and we'll send you a secure link to reset your password.
+              </p>
+              <form onSubmit={handleForgotPasswordSubmit} className="forgot-modal-form">
+                <div className="form-group">
+                  <label className="input-label">EMAIL ADDRESS <span className="star">*</span></label>
+                  <div className="composite-input">
+                    <input
+                      id="forgotEmailModal"
+                      name="forgotEmail"
+                      type="email"
+                      placeholder="e.g. employee@injibara.edu.et"
+                      required
+                      value={forgotEmail}
+                      onChange={(e) => setForgotEmail(e.target.value)}
+                      style={{ paddingLeft: '1rem', borderLeft: 'none' }}
+                    />
+                  </div>
+                </div>
+                <button type="submit" className="pro-btn-signin" disabled={isLoading}>
+                  {isLoading ? "Sending Link..." : "Send Reset Link"}
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Floating Dark Mode Toggle */}
       <button className="floating-theme-toggle" onClick={toggleTheme} aria-label="Toggle Theme">

@@ -17,7 +17,7 @@ const DashboardLayout = () => {
 
   const handleOpenProfile = () => {
     try {
-      const user = JSON.parse(localStorage.getItem('user'));
+      const user = JSON.parse((localStorage.getItem('user') || sessionStorage.getItem('user')));
       if (user && user.employeeId) {
         setProfileOpenId(user.employeeId);
       } else {

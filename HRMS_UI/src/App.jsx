@@ -5,6 +5,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import LandingPage from './pages/LandingPage';
 import Attendance from './pages/HRManager/Attendance/Attendance.jsx';
 import AdminLogin from './pages/Admin/Login';
+import ResetPassword from './pages/Admin/ResetPassword';
 import DashboardLayout from './layouts/DashboardLayout';
 import DashboardOverview from './pages/Admin/DashboardOverview';
 import BenefitList from './pages/HRManager/Benefits/BenefitList/BenefitList';
@@ -26,18 +27,23 @@ import Designations from './pages/HRManager/Designation/Designations';
 import AssetList from './pages/HRManager/Assets/AssetList/AssetList';
 import AssetAssignment from './pages/HRManager/Assets/AssetAssignment/AssetAssignment';
 import Recruitment from './pages/HRManager/Recruitment/Recruitment';
+import HeadDashboardLayout from './layouts/HeadDashboardLayout';
+import DeanDashboardLayout from './layouts/DeanDashboardLayout';
+import HRManagerNotices from './pages/HRManager/Notices/HRManagerNotices';
+import HeadNotices from './pages/HeadPortal/Notices/HeadNotices';
+import DeanNotices from './pages/DeanPortal/Notices/DeanNotices';
 import './index.css';
 
 // Admin Protected Route Component
 const AdminProtectedRoute = ({ children }) => {
-  const token = localStorage.getItem('adminToken');
-  const userStr = localStorage.getItem('user');
+  const token = (localStorage.getItem('adminToken') || sessionStorage.getItem('adminToken'));
+  const userStr = (localStorage.getItem('user') || sessionStorage.getItem('user'));
   let isAuthorized = false;
   
   if (token && userStr) {
     try {
       const user = JSON.parse(userStr);
-      if (user.role === 'HRMANAGER' || user.role === 'ADMIN' || user.role === 'SUPERADMIN' || !user.role || user.role !== 'EMPLOYEE') {
+      if (user.role === 'HRMANAGER') {
         isAuthorized = true;
       }
     } catch(e) {}
@@ -51,8 +57,8 @@ const AdminProtectedRoute = ({ children }) => {
 
 // Employee Protected Route Component
 const EmployeeProtectedRoute = ({ children }) => {
-  const token = localStorage.getItem('adminToken');
-  const userStr = localStorage.getItem('user');
+  const token = (localStorage.getItem('adminToken') || sessionStorage.getItem('adminToken'));
+  const userStr = (localStorage.getItem('user') || sessionStorage.getItem('user'));
   let isAuthorized = false;
   
   if (token && userStr) {
@@ -70,15 +76,60 @@ const EmployeeProtectedRoute = ({ children }) => {
   return children;
 };
 
-// Public Route Component
-const PublicRoute = ({ children }) => {
-  const token = localStorage.getItem('adminToken');
-  const userStr = localStorage.getItem('user');
+// Head Protected Route Component
+const HeadProtectedRoute = ({ children }) => {
+  const token = (localStorage.getItem('adminToken') || sessionStorage.getItem('adminToken'));
+  const userStr = (localStorage.getItem('user') || sessionStorage.getItem('user'));
+  let isAuthorized = false;
   
   if (token && userStr) {
     try {
       const user = JSON.parse(userStr);
-      return <Navigate to={user.role === 'EMPLOYEE' ? "/employee-portal" : "/dashboard"} replace />;
+      if (user.role === 'HEAD') {
+        isAuthorized = true;
+      }
+    } catch(e) {}
+  }
+  
+  if (!isAuthorized) {
+    return <Navigate to="/login" replace />;
+  }
+  return children;
+};
+
+// Dean Protected Route Component
+const DeanProtectedRoute = ({ children }) => {
+  const token = (localStorage.getItem('adminToken') || sessionStorage.getItem('adminToken'));
+  const userStr = (localStorage.getItem('user') || sessionStorage.getItem('user'));
+  let isAuthorized = false;
+  
+  if (token && userStr) {
+    try {
+      const user = JSON.parse(userStr);
+      if (user.role === 'DEAN') {
+        isAuthorized = true;
+      }
+    } catch(e) {}
+  }
+  
+  if (!isAuthorized) {
+    return <Navigate to="/login" replace />;
+  }
+  return children;
+};
+
+// Public Route Component
+const PublicRoute = ({ children }) => {
+  const token = (localStorage.getItem('adminToken') || sessionStorage.getItem('adminToken'));
+  const userStr = (localStorage.getItem('user') || sessionStorage.getItem('user'));
+  
+  if (token && userStr) {
+    try {
+      const user = JSON.parse(userStr);
+      if (user.role === 'EMPLOYEE') return <Navigate to="/employee-portal" replace />;
+      if (user.role === 'HEAD') return <Navigate to="/head-portal" replace />;
+      if (user.role === 'DEAN') return <Navigate to="/dean-portal" replace />;
+      return <Navigate to="/dashboard" replace />;
     } catch(e) {
       return <Navigate to="/dashboard" replace />;
     }
@@ -108,6 +159,14 @@ function App() {
             </PublicRoute>
           } 
         />
+        <Route 
+          path="/reset-password" 
+          element={
+            <PublicRoute>
+              <ResetPassword />
+            </PublicRoute>
+          } 
+        />
 
         {/* Admin Dashboard Routes */}
         <Route 
@@ -132,6 +191,8 @@ function App() {
           <Route path="asset/list" element={<AssetList />} />
           <Route path="asset/assignment" element={<AssetAssignment />} />
           <Route path="recruitment" element={<Recruitment />} />
+          <Route path="notices" element={<HRManagerNotices />} />
+          <Route path="notifications" element={<MyNotifications />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Route>
 
@@ -150,6 +211,34 @@ function App() {
           <Route path="assets" element={<MyAssetsAndBenefits />} />
           <Route path="benefits" element={<MyAssetsAndBenefits />} />
           <Route path="notices" element={<MyNotices />} />
+          <Route path="notifications" element={<MyNotifications />} />
+        </Route>
+
+        {/* Head Portal Routes */}
+        <Route 
+          path="/head-portal" 
+          element={
+            <HeadProtectedRoute>
+              <HeadDashboardLayout />
+            </HeadProtectedRoute>
+          }
+        >
+          <Route index element={<EmployeeOverview />} />
+          <Route path="notices" element={<HeadNotices />} />
+          <Route path="notifications" element={<MyNotifications />} />
+        </Route>
+
+        {/* Dean Portal Routes */}
+        <Route 
+          path="/dean-portal" 
+          element={
+            <DeanProtectedRoute>
+              <DeanDashboardLayout />
+            </DeanProtectedRoute>
+          }
+        >
+          <Route index element={<EmployeeOverview />} />
+          <Route path="notices" element={<DeanNotices />} />
           <Route path="notifications" element={<MyNotifications />} />
         </Route>
 

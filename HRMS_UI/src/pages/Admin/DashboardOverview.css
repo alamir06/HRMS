@@ -28,7 +28,7 @@
 .dashboard-header-bar h1 {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #0b4a3a;
+  color: var(--text-primary);
   margin-bottom: 0.25rem;
   letter-spacing: -0.02em;
 }
@@ -132,13 +132,13 @@
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  background: white;
-  border: 1px solid #0b4a3a !important;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color) !important;
   border-radius: 12px;
   padding: 1.5rem 1.25rem;
   font-size: 0.8rem;
   font-weight: 700;
-  color: #111827;
+  color: var(--text-primary);
   cursor: pointer;
   outline: none;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03);
@@ -148,8 +148,8 @@
 }
 
 .period-filter-trigger:hover, .period-filter-trigger.open {
-  background: #f8faf9;
-  border-color: #10a36c;
+  background: rgba(11, 130, 85, 0.05);
+  border-color: var(--primary-color) !important;
   
 }
 
@@ -157,8 +157,8 @@
   position: absolute;
   top: 110%;
   right: 0;
-  background: white;
-  border: 1px solid #e5e7eb;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
   min-width: 160px;
@@ -180,7 +180,7 @@
   padding: 0.6rem 1rem;
   font-size: 0.8rem;
   font-weight: 600;
-  color: #4b5563;
+  color: var(--text-secondary);
   background: none;
   border: none;
   border-radius: 6px;
@@ -189,13 +189,13 @@
 }
 
 .period-filter-option:hover {
-  background: #f8faf9;
-  color: #10a36c;
+  background: rgba(11, 130, 85, 0.05);
+  color: var(--primary-color);
 }
 
 .period-filter-option.active {
-  background: #e6f5ef;
-  color: #10a36c;
+  background: rgba(11, 130, 85, 0.1);
+  color: var(--primary-color);
 }
 
 /* Metrics Grid */
@@ -206,10 +206,10 @@
 }
 
 .metric-card {
-  background: white;
+  background: var(--bg-secondary);
   border-radius: 12px;
   padding: 1.25rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -229,7 +229,7 @@
   }
 
 .icon-box {
-  background: #e6f5ef;
+  background: rgba(11, 130, 85, 0.1);
   color: var(--primary-color);
   width: 40px;
   height: 40px;
@@ -247,25 +247,25 @@
 }
 
 .pill-tag.success {
-  background: #d1fae5;
-  color: #047857;
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
 }
 
 .pill-tag.success-light {
-  background: #f0fdf4;
-  color: #15803d;
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
   font-size: 0.75rem;
 }
 
 .pill-tag.brand-light {
-  background: #e6f5ef;
+  background: rgba(11, 130, 85, 0.1);
   color: var(--primary-color);
 }
 
 .metric-title {
   font-size: 0.7rem;
   font-weight: 500;
-  color: #9ca3af;
+  color: var(--text-secondary);
   letter-spacing: 0.05em;
   text-transform: uppercase;
   margin-top: 0.25rem;
@@ -274,7 +274,7 @@
 .metric-value {
   font-size: 1.8rem;
   font-weight: 700;
-  color: #111827;
+  color: var(--text-primary);
   letter-spacing: -0.02em;
   line-height: 1.1;
   overflow-wrap: anywhere;
@@ -290,7 +290,7 @@
 }
 
 .chart-card {
-  background: white;
+  background: var(--bg-secondary);
   border-radius: 16px;
   padding: 1.5rem;
   box-shadow: 0 4px 20px rgba(0,0,0,0.03);
@@ -315,13 +315,13 @@
 .chart-header h3 {
   font-size: 1.1rem;
   font-weight: 600;
-  color: #111827;
+  color: var(--text-primary);
   margin: 0;
 }
 
 .velocity-subtitle {
   font-size: 0.8rem;
-  color: #6b7280;
+  color: var(--text-secondary);
   margin-top: 0.25rem;
 }
 
@@ -333,7 +333,7 @@
 .legend-item {
   font-size: 0.7rem;
   font-weight: 600;
-  color: #9ca3af;
+  color: var(--text-secondary);
   display: flex;
   align-items: center;
   gap: 0.4rem;
@@ -374,14 +374,14 @@
 .capacity-value {
   font-size: 2rem;
   font-weight: 700;
-  color: #0b8255;
+  color: var(--primary-color);
   line-height: 1;
 }
 
 .capacity-label {
   font-size: 0.6rem;
   font-weight: 700;
-  color: #9ca3af;
+  color: var(--text-secondary);
   letter-spacing: 0.05em;
   margin-top: 4px;
 }
@@ -408,12 +408,12 @@
 .att-val {
   font-size: 0.9rem;
   font-weight: 700;
-  color: #111827;
+  color: var(--text-primary);
 }
 
 .att-lbl {
   font-size: 0.6rem;
-  color: #9ca3af;
+  color: var(--text-secondary);
   font-weight: 600;
   letter-spacing: 0.05em;
 }
@@ -427,9 +427,9 @@
 }
 
 .recent-appointments-card {
-  background: white;
+  background: var(--bg-secondary);
   border-radius: 12px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border-color);
   padding: 1.5rem;
 }
 
@@ -473,7 +473,7 @@
 }
 
 .appointment-item:hover {
-  background: #f9fafb;
+  background: rgba(11, 130, 85, 0.05);
 }
 
 .app-avatar {
@@ -497,7 +497,7 @@
 .app-details p {
   margin: 0;
   font-size: 0.8rem;
-  color: #6b7280;
+  color: var(--text-secondary);
 }
 
 .app-meta {
@@ -509,7 +509,7 @@
 
 .days-ago {
   font-size: 0.7rem;
-  color: #9ca3af;
+  color: var(--text-secondary);
   font-style: italic;
 }
 

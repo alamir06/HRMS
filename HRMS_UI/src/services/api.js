@@ -10,7 +10,7 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('adminToken');
+    const token = (localStorage.getItem('adminToken') || sessionStorage.getItem('adminToken'));
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -26,8 +26,16 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
+      // Clear token and user data on 401
       localStorage.removeItem('adminToken');
-      window.location.href = '/login';
+      localStorage.removeItem('user');
+      sessionStorage.removeItem('adminToken');
+      sessionStorage.removeItem('user');
+      
+      // Only redirect if not already on the login page or making a login request
+      if (error.config && !error.config.url.includes('/auth/login') && window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }

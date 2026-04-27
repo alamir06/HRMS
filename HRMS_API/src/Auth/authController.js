@@ -6,8 +6,11 @@ import {
   findUserByIdentifier,
   getEmployeeContact,
   recordSuccessfulLogin,
+  generatePasswordResetToken,
+  resetPasswordWithToken
 } from "./authService.js";
 import { sendEmail } from "../../utils/emailService.js";
+import { attendanceService } from "../Attendance/attendanceService.js";
 
 const signToken = ({ userId, employeeId, role }) => {
   const secret = process.env.JWT_SECRET;
@@ -49,6 +52,11 @@ export const login = async (req, res, next) => {
 
     const token = signToken({ userId: user.id, employeeId: user.employeeId, role: user.systemRole || user.employeeRole });
     await recordSuccessfulLogin(user.id);
+    
+    // Automatically record attendance check-in based on login
+    if (user.employeeId) {
+      await attendanceService.autoCheckIn(user.employeeId);
+    }
 
     res.json({
       success: true,
@@ -395,6 +403,45 @@ export const changePassword = async (req, res, next) => {
     await changeUserPassword({ userId, newPassword: newPassword, mustChange: false });
 
     res.json({ success: true, message: "Password updated" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const forgotPassword = async (req, res, next) => {
+  const { email } = req.body;
+  try {
+    await generatePasswordResetToken(email);
+    // Always return success to prevent email enumeration attacks
+    res.json({ success: true, message: "If an account exists with that email, a password reset link has been sent." });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const resetPassword = async (req, res, next) => {
+  const { token, newPassword } = req.body;
+  try {
+    const success = await resetPasswordWithToken(token, newPassword);
+    if (!success) {
+      return res.status(400).json({ success: false, error: "Invalid or expired token" });
+    }
+    res.json({ success: true, message: "Password has been successfully reset" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const logout = async (req, res, next) => {
+  try {
+    const employeeId = req.user?.employeeId;
+    if (employeeId) {
+      await attendanceService.autoCheckOut(employeeId);
+    }
+    res.json({
+      success: true,
+      message: "Successfully logged out and attendance check-out recorded."
+    });
   } catch (error) {
     next(error);
   }

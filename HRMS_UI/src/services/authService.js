@@ -20,4 +20,24 @@ export const authService = {
     const response = await api.patch('/auth/change-password', data);
     return response.data;
   },
+
+  /**
+   * Request password reset email
+   * @param {string} email - User email address
+   * @returns {Promise<Object>} API response data
+   */
+  forgotPassword: async (email) => {
+    const response = await api.post('/auth/forgot-password', { email });
+    return response.data;
+  },
+
+  /**
+   * Reset password with token
+   * @param {Object} data - { token, newPassword, confirmPassword }
+   * @returns {Promise<Object>} API response data
+   */
+  resetPassword: async (data) => {
+    const response = await api.post('/auth/reset-password', data);
+    return response.data;
+  },
 };

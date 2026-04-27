@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { authenticateToken } from "../../middleware/auth.js";
 import {
   createNotice,
   listNotices,
@@ -10,6 +11,9 @@ import {
 import { noticeValidationSchema, validateNotice } from "./noticeValidation.js";
 
 const router = Router();
+
+// Apply authentication to all notice routes since they rely on req.user
+router.use(authenticateToken);
 
 router.post(
   "/",

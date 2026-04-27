@@ -55,7 +55,7 @@ const MyLeaves = () => {
   };
 
   useEffect(() => {
-    const userStr = localStorage.getItem('user');
+    const userStr = (localStorage.getItem('user') || sessionStorage.getItem('user'));
     if (userStr) {
       setUser(JSON.parse(userStr));
     }
