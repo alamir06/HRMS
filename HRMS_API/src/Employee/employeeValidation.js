@@ -100,15 +100,7 @@ const employeeBaseSchema = z.object({
     emergencyContactNameAmharic: z.string().optional().nullable(),
     emergencyContactPhone: z.string().optional().nullable(),
     profilePicture: z.string().optional().nullable(),
-  }).strict()
-  .refine((data) => data.firstName || data.firstNameAmharic, {
-    message: "First name is required",
-    path: ["firstName"],
-  })
-  .refine((data) => data.lastName || data.lastNameAmharic, {
-    message: "Last name is required",
-    path: ["lastName"],
-  }),
+  }).strict(),
   employment: z
     .object({
       officialEmail: z
@@ -190,8 +182,25 @@ const employeeBaseSchema = z.object({
   }).optional().nullable(),
   documents: z.array(documentSchema).optional().nullable(),
   education: z.array(educationSchema).optional().nullable(),
-}).strict()
-.superRefine((data, ctx) => {
+}).strict();
+
+const employeeCreateSchema = employeeBaseSchema.superRefine((data, ctx) => {
+  if (data.personal) {
+    if (!data.personal.firstName && !data.personal.firstNameAmharic) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "First name is required",
+        path: ["personal", "firstName"],
+      });
+    }
+    if (!data.personal.lastName && !data.personal.lastNameAmharic) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Last name is required",
+        path: ["personal", "lastName"],
+      });
+    }
+  }
   if (data.employeeType === "ACADEMIC") {
     const rank = ((data.academic?.academicRank || "") + " " + (data.academic?.academicRankAmharic || "")).toLowerCase();
     const eduCount = data.education?.length || 0;
@@ -217,7 +226,7 @@ const employeeBaseSchema = z.object({
 });
 
 export const employeeValidationSchema = {
-  create: employeeBaseSchema,
+  create: employeeCreateSchema,
 
   update: employeeBaseSchema.partial(),
   
