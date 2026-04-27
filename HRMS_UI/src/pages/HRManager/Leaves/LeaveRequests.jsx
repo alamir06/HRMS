@@ -465,10 +465,18 @@ const LeaveRequests = () => {
                         <p>{formatEthiopianDateTime(viewRequest.createdAt) || 'N/A'}</p>
                       </div>
                       {viewRequest.approvedAt && (
-                       <div className="hr-leave-request-detail-item">
-                         <label>{i18n.language === 'am' ? 'የጸደቀበት ጊዜ' : 'Approved At'}</label>
-                         <p>{formatEthiopianDateTime(viewRequest.approvedAt) || 'N/A'}</p>
-                       </div>
+                       <>
+                         <div className="hr-leave-request-detail-item">
+                           <label>{i18n.language === 'am' ? 'የጸደቀበት ጊዜ' : 'Approved At'}</label>
+                           <p>{formatEthiopianDateTime(viewRequest.approvedAt) || 'N/A'}</p>
+                         </div>
+                         {viewRequest.sequenceNumber && (
+                           <div className="hr-leave-request-detail-item">
+                             <label>{i18n.language === 'am' ? 'የማጣቀሻ ቁጥር' : 'Reference No.'}</label>
+                             <p>እን/ዩኒ/የሰ-{viewRequest.sequenceNumber}</p>
+                           </div>
+                         )}
+                       </>
                       )}
                  </div>
 

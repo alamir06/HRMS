@@ -57,7 +57,7 @@ const escapeHtml = (value) => {
     .replace(/'/g, '&#39;');
 };
 
-export const generateLeaveDocumentHTML = (employee, leave, balanceData = null) => {
+export const generateLeaveDocumentHTML = (employee, leave, balanceData = null, refNumber = '') => {
   const logoSrc = `cid:${LEAVE_DOC_LOGO_CID}`;
   const stampSrc = `cid:${LEAVE_DOC_STAMP_CID}`;
 
@@ -126,7 +126,7 @@ export const generateLeaveDocumentHTML = (employee, leave, balanceData = null) =
               </div>
             </div>
             <div style="text-align:right; flex:0 0 200px;">
-               <div style="margin-bottom:10px;"><strong>ቁጥር:</strong> <u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u></div>
+               <div style="margin-bottom:10px;"><strong>ቁጥር:</strong> <u>&nbsp;&nbsp;${refNumber || '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'}&nbsp;&nbsp;</u></div>
                <div><strong>ቀን:</strong> <u>${new Date().toLocaleDateString()}</u></div>
             </div>
           </div>
