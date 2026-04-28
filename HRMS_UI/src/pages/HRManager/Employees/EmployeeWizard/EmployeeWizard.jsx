@@ -12,7 +12,7 @@ import { departmentService } from '../../../../services/departmentService';
 import { collegeService } from '../../../../services/collegeService';
 import { outsourceCompanyService } from '../../../../services/outsourceCompanyService';
 import EthiopianDateInput from '../../../../components/common/EthiopianDateInput';
-import { getAddisTodayGregorian, toGregorianInputDate } from '../../../../utils/dateTime';
+import { getAddisTodayGregorian, toGregorianInputDate, getCurrentEthiopianDate } from '../../../../utils/dateTime';
 import './EmployeeWizard.css';
 
 const steps = [
@@ -846,6 +846,7 @@ const EmployeeWizard = ({ onClose, onSuccess, editEmployeeId }) => {
                             onChange={(gregDate) => updateNested('personal', 'dateOfBirth', gregDate)}
                             language={i18n.language}
                             required
+                            maxYear={getCurrentEthiopianDate().year}
                           />
                         </div>
                       </div>
