@@ -161,7 +161,6 @@ export class LeaveService extends CrudService {
 
       // Handle Logic based on Type
       if (leaveType === "ORGANIZATION_LEAVE") {
-        // Trigger soft offboarding: keep records but disable access.
         await connection.query(
           `UPDATE employee 
            SET employmentStatus = 'TERMINATED', terminationDate = ? 
@@ -177,7 +176,6 @@ export class LeaveService extends CrudService {
           [employeeId]
         );
       } else {
-        // Deduct from standard balance
         const [updateResult] = await connection.query(
           `UPDATE leaveBalance 
            SET usedDays = usedDays + ?, remainingDays = remainingDays - ? 
@@ -209,6 +207,11 @@ export class LeaveService extends CrudService {
       const [seqRows] = await connection.query(`SELECT COUNT(*) as count FROM leaveRequest WHERE status = 'APPROVED' AND approvedAt <= (SELECT approvedAt FROM leaveRequest WHERE id = UUID_TO_BIN(?))`, [requestId]);
       const sequenceNumber = seqRows[0].count || 1;
       const refNumber = `እን/ዩኒ/የሰ-${sequenceNumber}`;
+
+      await connection.query(
+        `UPDATE leaveRequest SET documentNumber = ? WHERE id = UUID_TO_BIN(?)`,
+        [refNumber, requestId]
+      );
 
       // Create Notification
       const [userRows] = await connection.query(
@@ -394,7 +397,7 @@ export class LeaveService extends CrudService {
       // 2. Get Requests
       const [requests] = await pool.query(
         `SELECT BIN_TO_UUID(id) as id, leaveType, startDate, endDate, totalDays, status, reason, reasonAmharic, 
-         BIN_TO_UUID(approvedBy) as approvedBy, approvedAt, comments, commentsAmharic, createdAt,
+         BIN_TO_UUID(approvedBy) as approvedBy, approvedAt, comments, commentsAmharic, createdAt, documentNumber,
          (SELECT COUNT(*) FROM leaveRequest lr2 WHERE lr2.status = 'APPROVED' AND lr2.approvedAt <= leaveRequest.approvedAt) as sequenceNumber
          FROM leaveRequest WHERE employeeId = UUID_TO_BIN(?) ORDER BY createdAt DESC`,
         [employeeId]
@@ -428,6 +431,7 @@ export class LeaveService extends CrudService {
         lr.createdAt,
         lr.approvedAt,
         lr.supportDocument,
+        lr.documentNumber,
         ep.firstName,
         ep.lastName,
         ep.profilePicture,
@@ -461,13 +465,13 @@ export class LeaveService extends CrudService {
     
     if (search) {
       const s = `%${search}%`;
-      const searchClause = ` AND (ep.firstName LIKE ? OR ep.lastName LIKE ? OR lr.leaveType LIKE ?)`;
+      const searchClause = ` AND (ep.firstName LIKE ? OR ep.lastName LIKE ? OR lr.leaveType LIKE ? OR lr.documentNumber LIKE ?)`;
       query += searchClause;
       countQuery += searchClause;
       summaryQuery += searchClause;
-      params.push(s, s, s);
-      countParams.push(s, s, s);
-      summaryParams.push(s, s, s);
+      params.push(s, s, s, s);
+      countParams.push(s, s, s, s);
+      summaryParams.push(s, s, s, s);
     }
 
     if (period) {
