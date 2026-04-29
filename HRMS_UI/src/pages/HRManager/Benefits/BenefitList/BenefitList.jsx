@@ -128,7 +128,12 @@ const BenefitList = () => {
       benefitNameAmharic: formData.benefitNameAmharic || null,
       description: formData.description || null,
       descriptionAmharic: formData.descriptionAmharic || null,
-        benefitType: String(formData.benefitType).toUpperCase(),
+      benefitType: String(formData.benefitType).toUpperCase(),
+      costToCompany: formData.costToCompany === '' ? null : Number(formData.costToCompany),
+      isActive: formData.isActive === true || formData.isActive === 'true',
+    };
+
+    try {
       setIsSubmitting(true);
       if (editingBenefit) {
         const res = await benefitService.updateBenefit(editingBenefit.id, payload);
