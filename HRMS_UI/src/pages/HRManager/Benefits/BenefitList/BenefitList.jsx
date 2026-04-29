@@ -18,7 +18,7 @@ import ConfirmModal from '../../../../components/common/ConfirmModal';
 import { formatEthiopianDate } from '../../../../utils/dateTime';
 import './BenefitList.css';
 
-const BENEFIT_TYPES = ['Health', 'Retirement', 'Insurance', 'Wellness', 'Other'];
+const BENEFIT_TYPES = ['HEALTH', 'RETIREMENT', 'INSURANCE', 'WELLNESS', 'OTHER'];
 
 const benefitFormFields = [
   { name: 'benefitName', label: 'Benefit Name', type: 'text', required: true },
@@ -28,7 +28,7 @@ const benefitFormFields = [
     label: 'Type',
     type: 'select',
     required: true,
-    options: BENEFIT_TYPES.map((item) => ({ value: item, label: item }))
+    options: BENEFIT_TYPES.map((item) => ({ value: item, label: item[0] + item.slice(1).toLowerCase() }))
   },
   { name: 'costToCompany', label: 'Cost To Company', type: 'number', min: 0 },
   {
@@ -128,12 +128,7 @@ const BenefitList = () => {
       benefitNameAmharic: formData.benefitNameAmharic || null,
       description: formData.description || null,
       descriptionAmharic: formData.descriptionAmharic || null,
-      benefitType: formData.benefitType,
-      costToCompany: formData.costToCompany === '' ? null : Number(formData.costToCompany),
-      isActive: formData.isActive === true || formData.isActive === 'true',
-    };
-
-    try {
+        benefitType: String(formData.benefitType).toUpperCase(),
       setIsSubmitting(true);
       if (editingBenefit) {
         const res = await benefitService.updateBenefit(editingBenefit.id, payload);
@@ -314,7 +309,7 @@ const BenefitList = () => {
             <CommonForm
               fields={benefitFormFields}
               initialData={{
-                benefitType: 'Health',
+                benefitType: 'HEALTH',
                 costToCompany: '',
                 ...editingBenefit,
                 isActive: String(editingBenefit?.isActive ?? true)
