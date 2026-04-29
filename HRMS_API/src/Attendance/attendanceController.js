@@ -368,6 +368,9 @@ export const attendanceController = {
       console.log("== DEBUG GET EMPLOYEE ATTENDANCE ==");
       console.log("EMPLOYEE ID:", employeeId);
       console.log("RECORDS FETCHED:", records);
+      import('fs').then(fs => {
+        fs.appendFileSync('attendance-debug.log', JSON.stringify({ employeeId, count: records.length, records }) + '\n');
+      });
 
       const [countResult] = await pool.query(
         `SELECT COUNT(*) as total FROM attendance a ${whereClause}`,

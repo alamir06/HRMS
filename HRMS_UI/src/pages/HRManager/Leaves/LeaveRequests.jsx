@@ -5,9 +5,6 @@ import { useTranslation } from 'react-i18next';
 import { leaveService } from '../../../services/leaveService';
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import { formatEthiopianDate, formatEthiopianDateTime } from '../../../utils/dateTime';
-
-// Ensure we import the sibling css + the generic Employees CSS for full layout styling
-
 import './LeaveRequests.css';
 
 const LeaveRequests = () => {
@@ -25,7 +22,6 @@ const LeaveRequests = () => {
   const [period, setPeriod] = useState('DAILY');
   const [isPeriodMenuOpen, setIsPeriodMenuOpen] = useState(false);
   const periodMenuRef = useRef(null);
-
   // Modal State
   const [viewRequest, setViewRequest] = useState(null);
   const [previewDoc, setPreviewDoc] = useState(null);
@@ -87,7 +83,6 @@ const LeaveRequests = () => {
         setIsPeriodMenuOpen(false);
       }
     };
-
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
@@ -112,7 +107,6 @@ const LeaveRequests = () => {
       return false;
     }
   };
-
   const handleReject = async (id, comments) => {
     try {
       const resp = await leaveService.rejectLeave(id, { comments });
@@ -130,7 +124,6 @@ const LeaveRequests = () => {
       return false;
     }
   };
-
   const openActionModal = (request, action) => {
     setActionModal({
       isOpen: true,
@@ -465,10 +458,18 @@ const LeaveRequests = () => {
                         <p>{formatEthiopianDateTime(viewRequest.createdAt) || 'N/A'}</p>
                       </div>
                       {viewRequest.approvedAt && (
-                       <div className="hr-leave-request-detail-item">
-                         <label>{i18n.language === 'am' ? 'የጸደቀበት ጊዜ' : 'Approved At'}</label>
-                         <p>{formatEthiopianDateTime(viewRequest.approvedAt) || 'N/A'}</p>
-                       </div>
+                       <>
+                         <div className="hr-leave-request-detail-item">
+                           <label>{i18n.language === 'am' ? 'የጸደቀበት ጊዜ' : 'Approved At'}</label>
+                           <p>{formatEthiopianDateTime(viewRequest.approvedAt) || 'N/A'}</p>
+                         </div>
+                         {viewRequest.sequenceNumber && (
+                           <div className="hr-leave-request-detail-item">
+                             <label>{i18n.language === 'am' ? 'የማጣቀሻ ቁጥር' : 'Reference No.'}</label>
+                             <p>እን/ዩኒ/የሰ-{viewRequest.sequenceNumber}</p>
+                           </div>
+                         )}
+                       </>
                       )}
                  </div>
 

@@ -45,6 +45,46 @@ const compareTimes = (timeStr1, timeStr2) => {
 };
 
 export const attendanceService = {
+  seedDailyAbsentRecords: async () => {
+    const now = new Date();
+    const dayOfWeek = now.getDay();
+    if (dayOfWeek === 0 || dayOfWeek === 6) return; // Skip weekends
+
+    const date = now.toISOString().slice(0, 10);
+    const connection = await pool.getConnection();
+    
+    try {
+      await connection.beginTransaction();
+
+      const morningShiftId = await getOrSeedShift(connection, { name: 'Morning', startTime: '08:30:00', endTime: '12:00:00' });
+      const afternoonShiftId = await getOrSeedShift(connection, { name: 'Afternoon', startTime: '13:30:00', endTime: '17:00:00' });
+
+      const [employees] = await connection.query(
+        "SELECT id FROM employee WHERE employmentStatus IS NULL OR employmentStatus != 'TERMINATED'"
+      );
+
+      for (const emp of employees) {
+         await connection.query(
+           `INSERT IGNORE INTO attendance (employeeId, Date, status, shiftId, notes) 
+            VALUES (?, ?, 'ABSENT', UUID_TO_BIN(?), 'System generated default absence')`,
+           [emp.id, date, morningShiftId]
+         );
+         await connection.query(
+           `INSERT IGNORE INTO attendance (employeeId, Date, status, shiftId, notes) 
+            VALUES (?, ?, 'ABSENT', UUID_TO_BIN(?), 'System generated default absence')`,
+           [emp.id, date, afternoonShiftId]
+         );
+      }
+
+      await connection.commit();
+    } catch (error) {
+      await connection.rollback();
+      console.error("Daily Absent Seeding Failed:", error);
+    } finally {
+      connection.release();
+    }
+  },
+
   autoCheckIn: async (employeeId) => {
     if (!employeeId) return;
     
@@ -70,7 +110,7 @@ export const attendanceService = {
       }
 
       const [existing] = await connection.query(
-        "SELECT id, checkIn FROM attendance WHERE employeeId = UUID_TO_BIN(?) AND Date = ? AND shiftId = UUID_TO_BIN(?) FOR UPDATE",
+        "SELECT id, checkIn, status FROM attendance WHERE employeeId = UUID_TO_BIN(?) AND Date = ? AND shiftId = UUID_TO_BIN(?) FOR UPDATE",
         [employeeId, date, shiftId]
       );
 
@@ -86,14 +126,14 @@ export const attendanceService = {
              notes,
              shiftId
            ) VALUES (UUID_TO_BIN(?), ?, ?, ?, ?, 0, 'Auto check-in from login', UUID_TO_BIN(?))`,
-           [
-             employeeId,
-             date,
-             time,
-             calcStatus,
-             calcLateMins,
-             shiftId
-           ]
+           [employeeId, date, time, calcStatus, calcLateMins, shiftId]
+        );
+      } else if (existing[0].checkIn === null && String(existing[0].status).toUpperCase() === 'ABSENT') {
+        await connection.query(
+           `UPDATE attendance 
+            SET checkIn = ?, status = ?, lateMinutes = ?, notes = 'Auto check-in from login'
+            WHERE id = ?`,
+           [time, calcStatus, calcLateMins, existing[0].id]
         );
       }
       

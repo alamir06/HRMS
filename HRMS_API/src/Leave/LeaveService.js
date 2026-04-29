@@ -61,12 +61,42 @@ export class LeaveService extends CrudService {
       const totalDays = calculateWorkingDays(startDate, endDate);
       const year = new Date(startDate).getFullYear();
 
+      const [empRows] = await connection.query(
+        `SELECT e.employeeType, ep.gender, e.hireDate 
+         FROM employee e 
+         LEFT JOIN employeePersonal ep ON e.id = ep.employeeId 
+         WHERE e.id = UUID_TO_BIN(?)`,
+        [employeeId]
+      );
+      if (!empRows.length) throw new Error("Employee not found");
+      const { employeeType, gender, hireDate } = empRows[0];
+
+      if (employeeType === 'ACADEMIC' && leaveType === 'ANNUAL') {
+        throw new Error("Academic employees do not have annual leave.");
+      }
+      if (employeeType === 'ADMINISTRATIVE' && leaveType === 'SABBATICAL') {
+        throw new Error("Administrative employees do not have sabbatical leave.");
+      }
+      if (leaveType === 'SABBATICAL') {
+        if (!hireDate) throw new Error("Hire date is required to check Sabbatical eligibility.");
+        const hireYear = new Date(hireDate).getFullYear();
+        if (year - hireYear < 7) {
+          throw new Error("Sabbatical leave requires 7 years of consistent work.");
+        }
+      }
+      if ((gender || '').toUpperCase() === 'MALE' && leaveType === 'MATERNITY') {
+        throw new Error("Male employees cannot request maternity leave.");
+      }
+      if ((gender || '').toUpperCase() === 'FEMALE' && leaveType === 'PATERNITY') {
+        throw new Error("Female employees cannot request paternity leave.");
+      }
+
       if (totalDays <= 0 && leaveType !== "ORGANIZATION_LEAVE") {
         throw new Error("Invalid leave duration. Must include at least one working day.");
       }
 
-      // Check balance if it's not a clear-out organization leave
-      if (leaveType !== "ORGANIZATION_LEAVE") {
+      // Check balance if it's not a clear-out organization leave and not SABBATICAL
+      if (leaveType !== "ORGANIZATION_LEAVE" && leaveType !== "SABBATICAL") {
         const [balanceCheck] = await connection.query(
           `SELECT BIN_TO_UUID(id) as id, remainingDays 
            FROM leaveBalance 
@@ -131,7 +161,6 @@ export class LeaveService extends CrudService {
 
       // Handle Logic based on Type
       if (leaveType === "ORGANIZATION_LEAVE") {
-        // Trigger soft offboarding: keep records but disable access.
         await connection.query(
           `UPDATE employee 
            SET employmentStatus = 'TERMINATED', terminationDate = ? 
@@ -147,7 +176,6 @@ export class LeaveService extends CrudService {
           [employeeId]
         );
       } else {
-        // Deduct from standard balance
         const [updateResult] = await connection.query(
           `UPDATE leaveBalance 
            SET usedDays = usedDays + ?, remainingDays = remainingDays - ? 
@@ -173,6 +201,16 @@ export class LeaveService extends CrudService {
          SET status = 'APPROVED', approvedBy = UUID_TO_BIN(?), approvedAt = NOW(), comments = ?, commentsAmharic = ?
          WHERE id = UUID_TO_BIN(?)`,
         [approvedBy, comments || null, commentsAmharic || null, requestId]
+      );
+
+      // Generate sequence reference number
+      const [seqRows] = await connection.query(`SELECT COUNT(*) as count FROM leaveRequest WHERE status = 'APPROVED' AND approvedAt <= (SELECT approvedAt FROM leaveRequest WHERE id = UUID_TO_BIN(?))`, [requestId]);
+      const sequenceNumber = seqRows[0].count || 1;
+      const refNumber = `እን/ዩኒ/የሰ-${sequenceNumber}`;
+
+      await connection.query(
+        `UPDATE leaveRequest SET documentNumber = ? WHERE id = UUID_TO_BIN(?)`,
+        [refNumber, requestId]
       );
 
       // Create Notification
@@ -221,7 +259,7 @@ export class LeaveService extends CrudService {
         }
 
         try {
-          const htmlContent = generateLeaveDocumentHTML(fullEmployee, leaveData, balanceData);
+          const htmlContent = generateLeaveDocumentHTML(fullEmployee, leaveData, balanceData, refNumber);
           const inlineAttachments = getLeaveDocumentImageAttachments();
           const emailSubject = leaveData.leaveType === 'ORGANIZATION_LEAVE'
             ? 'Termination Clearance Letter - Injibara University'
@@ -322,17 +360,45 @@ export class LeaveService extends CrudService {
 
   async getEmployeeLeaveData(employeeId, year = new Date().getFullYear()) {
     try {
+      const [empRows] = await pool.query(`SELECT e.employeeType, ep.gender, e.hireDate FROM employee e LEFT JOIN employeePersonal ep ON e.id = ep.employeeId WHERE e.id = UUID_TO_BIN(?)`, [employeeId]);
+      const employee = empRows[0] || {};
+
       // 1. Get Balances
-      const [balances] = await pool.query(
+      let [balances] = await pool.query(
         `SELECT BIN_TO_UUID(id) as id, leaveType, year, totalAllocatedDays, usedDays, remainingDays, carryForwardDays 
          FROM leaveBalance WHERE employeeId = UUID_TO_BIN(?) AND year = ?`,
         [employeeId, year]
       );
 
+      // Filter balances based on rules
+      balances = balances.filter(b => {
+        if (employee.employeeType === 'ACADEMIC' && b.leaveType === 'ANNUAL') return false;
+        if ((employee.gender || '').toUpperCase() === 'MALE' && b.leaveType === 'MATERNITY') return false;
+        if ((employee.gender || '').toUpperCase() === 'FEMALE' && b.leaveType === 'PATERNITY') return false;
+        return true;
+      });
+
+      if (employee.employeeType === 'ACADEMIC') {
+         const hireYear = employee.hireDate ? new Date(employee.hireDate).getFullYear() : new Date().getFullYear();
+         const currentYear = new Date().getFullYear();
+         if (currentYear - hireYear >= 7) {
+            balances.push({
+               id: 'sabbatical-virtual',
+               leaveType: 'SABBATICAL',
+               year: currentYear,
+               totalAllocatedDays: 365,
+               usedDays: 0,
+               remainingDays: 365,
+               carryForwardDays: 0
+            });
+         }
+      }
+
       // 2. Get Requests
       const [requests] = await pool.query(
         `SELECT BIN_TO_UUID(id) as id, leaveType, startDate, endDate, totalDays, status, reason, reasonAmharic, 
-         BIN_TO_UUID(approvedBy) as approvedBy, approvedAt, comments, commentsAmharic, createdAt 
+         BIN_TO_UUID(approvedBy) as approvedBy, approvedAt, comments, commentsAmharic, createdAt, documentNumber,
+         (SELECT COUNT(*) FROM leaveRequest lr2 WHERE lr2.status = 'APPROVED' AND lr2.approvedAt <= leaveRequest.approvedAt) as sequenceNumber
          FROM leaveRequest WHERE employeeId = UUID_TO_BIN(?) ORDER BY createdAt DESC`,
         [employeeId]
       );
@@ -363,10 +429,13 @@ export class LeaveService extends CrudService {
         lr.reason,
         lr.status,
         lr.createdAt,
+        lr.approvedAt,
         lr.supportDocument,
+        lr.documentNumber,
         ep.firstName,
         ep.lastName,
-        ep.profilePicture
+        ep.profilePicture,
+        (SELECT COUNT(*) FROM leaveRequest lr2 WHERE lr2.status = 'APPROVED' AND lr2.approvedAt <= lr.approvedAt) as sequenceNumber
       FROM leaveRequest lr
       LEFT JOIN employeePersonal ep ON lr.employeeId = ep.employeeId
       WHERE 1=1
@@ -396,13 +465,13 @@ export class LeaveService extends CrudService {
     
     if (search) {
       const s = `%${search}%`;
-      const searchClause = ` AND (ep.firstName LIKE ? OR ep.lastName LIKE ? OR lr.leaveType LIKE ?)`;
+      const searchClause = ` AND (ep.firstName LIKE ? OR ep.lastName LIKE ? OR lr.leaveType LIKE ? OR lr.documentNumber LIKE ?)`;
       query += searchClause;
       countQuery += searchClause;
       summaryQuery += searchClause;
-      params.push(s, s, s);
-      countParams.push(s, s, s);
-      summaryParams.push(s, s, s);
+      params.push(s, s, s, s);
+      countParams.push(s, s, s, s);
+      summaryParams.push(s, s, s, s);
     }
 
     if (period) {

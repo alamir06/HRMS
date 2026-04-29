@@ -95,9 +95,23 @@ const MyLeaves = () => {
     if (!newRequest.startDate || !newRequest.endDate) return 0;
     const start = new Date(newRequest.startDate);
     const end = new Date(newRequest.endDate);
-    const diffTime = Math.abs(end - start);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-    return diffDays > 0 ? diffDays : 0;
+    
+    start.setHours(0, 0, 0, 0);
+    end.setHours(0, 0, 0, 0);
+
+    let count = 0;
+    let current = new Date(start);
+
+    while (current <= end) {
+      const dayOfWeek = current.getDay();
+      // Exclude Sunday (0) and Saturday (6)
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+        count++;
+      }
+      current.setDate(current.getDate() + 1);
+    }
+    
+    return count;
   };
 
   const handleApplyLeave = async () => {
@@ -151,6 +165,7 @@ const MyLeaves = () => {
     if (tStr.includes('personal')) return { color: '#dc2626', Icon: Heart, subtitle: 'Use by Q4 Performance Review' };
     if (tStr.includes('organization')) return { color: '#fb923c', Icon: BriefcaseMedical, subtitle: 'HR managed assignment' };
     if (tStr.includes('maternity') || tStr.includes('paternity')) return { color: '#7c3aed', Icon: Heart, subtitle: 'Pre/Post natal leave allowance' };
+    if (tStr.includes('sabbatical')) return { color: '#2563eb', Icon: Umbrella, subtitle: '1 year allocated for 7 years service' };
     return { color: '#6b7280', Icon: Info, subtitle: 'Standard allocation' };
   };
 
@@ -632,7 +647,7 @@ const MyLeaves = () => {
                         </div>
                       </div>
                       <div style={{textAlign: 'right', flex: '0 0 200px'}}>
-                         <div style={{marginBottom: '10px'}}><strong>ቁጥር:</strong> <u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u></div>
+                         <div style={{marginBottom: '10px'}}><strong>ቁጥር:</strong> <u style={{padding: '0 10px'}}>{viewedRequest.status === 'APPROVED' && viewedRequest.sequenceNumber ? `እን/ዩኒ/የሰ-${viewedRequest.sequenceNumber}` : '\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0'}</u></div>
                          <div><strong>ቀን:</strong> <u>{formatEthiopianDate(new Date())}</u></div>
                       </div>
                     </div>

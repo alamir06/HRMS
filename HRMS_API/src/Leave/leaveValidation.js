@@ -10,7 +10,8 @@ export const leaveValidation = {
       "PERSONAL",
       "MATERNITY",
       "PATERNITY",
-      "ORGANIZATION_LEAVE"
+      "ORGANIZATION_LEAVE",
+      "SABBATICAL"
     ]),
     startDate: z.string(),
     endDate: z.string(),
