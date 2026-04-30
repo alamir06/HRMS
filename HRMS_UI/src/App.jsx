@@ -19,7 +19,8 @@ import EmployeeDashboardLayout from './layouts/EmployeeDashboardLayout';
 import EmployeeOverview from './pages/EmployeePortal/EmployeeOverview/EmployeeOverview';
 import MyLeaves from './pages/EmployeePortal/MyLeaves/MyLeaves';
 import MyAttendance from './pages/EmployeePortal/MyAttendance/MyAttendance';
-import MyAssetsAndBenefits from './pages/EmployeePortal/MyAssetsAndBenefits/MyAssetsAndBenefits';
+import MyAssets from './pages/EmployeePortal/MyAssets/MyAssets';
+import MyBenefits from './pages/EmployeePortal/MyBenefits/MyBenefits';
 import MyNotices from './pages/EmployeePortal/MyNotices/MyNotices';
 import MyNotifications from './pages/EmployeePortal/MyNotifications/MyNotifications';
 import LeaveRequests from './pages/HRManager/Leaves/LeaveRequests';
@@ -208,8 +209,8 @@ function App() {
           <Route index element={<EmployeeOverview />} />
           <Route path="leaves" element={<MyLeaves />} />
           <Route path="attendance" element={<MyAttendance />} />
-          <Route path="assets" element={<MyAssetsAndBenefits />} />
-          <Route path="benefits" element={<MyAssetsAndBenefits />} />
+          <Route path="assets" element={<MyAssets />} />
+          <Route path="benefits" element={<MyBenefits />} />
           <Route path="notices" element={<MyNotices />} />
           <Route path="notifications" element={<MyNotifications />} />
         </Route>

@@ -27,5 +27,15 @@ export const leaveService = {
   rejectLeave: async (id, data) => {
     const response = await api.put(`/leave/${id}/reject`, data);
     return response.data;
+  },
+  
+  getPendingRollovers: async () => {
+    const response = await api.get('/leave/rollover/pending');
+    return response.data;
+  },
+  
+  submitRolloverDecision: async (id, decision) => {
+    const response = await api.post(`/leave/rollover/${id}/decision`, { decision });
+    return response.data;
   }
 };

@@ -5,7 +5,9 @@ import {
   rejectLeave, 
   getEmployeeLeaveData, 
   getMyLeaves,
-  getAllRequests 
+  getAllRequests,
+  getPendingRolloverDecisions,
+  submitRolloverDecision
 } from "./leaveController.js";
 import { leaveValidation } from "./leaveValidation.js";
 import { authenticateToken, authorize } from "../../middleware/auth.js";
@@ -31,6 +33,8 @@ router.use(authenticateToken);
 // Employee accessible routes
 router.get("/mine", getMyLeaves);
 router.get("/employee/:id", getEmployeeLeaveData);
+router.get("/rollover/pending", getPendingRolloverDecisions);
+router.post("/rollover/:id/decision", submitRolloverDecision);
 router.post(
   "/request", 
   fileUploadService.uploadSingleDocument("supportDocument"),
