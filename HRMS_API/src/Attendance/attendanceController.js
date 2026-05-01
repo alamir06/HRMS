@@ -533,14 +533,14 @@ export const attendanceController = {
          if (!collegeId) return res.status(403).json({ error: "DEAN has no associated college." });
          conditions.push("(BIN_TO_UUID(ea.collegeId) = ? OR BIN_TO_UUID(d.collegeId) = ?)");
          params.push(collegeId, collegeId);
-      } else if (userRole === 'HEAD') {
+      } else if (userRole === 'HEAD' || userRole === 'HROFFICER') {
          // Need requestor's departmentId
          const [reqDetails] = await pool.query(
             "SELECT BIN_TO_UUID(departmentId) as d1 FROM employee WHERE id = UUID_TO_BIN(?)",
             [req.user.employeeId]
          );
          const deptId = reqDetails[0].d1;
-         if (!deptId) return res.status(403).json({ error: "HEAD has no associated department." });
+         if (!deptId) return res.status(403).json({ error: "User has no associated department." });
          conditions.push("BIN_TO_UUID(e.departmentId) = ?");
          params.push(deptId);
       } else {

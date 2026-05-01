@@ -19,7 +19,8 @@ import {
   FileSearch,
   ChevronRight,
   ChevronDown,
-  ChevronLeft
+  ChevronLeft,
+  FileBadge
 } from 'lucide-react';
 import './Sidebar.css';
 
@@ -73,6 +74,7 @@ const Sidebar = ({ onOpenProfile, mobileOpen = false, onCloseMobile }) => {
         { name: t('sidebar.assetAssignment', 'Asset Assignment'), path: '/dashboard/asset/assignment' }
       ]
     },
+    { name: t('sidebar.recommendations', 'Recommendation Requests'), path: '/dashboard/recommendations', icon: <FileBadge size={20} /> },
     { name: t('sidebar.recruitment', 'Recruitment'), path: '/dashboard/recruitment', icon: <FileSearch size={20} /> },
     { name: t('sidebar.designations', 'Designations'), path: '/dashboard/designation', icon: <Briefcase size={20} /> },
     { name: t('sidebar.outsourcing', 'Outsourcing'), path: '/dashboard/outsourcing', icon: <UsersRound size={20} /> },

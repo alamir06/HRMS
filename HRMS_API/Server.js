@@ -10,6 +10,7 @@ import path from "path";
 //By Group1:Routes
 import appRouter from './routes/index.js';
 import { seedDefaultCompany, seedDefaultHrManager } from "./src/Auth/authService.js";
+import startLeaveCronJobs from "./src/Jobs/leaveCronService.js";
 
 dotenv.config();
 const app = express();
@@ -170,6 +171,9 @@ async function startServer() {
     throw companySeedResult?.error || new Error('Failed to seed default company');
   }
   await seedDefaultHrManager();
+
+  // Start Background Cron Jobs
+  startLeaveCronJobs();
 
   app.listen(PORT, () => {
     console.log(`HRMS Server running on port ${PORT}`);

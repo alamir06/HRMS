@@ -11,7 +11,8 @@ import {
   Megaphone,
   Bell,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  FileBadge
 } from 'lucide-react';
 import './Sidebar.css';
 
@@ -40,11 +41,12 @@ const EmployeeSidebar = ({ onOpenProfile, mobileOpen = false, onCloseMobile }) =
   const { t } = useTranslation();
 
   const navItems = [
-    { name: t('sidebar.overview', 'Overview'), path: '/employee-portal', icon: <LayoutDashboard size={20} /> },
-    { name: t('sidebar.myLeaves', 'My Leaves'), path: '/employee-portal/leaves', icon: <CalendarOff size={20} /> },
+    // { name: t('sidebar.overview', 'Overview'), path: '/employee-portal', icon: <LayoutDashboard size={20} /> },
     { name: t('sidebar.myAttendance', 'My Attendance'), path: '/employee-portal/attendance', icon: <Clock size={20} /> },
+    { name: t('sidebar.myLeaves', 'My Leaves'), path: '/employee-portal/leaves', icon: <CalendarOff size={20} /> },
     { name: t('sidebar.myAssets', 'My Assets'), path: '/employee-portal/assets', icon: <Component size={20} /> },
     { name: t('sidebar.myBenefits', 'My Benefits'), path: '/employee-portal/benefits', icon: <Gift size={20} /> },
+    { name: t('sidebar.recommendations', 'Recommendations'), path: '/employee-portal/recommendations', icon: <FileBadge size={20} /> },
     { name: t('sidebar.companyNotices', 'Notices'), path: '/employee-portal/notices', icon: <Megaphone size={20} /> },
     { name: t('sidebar.notifications', 'Notifications'), path: '/employee-portal/notifications', icon: <Bell size={20} /> },
   ];

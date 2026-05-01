@@ -46,6 +46,8 @@ const EthiopianDateInput = ({
   language = 'en',
   minYear,
   maxYear,
+  minMonth,
+  minDay,
 }) => {
   const currentEthDate = getCurrentEthiopianDate();
   const effectiveMinYear = minYear || (currentEthDate?.year ? currentEthDate.year - 90 : 1900);
@@ -99,21 +101,33 @@ const EthiopianDateInput = ({
   }, [effectiveMinYear, effectiveMaxYear]);
 
   const monthOptions = useMemo(() => {
-    return months.map((name, index) => ({
+    let filteredMonths = months.map((name, index) => ({
       value: String(index + 1),
       label: name,
     }));
-  }, [months]);
+    
+    if (minMonth && selected.year === String(minYear)) {
+       filteredMonths = filteredMonths.filter(m => Number(m.value) >= minMonth);
+    }
+    
+    return filteredMonths;
+  }, [months, minMonth, minYear, selected.year]);
 
   const dayOptions = useMemo(() => {
     if (!selected.year || !selected.month) return [];
     const maxDays = getEthiopianMonthDays(Number(selected.year), Number(selected.month));
     const days = [];
-    for (let d = 1; d <= maxDays; d += 1) {
+    
+    let startDay = 1;
+    if (minDay && selected.year === String(minYear) && selected.month === String(minMonth)) {
+       startDay = minDay;
+    }
+    
+    for (let d = startDay; d <= maxDays; d += 1) {
       days.push(String(d));
     }
     return days;
-  }, [selected.year, selected.month]);
+  }, [selected.year, selected.month, minYear, minMonth, minDay]);
 
   const emitGregorian = (parts) => {
     if (!parts.year || !parts.month || !parts.day) {

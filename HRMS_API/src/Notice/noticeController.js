@@ -148,9 +148,10 @@ export const listNotices = async (req, res, next) => {
           OR n.targetEmployeeId = UUID_TO_BIN(?)
           OR (n.targetAudience = 'DEPARTMENT' AND n.targetDepartmentId = (SELECT departmentId FROM employee WHERE id = UUID_TO_BIN(?)))
           OR (n.targetAudience = 'COLLEGE' AND n.targetCollegeId = (SELECT d.collegeId FROM employee e JOIN department d ON e.departmentId = d.id WHERE e.id = UUID_TO_BIN(?)))
+          OR (n.targetAudience = 'COLLEGE_HEADS' AND '${req.user.role}' IN ('HEAD', 'HROFFICER', 'DEAN') AND n.targetCollegeId = (SELECT d.collegeId FROM employee e JOIN department d ON e.departmentId = d.id WHERE e.id = UUID_TO_BIN(?)))
         )
       `);
-      params.push(req.user.id, req.user.employeeId, req.user.employeeId, req.user.employeeId);
+      params.push(req.user.id, req.user.employeeId, req.user.employeeId, req.user.employeeId, req.user.employeeId);
     }
 
     if (noticeType) {

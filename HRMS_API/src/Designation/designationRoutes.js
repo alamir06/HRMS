@@ -34,33 +34,59 @@ const assignManagerForDesignation = async (connection, designationId) => {
   const titleStr = (title || "").toLowerCase();
   const isHead = titleStr.includes("head");
   const isDea = titleStr.includes("dea") || titleStr.includes("dean");
+  const isManager = titleStr.includes("manager") && !titleStr.includes("hr manager") && !titleStr.includes("hrmanager") && deptType === 'ADMINISTRATIVE';
 
   // 1. UPDATE EMPLOYEE ROLE, DEPARTMENT, AND TYPE
   let roleQueryPart = "";
   if (isHead) roleQueryPart = "employeeRole = 'HEAD'";
   else if (isDea) roleQueryPart = "employeeRole = 'DEAN'";
+  else if (isManager) roleQueryPart = "employeeRole = 'HROFFICER'";
   else roleQueryPart = "employeeRole = 'EMPLOYEE'"; // dynamically strip previous structural authority when moving to normal roles
 
-  if (deptId && deptType) {
-    // Structurally transfer the employee into this specific department and adopt its Type (e.g. ACADEMIC/ADMINISTRATIVE)
-    await connection.query(
-      `UPDATE employee 
-          SET ${roleQueryPart},
-              departmentId = UUID_TO_BIN(?),
-              employeeType = ?
-        WHERE id = UUID_TO_BIN(?)`,
-      [deptId, deptType, employeeId]
-    );
-  } else {
-    // If no department is designated (e.g., College Dean), just update their structural role mapping
-    await connection.query(
-      `UPDATE employee SET ${roleQueryPart} WHERE id = UUID_TO_BIN(?)`,
-      [employeeId]
-    );
+  const [empData] = await connection.query(
+    `SELECT employeeType, BIN_TO_UUID(departmentId) as empDeptId FROM employee WHERE id = UUID_TO_BIN(?)`,
+    [employeeId]
+  );
+
+  if (empData.length) {
+    const { employeeType: currentEmpType, empDeptId: currentDeptId } = empData[0];
+
+    if (deptId && deptType) {
+      if (currentEmpType === 'ADMINISTRATIVE' || currentEmpType === 'OUTSOURCE') {
+        // Structurally transfer the employee into this specific department
+        await connection.query(
+          `UPDATE employee 
+              SET ${roleQueryPart},
+                  departmentId = UUID_TO_BIN(?),
+                  employeeType = ?
+            WHERE id = UUID_TO_BIN(?)`,
+          [deptId, deptType, employeeId]
+        );
+      } else if (currentEmpType === 'ACADEMIC') {
+        // Academic employees keep their academic department but get the new role
+        await connection.query(
+          `UPDATE employee SET ${roleQueryPart} WHERE id = UUID_TO_BIN(?)`,
+          [employeeId]
+        );
+        // Store their academic department ID in the designation table
+        if (currentDeptId) {
+          await connection.query(
+            `UPDATE designations SET academicDepartmentId = UUID_TO_BIN(?) WHERE id = UUID_TO_BIN(?)`,
+            [currentDeptId, designationId]
+          );
+        }
+      }
+    } else {
+      // If no department is designated (e.g., College Dean), just update their structural role mapping
+      await connection.query(
+        `UPDATE employee SET ${roleQueryPart} WHERE id = UUID_TO_BIN(?)`,
+        [employeeId]
+      );
+    }
   }
 
   // 2. HIERARCHY CASCADING
-  if (isHead && deptId) {
+  if ((isHead || isManager) && deptId) {
     await connection.query(
       `UPDATE department SET managerId = UUID_TO_BIN(?) WHERE id = UUID_TO_BIN(?)`,
       [employeeId, deptId]
@@ -73,10 +99,11 @@ const assignManagerForDesignation = async (connection, designationId) => {
     );
 
     // Get the collegeId of this department to find the Dean
-    const [deptRows] = await connection.query(
-      `SELECT BIN_TO_UUID(collegeId) as collegeId FROM department WHERE id = UUID_TO_BIN(?)`,
-      [deptId]
-    );
+    if (isHead) {
+      const [deptRows] = await connection.query(
+        `SELECT BIN_TO_UUID(collegeId) as collegeId FROM department WHERE id = UUID_TO_BIN(?)`,
+        [deptId]
+      );
     if (deptRows.length && deptRows[0].collegeId) {
        const colId = deptRows[0].collegeId;
        // Find the Dean of this college (if any) and set as Head's manager
@@ -94,6 +121,7 @@ const assignManagerForDesignation = async (connection, designationId) => {
             [deanRows[0].deanId, employeeId]
           );
        }
+      }
     }
   }
 
@@ -129,6 +157,7 @@ const assignManagerForDesignation = async (connection, designationId) => {
   let systemRole = 'EMPLOYEE';
   if (isDea) systemRole = 'DEAN';
   else if (isHead) systemRole = 'HEAD';
+  else if (isManager) systemRole = 'HROFFICER';
   else if (titleStr.includes("hr manager") || titleStr.includes("hrmanager")) systemRole = 'HRMANAGER';
   else if (titleStr.includes("hr officer") || titleStr.includes("hrofficer")) systemRole = 'HROFFICER';
   else if (titleStr.includes("recruiter")) systemRole = 'RECRUITER';
@@ -191,6 +220,68 @@ designationRouter.post(
           status = "ACTIVE",
         } = payload;
 
+        const titleStr = (title || "").toLowerCase();
+        const isHead = titleStr.includes("head");
+        const isDea = titleStr.includes("dea") || titleStr.includes("dean");
+        let finalTitle = title;
+        let isManager = false;
+
+        if (departmentId && titleStr.includes("manager") && !titleStr.includes("hr manager") && !titleStr.includes("hrmanager")) {
+          const [deptInfo] = await connection.query(`SELECT departmentName, departmentType FROM department WHERE id = UUID_TO_BIN(?)`, [departmentId]);
+          if (deptInfo.length > 0 && deptInfo[0].departmentType === 'ADMINISTRATIVE') {
+            isManager = true;
+            finalTitle = `${deptInfo[0].departmentName} Manager`;
+
+            // Validate employee is ADMINISTRATIVE
+            const [empInfo] = await connection.query(`SELECT employeeType FROM employee WHERE id = UUID_TO_BIN(?)`, [employeeId]);
+            if (!empInfo.length || empInfo[0].employeeType !== 'ADMINISTRATIVE') {
+               throw new Error("Only ADMINISTRATIVE employees can be designated as administrative department managers.");
+            }
+
+            // Validate employee is not already a manager of another department
+            const [otherManagerCheck] = await connection.query(`
+              SELECT id FROM department 
+              WHERE managerId = UUID_TO_BIN(?) AND id != UUID_TO_BIN(?) AND departmentStatus = 'ACTIVE'
+            `, [employeeId, departmentId]);
+
+            if (otherManagerCheck.length > 0) {
+               throw new Error("This employee is already managing another department.");
+            }
+          }
+        }
+
+        if (status === "ACTIVE") {
+          if (isHead && departmentId) {
+            const [headCheck] = await connection.query(
+              `SELECT id FROM designations WHERE departmentId = UUID_TO_BIN(?) AND LOWER(title) LIKE '%head%' AND status = 'ACTIVE' LIMIT 1`,
+              [departmentId]
+            );
+            if (headCheck.length > 0) {
+              throw new Error("This department already has an active head.");
+            }
+          }
+
+          if (isDea && collegeId) {
+            const [deanCheck] = await connection.query(
+              `SELECT id FROM designations WHERE collegeId = UUID_TO_BIN(?) AND (LOWER(title) LIKE '%dean%' OR LOWER(title) LIKE '%dea%') AND status = 'ACTIVE' LIMIT 1`,
+              [collegeId]
+            );
+            if (deanCheck.length > 0) {
+              throw new Error("This college already has an active dean.");
+            }
+          }
+
+          if (isManager && departmentId) {
+            const [managerCheck] = await connection.query(
+              `SELECT id FROM designations WHERE departmentId = UUID_TO_BIN(?) AND LOWER(title) LIKE '%manager%' AND status = 'ACTIVE' LIMIT 1`,
+              [departmentId]
+            );
+            if (managerCheck.length > 0) {
+              throw new Error("This administrative department already has an active manager.");
+            }
+          }
+        }
+
         await connection.query(
           `INSERT INTO designations (
             id, employeeId, departmentId, collegeId, title, titleAmharic,
@@ -203,7 +294,7 @@ designationRouter.post(
             employeeId,
             departmentId || null,
             collegeId || null,
-            title,
+            finalTitle,
             titleAmharic || null,
             jobDescription || null,
             jobDescriptionAmharic || null,
@@ -271,6 +362,97 @@ designationRouter.put(
 
         const fields = [];
         const values = [];
+
+        // Check for duplicate active head/dean
+        const [existingDesig] = await connection.query(
+          `SELECT title, BIN_TO_UUID(departmentId) as departmentId, BIN_TO_UUID(collegeId) as collegeId, status FROM designations WHERE id = UUID_TO_BIN(?)`,
+          [id]
+        );
+        
+        if (existingDesig.length === 0) {
+          throw new Error("Designation not found");
+        }
+        
+        const currentDesig = existingDesig[0];
+        const mergedTitle = payload.title !== undefined ? payload.title : currentDesig.title;
+        const mergedStatus = payload.status !== undefined ? payload.status : currentDesig.status;
+        const mergedDeptId = payload.departmentId !== undefined ? payload.departmentId : currentDesig.departmentId;
+        const mergedColId = payload.collegeId !== undefined ? payload.collegeId : currentDesig.collegeId;
+
+        const titleStr = (mergedTitle || "").toLowerCase();
+        const isHead = titleStr.includes("head");
+        const isDea = titleStr.includes("dea") || titleStr.includes("dean");
+
+        let finalTitle = mergedTitle;
+        let isManager = false;
+
+        let updateEmployeeId = payload.employeeId || null;
+        if (!updateEmployeeId) {
+           const [empRow] = await connection.query(`SELECT BIN_TO_UUID(employeeId) as empId FROM designations WHERE id = UUID_TO_BIN(?)`, [id]);
+           if (empRow.length > 0) updateEmployeeId = empRow[0].empId;
+        }
+
+        if (mergedDeptId && titleStr.includes("manager") && !titleStr.includes("hr manager") && !titleStr.includes("hrmanager")) {
+          const [deptInfo] = await connection.query(`SELECT departmentName, departmentType FROM department WHERE id = UUID_TO_BIN(?)`, [mergedDeptId]);
+          if (deptInfo.length > 0 && deptInfo[0].departmentType === 'ADMINISTRATIVE') {
+            isManager = true;
+            finalTitle = `${deptInfo[0].departmentName} Manager`;
+
+            // Validate employee is ADMINISTRATIVE
+            if (updateEmployeeId) {
+               const [empInfo] = await connection.query(`SELECT employeeType FROM employee WHERE id = UUID_TO_BIN(?)`, [updateEmployeeId]);
+               if (!empInfo.length || empInfo[0].employeeType !== 'ADMINISTRATIVE') {
+                  throw new Error("Only ADMINISTRATIVE employees can be designated as administrative department managers.");
+               }
+
+               // Validate employee is not already a manager of another department
+               const [otherManagerCheck] = await connection.query(`
+                 SELECT id FROM department 
+                 WHERE managerId = UUID_TO_BIN(?) AND id != UUID_TO_BIN(?) AND departmentStatus = 'ACTIVE'
+               `, [updateEmployeeId, mergedDeptId]);
+
+               if (otherManagerCheck.length > 0) {
+                  throw new Error("This employee is already managing another department.");
+               }
+            }
+          }
+        }
+
+        if (payload.title !== undefined || isManager) {
+           payload.title = finalTitle;
+        }
+
+        if (mergedStatus === "ACTIVE") {
+          if (isHead && mergedDeptId) {
+            const [headCheck] = await connection.query(
+              `SELECT id FROM designations WHERE departmentId = UUID_TO_BIN(?) AND LOWER(title) LIKE '%head%' AND status = 'ACTIVE' AND id != UUID_TO_BIN(?) LIMIT 1`,
+              [mergedDeptId, id]
+            );
+            if (headCheck.length > 0) {
+              throw new Error("This department already has an active head.");
+            }
+          }
+
+          if (isDea && mergedColId) {
+            const [deanCheck] = await connection.query(
+              `SELECT id FROM designations WHERE collegeId = UUID_TO_BIN(?) AND (LOWER(title) LIKE '%dean%' OR LOWER(title) LIKE '%dea%') AND status = 'ACTIVE' AND id != UUID_TO_BIN(?) LIMIT 1`,
+              [mergedColId, id]
+            );
+            if (deanCheck.length > 0) {
+              throw new Error("This college already has an active dean.");
+            }
+          }
+
+          if (isManager && mergedDeptId) {
+             const [managerCheck] = await connection.query(
+               `SELECT id FROM designations WHERE departmentId = UUID_TO_BIN(?) AND LOWER(title) LIKE '%manager%' AND status = 'ACTIVE' AND id != UUID_TO_BIN(?) LIMIT 1`,
+               [mergedDeptId, id]
+             );
+             if (managerCheck.length > 0) {
+               throw new Error("This administrative department already has an active manager.");
+             }
+          }
+        }
 
         Object.entries(payload).forEach(([key, value]) => {
           if (value === undefined) return;

@@ -209,11 +209,11 @@ const MyAttendance = () => {
                         </td>
                         <td style={{ textAlign: 'right' }}>
                            <button 
-                             className="hr-attendance-action-btn" 
+                             className="action-btn-light" 
                              onClick={() => setIsModalOpen(true)}
                              title="View Details"
                            >
-                              <Eye size={16} />
+                              <Eye size={14} />
                            </button>
                         </td>
                      </tr>

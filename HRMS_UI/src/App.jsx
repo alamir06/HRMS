@@ -19,19 +19,24 @@ import EmployeeDashboardLayout from './layouts/EmployeeDashboardLayout';
 import EmployeeOverview from './pages/EmployeePortal/EmployeeOverview/EmployeeOverview';
 import MyLeaves from './pages/EmployeePortal/MyLeaves/MyLeaves';
 import MyAttendance from './pages/EmployeePortal/MyAttendance/MyAttendance';
-import MyAssetsAndBenefits from './pages/EmployeePortal/MyAssetsAndBenefits/MyAssetsAndBenefits';
+import MyAssets from './pages/EmployeePortal/MyAssets/MyAssets';
+import MyBenefits from './pages/EmployeePortal/MyBenefits/MyBenefits';
 import MyNotices from './pages/EmployeePortal/MyNotices/MyNotices';
 import MyNotifications from './pages/EmployeePortal/MyNotifications/MyNotifications';
+import MyRecommendations from './pages/EmployeePortal/MyRecommendations/MyRecommendations';
 import LeaveRequests from './pages/HRManager/Leaves/LeaveRequests';
 import Designations from './pages/HRManager/Designation/Designations';
 import AssetList from './pages/HRManager/Assets/AssetList/AssetList';
 import AssetAssignment from './pages/HRManager/Assets/AssetAssignment/AssetAssignment';
+import Recommendations from './pages/HRManager/Recommendations/Recommendations';
 import Recruitment from './pages/HRManager/Recruitment/Recruitment';
 import HeadDashboardLayout from './layouts/HeadDashboardLayout';
 import DeanDashboardLayout from './layouts/DeanDashboardLayout';
 import HRManagerNotices from './pages/HRManager/Notices/HRManagerNotices';
 import HeadNotices from './pages/HeadPortal/Notices/HeadNotices';
 import DeanNotices from './pages/DeanPortal/Notices/DeanNotices';
+import OnLeaveStaff from './pages/HeadPortal/OnLeaveStaff/OnLeaveStaff';
+import StaffAttendance from './pages/HeadPortal/StaffAttendance/StaffAttendance';
 import './index.css';
 
 // Admin Protected Route Component
@@ -85,7 +90,7 @@ const HeadProtectedRoute = ({ children }) => {
   if (token && userStr) {
     try {
       const user = JSON.parse(userStr);
-      if (user.role === 'HEAD') {
+      if (user.role === 'HEAD' || user.role === 'HROFFICER') {
         isAuthorized = true;
       }
     } catch(e) {}
@@ -127,7 +132,7 @@ const PublicRoute = ({ children }) => {
     try {
       const user = JSON.parse(userStr);
       if (user.role === 'EMPLOYEE') return <Navigate to="/employee-portal" replace />;
-      if (user.role === 'HEAD') return <Navigate to="/head-portal" replace />;
+      if (user.role === 'HEAD' || user.role === 'HROFFICER') return <Navigate to="/head-portal" replace />;
       if (user.role === 'DEAN') return <Navigate to="/dean-portal" replace />;
       return <Navigate to="/dashboard" replace />;
     } catch(e) {
@@ -190,6 +195,7 @@ function App() {
           <Route path="designation" element={<Designations />} />
           <Route path="asset/list" element={<AssetList />} />
           <Route path="asset/assignment" element={<AssetAssignment />} />
+          <Route path="recommendations" element={<Recommendations />} />
           <Route path="recruitment" element={<Recruitment />} />
           <Route path="notices" element={<HRManagerNotices />} />
           <Route path="notifications" element={<MyNotifications />} />
@@ -205,11 +211,13 @@ function App() {
             </EmployeeProtectedRoute>
           }
         >
-          <Route index element={<EmployeeOverview />} />
+          <Route index element={<Navigate to="attendance" replace />} />
+          {/* <Route index element={<EmployeeOverview />} /> */}
           <Route path="leaves" element={<MyLeaves />} />
           <Route path="attendance" element={<MyAttendance />} />
-          <Route path="assets" element={<MyAssetsAndBenefits />} />
-          <Route path="benefits" element={<MyAssetsAndBenefits />} />
+          <Route path="assets" element={<MyAssets />} />
+          <Route path="benefits" element={<MyBenefits />} />
+          <Route path="recommendations" element={<MyRecommendations />} />
           <Route path="notices" element={<MyNotices />} />
           <Route path="notifications" element={<MyNotifications />} />
         </Route>
@@ -224,6 +232,13 @@ function App() {
           }
         >
           <Route index element={<EmployeeOverview />} />
+          <Route path="leaves" element={<MyLeaves />} />
+          <Route path="attendance" element={<MyAttendance />} />
+          <Route path="staff-attendance" element={<StaffAttendance />} />
+          <Route path="assets" element={<MyAssets />} />
+          <Route path="benefits" element={<MyBenefits />} />
+          <Route path="recommendations" element={<MyRecommendations />} />
+          <Route path="on-leave" element={<OnLeaveStaff />} />
           <Route path="notices" element={<HeadNotices />} />
           <Route path="notifications" element={<MyNotifications />} />
         </Route>
@@ -238,6 +253,13 @@ function App() {
           }
         >
           <Route index element={<EmployeeOverview />} />
+          <Route path="leaves" element={<MyLeaves />} />
+          <Route path="attendance" element={<MyAttendance />} />
+          <Route path="staff-attendance" element={<StaffAttendance />} />
+          <Route path="assets" element={<MyAssets />} />
+          <Route path="benefits" element={<MyBenefits />} />
+          <Route path="recommendations" element={<MyRecommendations />} />
+          <Route path="on-leave" element={<OnLeaveStaff />} />
           <Route path="notices" element={<DeanNotices />} />
           <Route path="notifications" element={<MyNotifications />} />
         </Route>

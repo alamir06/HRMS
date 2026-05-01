@@ -195,6 +195,7 @@ CREATE TABLE designations (
     id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
     employeeId BINARY(16) NOT NULL,
     departmentId BINARY(16),
+    academicDepartmentId BINARY(16) NULL,
     collegeId BINARY(16),
     title VARCHAR(100) NOT NULL,
     titleAmharic VARCHAR(100),
@@ -301,7 +302,18 @@ CREATE TABLE leaveRequest (
     createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
-
+ CREATE TABLE  leaveRolloverRequest (
+        id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
+        employeeId BINARY(16) NOT NULL,
+        sourceYear INT NOT NULL,
+        leaveType ENUM('ANNUAL') NOT NULL,
+        unusedDays INT NOT NULL,
+        decision ENUM('PENDING', 'CARRY_FORWARD', 'ENCASH') DEFAULT 'PENDING',
+        status ENUM('PENDING', 'PROCESSED') DEFAULT 'PENDING',
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX (employeeId)
+      );
 -- SIMPLIFIED PAYROLL TABLE FOR PAYSLIP GENERATION
 CREATE TABLE payroll (
     id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
@@ -573,7 +585,24 @@ CREATE TABLE notifications (
     isRead BOOLEAN DEFAULT FALSE,
     createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
+CREATE  recommendations (
+        id BINARY(16) PRIMARY KEY,
+        employeeId BINARY(16) NOT NULL,
+        recommendationType ENUM('EDUCATION', 'PROFESSIONAL_LICENSE', 'MAYOR_OFFICE', 'MINISTRY_OF_EDUCATION', 'WORK_EXPERIENCE') NOT NULL,
+        reason TEXT,
+        degreeProgram VARCHAR(255) NULL,
+        institutionName VARCHAR(255) NULL,
+        status ENUM('PENDING', 'APPROVED', 'REJECTED') DEFAULT 'PENDING',
+        requestDate DATE NOT NULL,
+        approvedDate DATE NULL,
+        approvedBy BINARY(16) NULL,
+        rejectionReason TEXT NULL,
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (employeeId) REFERENCES employee(id) ON DELETE CASCADE,
+        FOREIGN KEY (approvedBy) REFERENCES users(id) ON DELETE SET NULL
+      );
+  
 -- ADD ALL FOREIGN KEY CONSTRAINTS
 ALTER TABLE college ADD FOREIGN KEY (companyId) REFERENCES company(id) ON DELETE CASCADE;
 

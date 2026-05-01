@@ -9,6 +9,11 @@ export const designationValidationSchema = {
       .string()
       .uuid("Invalid department ID format")
       .optional(),
+    academicDepartmentId: z
+      .string()
+      .uuid("Invalid academic department ID format")
+      .optional()
+      .nullable(),
     collegeId: z
       .string()
       .uuid("Invalid college ID format")
@@ -39,6 +44,7 @@ export const designationValidationSchema = {
   update: z.object({
     employeeId: z.string().uuid("Invalid employee ID format").optional(),
     departmentId: z.string().uuid("Invalid department ID format").optional(),
+    academicDepartmentId: z.string().uuid("Invalid academic department ID format").optional().nullable(),
     collegeId: z.string().uuid("Invalid college ID format").optional(),
     title: z
       .string()

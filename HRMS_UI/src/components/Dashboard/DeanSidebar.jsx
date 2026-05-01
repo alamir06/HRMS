@@ -6,8 +6,15 @@ import {
   LayoutDashboard, 
   Megaphone,
   Bell,
+  Clock,
+  CalendarOff,
+  Component,
+  Gift,
+  Users,
+  Fingerprint,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  FileBadge
 } from 'lucide-react';
 import './Sidebar.css';
 
@@ -37,7 +44,14 @@ const DeanSidebar = ({ onOpenProfile, mobileOpen = false, onCloseMobile }) => {
 
   const navItems = [
     { name: t('sidebar.overview', 'Overview'), path: '/dean-portal', icon: <LayoutDashboard size={20} /> },
-    { name: t('sidebar.companyNotices', 'Notices'), path: '/dean-portal/notices', icon: <Megaphone size={20} /> },
+    { name: t('sidebar.myAttendance', 'My Attendance'), path: '/dean-portal/attendance', icon: <Clock size={20} /> },
+    { name: t('sidebar.staffAttendance', 'Staff Attendance'), path: '/dean-portal/staff-attendance', icon: <Fingerprint size={20} /> },
+    { name: t('sidebar.myLeaves', 'My Leaves'), path: '/dean-portal/leaves', icon: <CalendarOff size={20} /> },
+    { name: t('sidebar.myAssets', 'My Assets'), path: '/dean-portal/assets', icon: <Component size={20} /> },
+    { name: t('sidebar.myBenefits', 'My Benefits'), path: '/dean-portal/benefits', icon: <Gift size={20} /> },
+    { name: t('sidebar.recommendations', 'Recommendations'), path: '/dean-portal/recommendations', icon: <FileBadge size={20} /> },
+    { name: t('sidebar.onLeaveStaff', 'On-Leave Staff'), path: '/dean-portal/on-leave', icon: <Users size={20} /> },
+    { name: t('sidebar.notices', 'Notices'), path: '/dean-portal/notices', icon: <Megaphone size={20} /> },
     { name: t('sidebar.notifications', 'Notifications'), path: '/dean-portal/notifications', icon: <Bell size={20} /> },
   ];
 

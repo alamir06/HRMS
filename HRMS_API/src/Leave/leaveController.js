@@ -72,3 +72,25 @@ export const getAllRequests = async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 };
+
+export const getPendingRolloverDecisions = async (req, res) => {
+  try {
+    const employeeId = req.user.employeeId;
+    const result = await leaveService.getPendingRolloverDecisions(employeeId);
+    res.status(200).json({ success: true, message: "Pending rollover decisions fetched", data: result });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+export const submitRolloverDecision = async (req, res) => {
+  try {
+    const employeeId = req.user.employeeId;
+    const { id } = req.params;
+    const { decision } = req.body;
+    const result = await leaveService.submitRolloverDecision(employeeId, id, decision);
+    res.status(200).json({ success: true, message: result.message, data: result });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+};
