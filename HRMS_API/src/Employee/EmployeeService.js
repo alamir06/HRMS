@@ -201,6 +201,21 @@ export class EmployeeService extends CrudService {
         "?",
         "?",
       ];
+      let autoManagerId = employeeData.managerId || null;
+      if (!autoManagerId && employeeData.departmentId) {
+        try {
+          const [headRows] = await connection.query(
+            `SELECT BIN_TO_UUID(employeeId) as headId FROM designations WHERE departmentId = UUID_TO_BIN(?) AND LOWER(title) LIKE '%head%' AND status = 'ACTIVE' LIMIT 1`,
+            [employeeData.departmentId]
+          );
+          if (headRows.length > 0 && headRows[0].headId) {
+            autoManagerId = headRows[0].headId;
+          }
+        } catch (err) {
+          console.error("Failed to auto-assign managerId", err);
+        }
+      }
+
       const employeeValues = [
         employeeUUID,
         generatedEmployeeCode,
@@ -208,7 +223,7 @@ export class EmployeeService extends CrudService {
         employeeData.employeeType,
         employeeData.employeeRole || "EMPLOYEE",
         employeeData.departmentId,
-        employeeData.managerId || null,
+        autoManagerId,
         employeeData.hireDate,
         employeeData.employmentType,
         employeeData.employmentStatus || "ACTIVE",
@@ -546,15 +561,25 @@ export class EmployeeService extends CrudService {
           ea.academicRankAmharic,
           ea.academicStatus,
           ea.fieldOfSpecialization,
-          ea.fieldOfSpecializationAmharic
+          ea.fieldOfSpecializationAmharic,
+          eo.outsourcingCompanyId,
+          eo.contractStartDate,
+          eo.contractEndDate,
+          eo.serviceType,
+          mep.firstName as managerFirstName,
+          mep.lastName as managerLastName,
+          mep.firstNameAmharic as managerFirstNameAmharic,
+          mep.lastNameAmharic as managerLastNameAmharic
         FROM employee e
         LEFT JOIN employeePersonal ep ON e.id = ep.employeeId
         LEFT JOIN employeeEmployment ee ON e.id = ee.employeeId
         LEFT JOIN employeeAcademic ea ON e.id = ea.employeeId
+        LEFT JOIN employeeOutsource eo ON e.id = eo.employeeId
         LEFT JOIN college col ON ea.collegeId = col.id
         LEFT JOIN company c ON e.companyId = c.id
         LEFT JOIN department d ON e.departmentId = d.id
-        LEFT JOIN designations des ON des.employeeId = e.id
+        LEFT JOIN designations des ON des.employeeId = e.id AND des.status = 'ACTIVE'
+        LEFT JOIN employeePersonal mep ON e.managerId = mep.employeeId
         WHERE e.id = UUID_TO_BIN(?)
       `;
 

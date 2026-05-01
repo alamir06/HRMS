@@ -189,13 +189,21 @@ const LeaveRequests = () => {
           ${styles}
           <style>
             body { padding: 40px; background: white; font-family: Inter, sans-serif; }
-            .hr-leave-request-table-actions { display: none !important; }
-            .hr-leave-request-pagination-controls, .hr-leave-request-page-limit-selector { display: none !important; }
-            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-            th, td { border: 1px solid #e2e8f0; padding: 12px; text-align: left; }
-            th { border-bottom: 2px solid #cbd5e1; }
+            .hr-leave-request-table-actions, .hr-leave-request-table-actions-header { display: none !important; }
+            .hr-leave-request-data-table th:last-child, .hr-leave-request-data-table td:last-child { display: none !important; }
+            .hr-leave-request-table-footer { display: none !important; }
+            .hr-leave-request-responsive-wrapper { overflow-x: visible !important; }
+            .hr-leave-request-data-table { min-width: auto !important; width: 100% !important; border-collapse: collapse; margin-top: 20px; table-layout: auto; }
+            th, td { border: 1px solid #e2e8f0; padding: 10px; text-align: left; white-space: normal !important; word-break: break-word; }
+            th { border-bottom: 2px solid #cbd5e1; background-color: #f8fafc !important; -webkit-print-color-adjust: exact; color-adjust: exact; font-size: 14px; }
+            td { font-size: 14px; }
             h1 { font-family: Inter, sans-serif; color: #2d3748; margin-bottom: 10px; }
             .report-header { margin-bottom: 30px; }
+            @media print {
+              body { padding: 0; }
+              .hr-leave-request-responsive-wrapper { overflow: visible !important; }
+              @page { size: landscape; margin: 10mm; }
+            }
           </style>
         </head>
         <body>

@@ -25,10 +25,14 @@ const MyAssets = () => {
     setErrorMsg('');
     try {
       const assetsRes = await assetService.getEmployeeAssets(employeeId);
-      if (assetsRes.success) setAssets(assetsRes.data || []);
+      if (assetsRes.success) {
+        setAssets(assetsRes.data || []);
+      } else {
+        setErrorMsg(assetsRes.error || assetsRes.message || "Failed to load inventory data.");
+      }
     } catch (error) {
       console.error("Failed to fetch assets:", error);
-      setErrorMsg("Failed to load inventory data.");
+      setErrorMsg(error.response?.data?.error || "Failed to load inventory data.");
     } finally {
       setIsLoading(false);
     }
@@ -54,9 +58,6 @@ const MyAssets = () => {
       </div>
 
       <div className="portal-recent-activity">
-        <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-          <Box size={20}/> Company Assets
-        </h2>
         <div className="hr-attendance-table-card">
           <div className="hr-attendance-responsive-wrapper">
              <table className="hr-attendance-data-table">
@@ -72,6 +73,12 @@ const MyAssets = () => {
                {isLoading ? (
                  <tr>
                    <td colSpan="4" style={{ textAlign: 'center', padding: '20px' }}>Loading assets...</td>
+                 </tr>
+               ) : errorMsg ? (
+                 <tr>
+                   <td colSpan="4" style={{ textAlign: 'center', padding: '20px', color: '#e53e3e' }}>
+                     {errorMsg}
+                   </td>
                  </tr>
                ) : assets.length === 0 ? (
                  <tr>

@@ -25,11 +25,14 @@ const MyBenefits = () => {
     setErrorMsg('');
     try {
       const benefitsRes = await benefitService.getEmployeeBenefits(employeeId);
-      if (benefitsRes.success) setBenefits(benefitsRes.data || []);
-      
+      if (benefitsRes.success) {
+        setBenefits(benefitsRes.data || []);
+      } else {
+        setErrorMsg(benefitsRes.error || benefitsRes.message || "Failed to load benefits data.");
+      }
     } catch (error) {
       console.error("Failed to fetch benefits:", error);
-      setErrorMsg("Failed to load inventory data.");
+      setErrorMsg(error.response?.data?.error || "Failed to load benefits data.");
     } finally {
       setIsLoading(false);
     }
@@ -55,9 +58,6 @@ const MyBenefits = () => {
       </div>
 
       <div className="portal-recent-activity">
-        <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-          <ShieldCheck size={20}/> Employee Benefits
-        </h2>
         <div className="hr-attendance-table-card">
           <div className="hr-attendance-responsive-wrapper">
              <table className="hr-attendance-data-table">
@@ -73,6 +73,12 @@ const MyBenefits = () => {
                {isLoading ? (
                  <tr>
                    <td colSpan="4" style={{ textAlign: 'center', padding: '20px' }}>Loading benefits...</td>
+                 </tr>
+               ) : errorMsg ? (
+                 <tr>
+                   <td colSpan="4" style={{ textAlign: 'center', padding: '20px', color: '#e53e3e' }}>
+                     {errorMsg}
+                   </td>
                  </tr>
                ) : benefits.length === 0 ? (
                  <tr>

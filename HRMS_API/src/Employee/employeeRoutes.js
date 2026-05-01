@@ -29,7 +29,7 @@ employeeRouter.post(
 employeeRouter.get(
   "/", 
     authenticateToken,
-    authorize("HRMANAGER", "HROFFICER","RECRUITER"),
+    authorize("HRMANAGER", "HROFFICER","RECRUITER", "HEAD", "DEAN"),
   employeeController.findAll);
 
 employeeRouter.get(
@@ -42,7 +42,7 @@ employeeRouter.get(
 employeeRouter.get(
   "/:id",
   authenticateToken,
-  authorize("HRMANAGER", "HROFFICER","RECRUITER", "EMPLOYEE"),
+  authorize("HRMANAGER", "HROFFICER","RECRUITER", "EMPLOYEE", "HEAD", "DEAN"),
   validateEmployee(employeeIdSchema),
   employeeController.findById
 );
@@ -117,7 +117,7 @@ employeeRouter.post(
 employeeRouter.get(
   "/:id/documents",
   authenticateToken,
-  authorize("HRMANAGER", "HROFFICER", "EMPLOYEE"),
+  authorize("HRMANAGER", "HROFFICER", "EMPLOYEE", "HEAD", "DEAN"),
   validateEmployee(employeeIdSchema),
   employeeController.getDocuments
 );

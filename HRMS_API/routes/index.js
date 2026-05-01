@@ -15,6 +15,7 @@ import payrollRouter from "../src/Payroll/payrollRouter.js";
 import authRouter from "../src/Auth/authRouter.js";
 import outsourcingCompanyRouter from "../src/OutsourcingCompany/outsourcingCompanyRouter.js";
 import { dashboardRouter } from "../src/Dashboard/dashboardRoutes.js";
+import recommendationRouter from "../src/Recommendation/recommendationRoutes.js";
 
 const appRouter=express.Router();
 
@@ -34,5 +35,6 @@ appRouter.use("/notifications", notificationRouter);
 appRouter.use("/payroll", payrollRouter);
 appRouter.use("/auth", authRouter);
 appRouter.use("/outsourcing-companies", outsourcingCompanyRouter);
+appRouter.use("/recommendations", recommendationRouter);
 
 export default appRouter;

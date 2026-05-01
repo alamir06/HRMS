@@ -48,7 +48,8 @@ export const authenticateToken = async (req, res, next) => {
     if (
       req.user.employmentStatus === 'ONLEAVE' &&
       req.method !== 'GET' &&
-      !req.originalUrl.includes('/auth/change-password')
+      !req.originalUrl.includes('/auth/change-password') &&
+      !(req.method === 'POST' && req.originalUrl.includes('/api/notices'))
     ) {
       return res.status(403).json({ error: "Access denied. Actions are restricted to view-only while on leave." });
     }

@@ -1,0 +1,400 @@
+.my-recommendations-container {
+  padding: 24px;
+  max-width: 1152px;
+  margin: 0 auto;
+  font-family: 'Inter', -apple-system, sans-serif;
+}
+
+.my-recommendations-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.my-recommendations-title h1 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+}
+
+.my-recommendations-title p {
+  color: #6b7280;
+  margin: 4px 0 0 0;
+  font-size: 14px;
+}
+
+.my-recommendations-new-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #059669;
+  color: white;
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(5, 150, 105, 0.2);
+}
+
+.my-recommendations-new-btn:hover {
+  background-color: #047857;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(5, 150, 105, 0.25);
+}
+
+.my-recommendations-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #f3f4f6;
+  overflow: hidden;
+}
+
+.my-recommendations-table-wrapper {
+  overflow-x: auto;
+}
+
+.my-recommendations-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.my-recommendations-table th {
+  padding: 16px;
+  font-weight: 500;
+  font-size: 14px;
+  color: #6b7280;
+  background-color: #f9fafb;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.my-recommendations-table td {
+  padding: 16px;
+  border-bottom: 1px solid #f3f4f6;
+  vertical-align: middle;
+}
+
+.my-recommendations-table tr:last-child td {
+  border-bottom: none;
+}
+
+.my-recommendations-table tr:hover {
+  background-color: #f9fafb;
+}
+
+.my-recommendations-type-col {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.my-recommendations-icon-box {
+  padding: 8px;
+  background-color: #ecfdf5;
+  color: #059669;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.my-recommendations-type-info p {
+  margin: 0;
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.my-recommendations-type-info span {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.my-recommendations-date-col {
+  color: #4b5563;
+  font-size: 14px;
+}
+
+.my-recommendations-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.my-recommendations-badge.approved {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.my-recommendations-badge.rejected {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.my-recommendations-badge.pending {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.my-recommendations-reject-reason {
+  font-size: 12px;
+  color: #ef4444;
+  margin-top: 4px;
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.my-recommendations-empty {
+  text-align: center;
+  padding: 40px;
+  color: #6b7280;
+}
+
+.my-recommendations-empty p {
+  margin-top: 8px;
+}
+
+/* Modal Styles matching Leave Request */
+.my-recommendations-modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: rgba(17, 24, 39, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 0.5rem;
+}
+
+.my-recommendations-modal-content {
+  background-color: #f9fafb;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 2rem;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  animation: scaleIn 0.2s ease-out;
+  position: relative;
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.my-recommendations-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.my-recommendations-modal-title-col h2 {
+  font-family: 'Inter', -apple-system, sans-serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 0.2rem 0;
+}
+
+.my-recommendations-modal-title-col p {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+.my-recommendations-modal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: white;
+  border: 1px solid #e5e7eb;
+  color: #6b7280;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.my-recommendations-modal-close:hover {
+  background-color: #fee2e2;
+  color: #ef4444;
+  border-color: #fca5a5;
+}
+
+.my-recommendations-req-card {
+  background: white;
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 4px 15px -5px rgba(0,0,0,0.03);
+  border: 1px solid #f3f4f6;
+  margin-bottom: 1rem;
+  border-left: 3px solid white;
+  transition: border-left-color 0.2s;
+}
+
+.my-recommendations-req-card:hover {
+  border-left-color: #059669;
+}
+
+.my-recommendations-req-section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: 'Inter', -apple-system, sans-serif;
+  font-weight: 700;
+  color: #111827;
+  font-size: 0.95rem;
+  margin-bottom: 1rem;
+}
+
+.my-recommendations-type-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.my-recommendations-type-btn {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: white;
+  text-align: left;
+  display: block;
+  width: 100%;
+}
+
+.my-recommendations-type-btn:hover {
+  border-color: #059669;
+}
+
+.my-recommendations-type-btn.selected {
+  border-color: #059669;
+  background-color: #ecfdf5;
+  box-shadow: inset 0 0 0 1px #059669;
+}
+
+.my-recommendations-type-icon-box {
+  margin-bottom: 0.5rem;
+  display: inline-flex;
+  padding: 0.3rem;
+  border-radius: 6px;
+  background-color: rgba(5, 150, 105, 0.1);
+  color: #059669;
+}
+
+.my-recommendations-type-name {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 0.15rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.my-recommendations-input-grid {
+  display: flex;
+  gap: 1rem;
+}
+
+.my-recommendations-input-group {
+  flex: 1;
+}
+
+.my-recommendations-input-group label {
+  display: block;
+  font-size: 0.55rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #9ca3af;
+  margin-bottom: 0.3rem;
+  letter-spacing: 0.5px;
+}
+
+.my-recommendations-input-field,
+.my-recommendations-select {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  background-color: #f9fafb;
+  color: #374151;
+  font-size: 0.75rem;
+  font-weight: 500;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.2s, background-color 0.2s;
+  box-sizing: border-box;
+}
+
+.my-recommendations-input-field:focus,
+.my-recommendations-select:focus {
+  border-color: #059669;
+  background-color: white;
+}
+
+.my-recommendations-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.my-recommendations-btn-cancel {
+  background: transparent;
+  border: none;
+  color: #6b7280;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.2s;
+  padding: 0.6rem 1.25rem;
+}
+
+.my-recommendations-btn-cancel:hover {
+  color: #374151;
+}
+
+.my-recommendations-btn-submit {
+  background-color: #047857;
+  color: white;
+  border: none;
+  padding: 0.6rem 1.25rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(4,120,87,0.3);
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.my-recommendations-btn-submit:hover:not(:disabled) {
+  background-color: #065f46;
+}
+
+.my-recommendations-btn-submit:active {
+  transform: scale(0.98);
+}
+
+.my-recommendations-btn-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

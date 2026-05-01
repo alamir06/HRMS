@@ -311,6 +311,10 @@ export const assetController = {
       const { employeeId } = req.params;
       const { status } = req.query;
 
+      if (req.user.role === 'EMPLOYEE' && req.user.employeeId !== employeeId) {
+        return res.status(403).json({ success: false, error: "Not authorized to view other's assets" });
+      }
+
       const conditions = ["aa.employeeId = UUID_TO_BIN(?)"];
       const params = [employeeId];
 

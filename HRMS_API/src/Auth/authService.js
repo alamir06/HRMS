@@ -43,7 +43,9 @@ export const findUserByIdentifier = async (identifier) => {
        ep.middleName,
        ep.lastName,
        d.departmentName AS department,
+       BIN_TO_UUID(e.departmentId) AS departmentId,
        col.collegeName AS collegeName,
+       BIN_TO_UUID(d.collegeId) AS collegeId,
        ee.salary AS salary,
        COALESCE(des.title, ea.academicRank, e.employeeRole) AS position,
        e.hireDate AS hireDate

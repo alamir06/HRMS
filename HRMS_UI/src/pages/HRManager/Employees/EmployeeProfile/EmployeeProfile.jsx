@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, User, Briefcase, GraduationCap, FileText, UploadCloud, Trash, X, Camera } from 'lucide-react';
+import { ArrowLeft, User, Briefcase, GraduationCap, FileText, UploadCloud, Trash, X, Camera, Building2 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
 import { employeeService } from '../../../../services/employeeService';
@@ -246,6 +246,12 @@ const EmployeeProfileModal = ({ employeeId, onClose }) => {
              </span>
            </div>
            <p className="hero-subtitle">{getLocalizedText(employee.departmentName, employee.departmentNameAmharic) || (isAmharic ? 'ዲፓርትመንት አልተገኘም' : 'No Linked Department')}</p>
+           {employee.designationTitle && (
+             <p className="hero-subtitle" style={{fontWeight: 500, marginTop: '4px', color: 'var(--text-primary)'}}>
+               {getLocalizedText(employee.designationTitle, employee.designationTitleAmharic)}
+               {employee.designationGradeLevel && ` (${employee.designationGradeLevel})`}
+             </p>
+           )}
         </div>
       </div>
 
@@ -296,8 +302,41 @@ const EmployeeProfileModal = ({ employeeId, onClose }) => {
                <label>{isAmharic ? 'መሰረታዊ ደመወዝ' : 'Base Salary'}</label>
                <span>{employee.salary ? `$${employee.salary}` : (isAmharic ? 'ምስጢር' : 'Confidential')}</span>
              </div>
+             <div className="data-group">
+               <label>{isAmharic ? 'የስራ ሃላፊ (ማናጀር)' : 'Reporting Manager'}</label>
+               <span>
+                 {employee.managerFirstName 
+                   ? `${getLocalizedText(employee.managerFirstName, employee.managerFirstNameAmharic)} ${getLocalizedText(employee.managerLastName, employee.managerLastNameAmharic) || ''}`
+                   : (isAmharic ? 'አልተመደበም' : 'None Assigned')}
+               </span>
+             </div>
            </div>
         </div>
+
+        {/* OUTSOURCE DETAILS CARD */}
+        {employee.employeeType === 'OUTSOURCE' && (
+          <div className="profile-info-card">
+             <div className="card-lbl-header"><Building2 size={18}/> {isAmharic ? 'የውጭ ኮንትራት መረጃ' : 'Outsourcing Details'}</div>
+             <div className="card-data-grid">
+               <div className="data-group">
+                 <label>{isAmharic ? 'ኮንትራክተር ካምፓኒ' : 'Company'}</label>
+                 <span>{getLocalizedText(employee.companyName, employee.companyNameAmharic) || (isAmharic ? 'አልተገኘም' : 'N/A')}</span>
+               </div>
+               <div className="data-group">
+                 <label>{isAmharic ? 'የአገልግሎት ዓይነት' : 'Service Type'}</label>
+                 <span>{employee.serviceType || (isAmharic ? 'አልተገለጸም' : 'Unspecified')}</span>
+               </div>
+               <div className="data-group">
+                 <label>{isAmharic ? 'የውል ጅማሬ' : 'Contract Start'}</label>
+                 <span>{displayEthDate(null, employee.contractStartDate) || (isAmharic ? 'አልተገኘም' : 'N/A')}</span>
+               </div>
+               <div className="data-group">
+                 <label>{isAmharic ? 'የውል ማብቂያ' : 'Contract End'}</label>
+                 <span>{displayEthDate(null, employee.contractEndDate) || (isAmharic ? 'አልተገኘም' : 'N/A')}</span>
+               </div>
+             </div>
+          </div>
+        )}
 
         {/* ACADEMIC / SPECIFIC DETAILS CARD */}
         {employee.employeeType === 'ACADEMIC' && (
