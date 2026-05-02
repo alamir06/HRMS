@@ -11,6 +11,7 @@ const designationCustomController = {
         SELECT 
           BIN_TO_UUID(d.id) as id,
           BIN_TO_UUID(d.departmentId) as departmentId,
+          BIN_TO_UUID(d.academicDepartmentId) as academicDepartmentId,
           d.title,
           d.titleAmharic,
           d.jobDescription,
@@ -145,6 +146,7 @@ const designationCustomController = {
             BIN_TO_UUID(des.id) as id,
             BIN_TO_UUID(des.employeeId) as employeeId,
             COALESCE(BIN_TO_UUID(des.departmentId), BIN_TO_UUID(e.departmentId)) as departmentId,
+            BIN_TO_UUID(des.academicDepartmentId) as academicDepartmentId,
             COALESCE(BIN_TO_UUID(des.collegeId), BIN_TO_UUID(dep.collegeId), BIN_TO_UUID(empDept.collegeId)) as collegeId,
             des.title,
             des.titleAmharic,

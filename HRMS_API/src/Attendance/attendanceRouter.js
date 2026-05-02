@@ -27,7 +27,7 @@ attendanceRouter.use(async (req, res, next) => {
 attendanceRouter.get(
   "/",
   authenticateToken,
-  authorize("HRMANAGER", "DEAN", "HEAD"),
+  authorize("HRMANAGER", "DEAN", "HEAD", "HROFFICER"),
   attendanceController.getAllScopedAttendance
 );
 

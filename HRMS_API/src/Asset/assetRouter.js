@@ -69,7 +69,7 @@ assetRouter.get(
 assetRouter.get(
   "/employees/:employeeId/assets",
   authenticateToken,
-  authorize("HRMANAGER", "HROFFICER", "HEAD"),
+  authorize("HRMANAGER", "HROFFICER", "HEAD", "EMPLOYEE"),
   assetController.getEmployeeAssets
 );
 

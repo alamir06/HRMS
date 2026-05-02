@@ -5,8 +5,9 @@ import { X, Search, ChevronDown } from 'lucide-react';
 import api from '../../../services/api';
 import designationService from '../../../services/designationService';
 
-const CustomSelect = ({ value, onChange, options, placeholder }) => {
+const CustomSelect = ({ value, onChange, options, placeholder, searchable = false, searchPlaceholder = "Search..." }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const selectRef = useRef(null);
 
   useEffect(() => {
@@ -18,13 +19,16 @@ const CustomSelect = ({ value, onChange, options, placeholder }) => {
   }, []);
 
   const selectedLabel = options.find(o => o.value === value)?.label || placeholder;
+  const filteredOptions = searchable && searchTerm
+    ? options.filter(o => o.label.toLowerCase().includes(searchTerm.toLowerCase()))
+    : options;
 
   return (
     <div className="hr-attendance-period-filter-wrap" ref={selectRef} style={{ width: '100%', position: 'relative' }}>
       <button
         type="button"
         className={`hr-attendance-period-filter-trigger ${isOpen ? 'open' : ''}`}
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => { setIsOpen(!isOpen); setSearchTerm(''); }}
         style={{ width: '100%', justifyContent: 'space-between', minHeight: '48px' }}
       >
         <span style={{ color: value ? 'var(--text-primary)' : 'var(--text-secondary)' }}>{selectedLabel}</span>
@@ -32,25 +36,45 @@ const CustomSelect = ({ value, onChange, options, placeholder }) => {
       </button>
       
       {isOpen && (
-        <div className="hr-attendance-period-filter-menu" style={{ width: '100%', maxHeight: '200px', overflowY: 'auto', left: 0 }}>
+        <div className="hr-attendance-period-filter-menu" style={{ width: '100%', maxHeight: '250px', overflowY: 'auto', left: 0, zIndex: 10 }}>
+          {searchable && (
+            <div style={{ padding: '8px', borderBottom: '1px solid var(--border-color)', position: 'sticky', top: 0, background: 'var(--bg-secondary)', zIndex: 11 }}>
+              <div style={{ display: 'flex', alignItems: 'center', background: 'var(--bg-primary)', borderRadius: '6px', padding: '4px 8px' }}>
+                <Search size={14} color="var(--text-secondary)" style={{ marginRight: '6px' }} />
+                <input
+                  type="text"
+                  placeholder={searchPlaceholder}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%', color: 'var(--text-primary)', fontSize: '0.85rem' }}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </div>
+            </div>
+          )}
           <button
             type="button"
             className="hr-attendance-period-filter-option"
-            onClick={() => { onChange(''); setIsOpen(false); }}
+            onClick={() => { onChange(''); setIsOpen(false); setSearchTerm(''); }}
             style={{ color: 'var(--text-secondary)' }}
           >
             {placeholder}
           </button>
-          {options.map(opt => (
+          {filteredOptions.map(opt => (
              <button
                 key={opt.value}
                 type="button"
                 className={`hr-attendance-period-filter-option ${value === opt.value ? 'active' : ''}`}
-                onClick={() => { onChange(opt.value); setIsOpen(false); }}
+                onClick={() => { onChange(opt.value); setIsOpen(false); setSearchTerm(''); }}
              >
                 {opt.label}
              </button>
           ))}
+          {searchable && filteredOptions.length === 0 && (
+             <div className="hr-attendance-period-filter-option" style={{ padding: '12px', color: 'var(--text-secondary)', cursor: 'default' }}>
+                No matches found...
+             </div>
+          )}
         </div>
       )}
     </div>
@@ -72,11 +96,12 @@ const DesignationForm = ({ onClose, onSuccess }) => {
   const empDropdownRef = useRef(null);
 
   const [isJobDescFocused, setIsJobDescFocused] = useState(false);
+  const [customTitle, setCustomTitle] = useState('');
 
   // Form State
   const [formData, setFormData] = useState({
     employeeId: '',
-    title: '', // expected: HEAD, DEAN, TRANSFER
+    title: '', // expected: HEAD, DEAN, TRANSFER, MANAGER, OTHER
     jobDescription: '',
     status: 'ACTIVE',
     collegeId: '',
@@ -127,8 +152,14 @@ const DesignationForm = ({ onClose, onSuccess }) => {
       const next = { ...prev, [name]: value };
       
       // Reset dependent fields intelligently
-      if (name === 'title' && value === 'TRANSFER') {
-        next.collegeId = '';
+      if (name === 'title') {
+        if (value === 'TRANSFER' || value === 'MANAGER') {
+          next.collegeId = '';
+        } else if (value === 'OTHER') {
+          next.collegeId = '';
+          next.departmentId = '';
+          setCustomTitle('');
+        }
       }
       if (name === 'collegeId' && prev.title === 'HEAD') {
         next.departmentId = ''; // Reset dept if college changes for Head
@@ -160,6 +191,15 @@ const DesignationForm = ({ onClose, onSuccess }) => {
     }
     else if (formData.title === 'TRANSFER') {
        if (!formData.departmentId) return "Target Department selection is strictly required for Transfer.";
+    }
+    else if (formData.title === 'MANAGER') {
+       if (!formData.departmentId) return "Target Department selection is strictly required for Office Manager.";
+    }
+    else if (formData.title === 'OTHER') {
+       if (!customTitle.trim()) return "Please specify the exact title.";
+       const lowerTitle = customTitle.toLowerCase();
+       if (lowerTitle.includes('dean') && !formData.collegeId) return "College selection is required for Vice Dean or similar roles.";
+       if (lowerTitle.includes('coordinator') && !formData.departmentId) return "Department selection is required for Coordinator roles.";
     }
     return null;
   };
@@ -225,6 +265,8 @@ const DesignationForm = ({ onClose, onSuccess }) => {
            } else {
                payload.titleAmharic = 'ዲን';
            }
+       } else if (payload.title === 'OTHER') {
+           payload.title = customTitle.trim();
        }
 
        const res = await designationService.createDesignation(payload);
@@ -268,11 +310,37 @@ const DesignationForm = ({ onClose, onSuccess }) => {
                   options={[
                     { value: 'HEAD', label: isAmharic ? 'የክፍል ኃላፊ (Department Head)' : 'Department Head (HEAD)' },
                     { value: 'DEAN', label: isAmharic ? 'ዲን (Dean)' : 'College Dean (DEAN)' },
-                    { value: 'TRANSFER', label: isAmharic ? 'ዝውውር (Transfer)' : 'Transfer Employee (TRANSFER)' }
+                    { value: 'TRANSFER', label: isAmharic ? 'ዝውውር (Transfer)' : 'Transfer Employee (TRANSFER)' },
+                    { value: 'MANAGER', label: isAmharic ? 'የቢሮ ሃላፊ (Administrative Office Manager)' : 'Administrative Office Manager (MANAGER)' },
+                    { value: 'OTHER', label: isAmharic ? 'ሌላ (Other / Dual Role)' : 'Other Dual Role (Coordinator, Vice Dean)' }
                   ]}
                 />
              </div>
           </div>
+
+          {formData.title === 'OTHER' && (
+             <div style={{ marginBottom: '1.5rem' }}>
+                <div className="form-group">
+                   <label className="required">{isAmharic ? 'ትክክለኛውን ማዕረግ ያስገቡ' : 'Specify Exact Title'}</label>
+                   <input
+                     type="text"
+                     value={customTitle}
+                     onChange={(e) => setCustomTitle(e.target.value)}
+                     placeholder={isAmharic ? 'ለምሳሌ፡ አስተባባሪ' : 'e.g., Coordinator, Vice Dean...'}
+                     style={{
+                       width: '100%',
+                       padding: '0.6rem 1rem',
+                       borderRadius: '8px',
+                       border: '1px solid var(--border-color)',
+                       background: 'var(--bg-secondary)',
+                       color: 'var(--text-primary)',
+                       outline: 'none',
+                       minHeight: '48px'
+                     }}
+                   />
+                </div>
+             </div>
+          )}
 
           <div className="form-group" style={{ marginBottom: '1.5rem', position: 'relative' }} ref={empDropdownRef}>
              <label className="required">{isAmharic ? 'ሰራተኛ ምረጥ' : 'Select Employee'}</label>
@@ -346,13 +414,15 @@ const DesignationForm = ({ onClose, onSuccess }) => {
              <div style={{ padding: '1.25rem', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '12px', marginBottom: '1.25rem' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '1rem' }}>
                    
-                   {(formData.title === 'HEAD' || formData.title === 'DEAN') && (
+                   {(formData.title === 'HEAD' || formData.title === 'DEAN' || (formData.title === 'OTHER' && customTitle.toLowerCase().includes('dean'))) && (
                      <div className="form-group">
                         <label className="required">{isAmharic ? 'ኮሌጅ' : 'Target College'}</label>
                         <CustomSelect 
                           value={formData.collegeId}
                           onChange={(val) => handleChange({ target: { name: 'collegeId', value: val } })}
                           placeholder={isAmharic ? '-- ምረጥ --' : '-- Select College --'}
+                          searchable={true}
+                          searchPlaceholder={isAmharic ? 'ፈልግ...' : 'Search colleges...'}
                           options={colleges.map(c => ({
                              value: c.id,
                              label: getLocalizedTitle(c.collegeName, c.collegeNameAmharic)
@@ -361,18 +431,24 @@ const DesignationForm = ({ onClose, onSuccess }) => {
                      </div>
                    )}
                    
-                   {(formData.title === 'HEAD' || formData.title === 'TRANSFER') && (
+                   {(formData.title === 'HEAD' || formData.title === 'TRANSFER' || formData.title === 'MANAGER' || (formData.title === 'OTHER' && customTitle.toLowerCase().includes('coordinator'))) && (
                      <div className="form-group">
                         <label className="required">{isAmharic ? 'ዲፓርትመንት' : 'Target Department'}</label>
                         <CustomSelect 
                           value={formData.departmentId}
                           onChange={(val) => handleChange({ target: { name: 'departmentId', value: val } })}
                           placeholder={isAmharic ? '-- ምረጥ --' : '-- Select Department --'}
+                          searchable={true}
+                          searchPlaceholder={isAmharic ? 'ፈልግ...' : 'Search departments...'}
                           options={departments
-                              .filter(d => formData.title === 'HEAD' ? d.collegeId === formData.collegeId : true)
+                              .filter(d => {
+                                 if (formData.title === 'MANAGER') return d.departmentType === 'ADMINISTRATIVE';
+                                 if (formData.title === 'HEAD') return d.collegeId === formData.collegeId;
+                                 return true;
+                              })
                               .map(d => ({
                                  value: d.id,
-                                 label: `${getLocalizedTitle(d.departmentName, d.departmentNameAmharic)}${formData.title === 'TRANSFER' ? ` (${d.departmentType})` : ''}`
+                                 label: `${getLocalizedTitle(d.departmentName, d.departmentNameAmharic)}${formData.title === 'TRANSFER' || formData.title === 'OTHER' ? ` (${d.departmentType})` : ''}`
                               }))
                           }
                         />

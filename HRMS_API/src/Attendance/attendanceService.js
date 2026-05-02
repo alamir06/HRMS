@@ -64,15 +64,28 @@ export const attendanceService = {
       );
 
       for (const emp of employees) {
+         // Check if employee is on approved leave today
+         const [leaveRows] = await connection.query(
+           `SELECT id FROM leaveRequest 
+            WHERE employeeId = ? 
+            AND status = 'APPROVED' 
+            AND ? BETWEEN startDate AND endDate`,
+           [emp.id, date]
+         );
+         
+         const isOnLeave = leaveRows.length > 0;
+         const attendanceStatus = isOnLeave ? 'ON_LEAVE' : 'ABSENT';
+         const notes = isOnLeave ? 'System generated: On Leave' : 'System generated default absence';
+
          await connection.query(
            `INSERT IGNORE INTO attendance (employeeId, Date, status, shiftId, notes) 
-            VALUES (?, ?, 'ABSENT', UUID_TO_BIN(?), 'System generated default absence')`,
-           [emp.id, date, morningShiftId]
+            VALUES (?, ?, ?, UUID_TO_BIN(?), ?)`,
+           [emp.id, date, attendanceStatus, morningShiftId, notes]
          );
          await connection.query(
            `INSERT IGNORE INTO attendance (employeeId, Date, status, shiftId, notes) 
-            VALUES (?, ?, 'ABSENT', UUID_TO_BIN(?), 'System generated default absence')`,
-           [emp.id, date, afternoonShiftId]
+            VALUES (?, ?, ?, UUID_TO_BIN(?), ?)`,
+           [emp.id, date, attendanceStatus, afternoonShiftId, notes]
          );
       }
 

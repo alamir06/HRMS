@@ -1,0 +1,145 @@
+/* EmployeeOverview Dashboard Styles adapted from Profile */
+
+.overview-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 50vh;
+  font-size: 1.2rem;
+  color: var(--text-secondary);
+}
+
+/* HERO CARD */
+.profile-hero-card {
+  background: linear-gradient(135deg, white 0%, #f9fbfb 100%);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+  border: 1px solid rgba(0,0,0,0.02);
+  margin-bottom: 2rem;
+}
+
+.avatar-wrapper-lg {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  overflow: visible;
+  border: 4px solid white;
+}
+
+.avatar-wrapper-lg img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.profile-hero-info h2 {
+  margin: 0 0 0.5rem;
+  font-size: 2rem;
+  color: var(--text-primary);
+}
+
+.hero-badges {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.hero-subtitle {
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+/* GRID LAYOUT FOR CARDS */
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.profile-info-card {
+  background: white;
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  border: 1px solid var(--border-color);
+}
+
+.profile-info-card.full-span {
+  grid-column: 1 / -1;
+}
+
+.card-lbl-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--primary-color);
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid rgba(0,0,0,0.03);
+  padding-bottom: 0.75rem;
+}
+
+.header-spread {
+  justify-content: space-between;
+}
+
+.card-data-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem 1rem;
+}
+
+.data-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.data-group label {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.data-group span {
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+/* DOCUMENTS VAULT */
+.empty-docs {
+  color: #9ca3af;
+  font-style: italic;
+  font-size: 0.9rem;
+  text-align: center;
+  padding: 2rem;
+  background: var(--bg-primary);
+  border-radius: var(--radius-sm);
+}
+
+/* Dark Mode Handling */
+[data-theme='dark'] .profile-hero-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+}
+
+[data-theme='dark'] .profile-info-card {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+}
+
+[data-theme='dark'] .empty-docs {
+  background: var(--bg-primary);
+}

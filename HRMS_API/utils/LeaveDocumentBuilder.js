@@ -142,9 +142,9 @@ export const generateLeaveDocumentHTML = (employee, leave, balanceData = null, r
             </li>
             <li style="margin-bottom: 15px;"> 
               <strong>ፈቃድ የተሰጠበት ምክንያት:</strong>
-              <div style="margin-top: 5px; padding: 10px; border: 1px dashed #777; background: #fafafa; border-radius: 4px; display: block; max-width: 100%; word-wrap: break-word; overflow-wrap: break-word;">
+              <span style="margin-left: 10px;">
                 ${escapeHtml(leave.reason || 'N/A')}
-              </div>
+              </span>
             </li>
             <li style="margin-bottom: 10px;"> 
               <strong>የጠየቁት ፈቃድ አይነት:</strong> <u>${escapeHtml(leave.leaveType.replace('_', ' '))}</u>

@@ -11,6 +11,8 @@ import './NoticeModule.css';
 
 const NoticeModule = ({ allowedAudiences, isEmployeeView = false }) => {
   const { t, i18n } = useTranslation();
+  const isAmharic = i18n.language === 'am';
+  
   const [notices, setNotices] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [colleges, setColleges] = useState([]);
@@ -18,8 +20,10 @@ const NoticeModule = ({ allowedAudiences, isEmployeeView = false }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [search, setSearch] = useState('');
 
-  // Modal States
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  // Get logged in user data to auto-assign department/college context
+  const currentUser = JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user') || '{}');
   
   const [formData, setFormData] = useState({
     title: '',
@@ -87,24 +91,53 @@ const NoticeModule = ({ allowedAudiences, isEmployeeView = false }) => {
   };
 
   const handleSubmit = async () => {
-    if (!formData.title || !formData.content) {
-      toast.error(i18n.language === 'am' ? 'እባክዎ ርዕስ እና ይዘት ያስገቡ' : 'Please provide title and content');
-      return;
+    const payload = { ...formData };
+
+    if (isAmharic) {
+      if (!payload.titleAmharic || !payload.contentAmharic) {
+        toast.error('እባክዎ ርዕስ እና ይዘት ያስገቡ');
+        return;
+      }
+      if (!payload.title) payload.title = payload.titleAmharic;
+      if (!payload.content) payload.content = payload.contentAmharic;
+    } else {
+      if (!payload.title || !payload.content) {
+        toast.error('Please provide title and content');
+        return;
+      }
+      if (!payload.titleAmharic) payload.titleAmharic = payload.title;
+      if (!payload.contentAmharic) payload.contentAmharic = payload.content;
     }
 
-    if (formData.targetAudience === 'DEPARTMENT' && !formData.targetDepartmentId) {
-      toast.error('Please select a department');
-      return;
+    // Auto-attach department and college logic based on user's role
+    if (payload.targetAudience === 'DEPARTMENT') {
+      if (!currentUser.departmentId) {
+        toast.error('You do not belong to a department. Cannot send departmental notice.');
+        return;
+      }
+      payload.targetDepartmentId = currentUser.departmentId;
     }
 
-    if (formData.targetAudience === 'COLLEGE' && !formData.targetCollegeId) {
-      toast.error('Please select a college');
-      return;
+    if (payload.targetAudience === 'COLLEGE_HEADS') {
+      if (!currentUser.collegeId) {
+        // Find the collegeId if the user has a department that maps to one, or grab from current user object
+        toast.error('You do not belong to a college. Cannot send college notice.');
+        return;
+      }
+      payload.targetCollegeId = currentUser.collegeId;
+    }
+
+    if (payload.targetAudience === 'COLLEGE' && !payload.targetCollegeId) {
+      if (currentUser.collegeId) {
+         payload.targetCollegeId = currentUser.collegeId;
+      } else {
+         toast.error('Please select a college');
+         return;
+      }
     }
 
     try {
       setIsSubmitting(true);
-      const payload = { ...formData };
       
       // Clean up empty strings for Zod
       Object.keys(payload).forEach(key => {
@@ -184,9 +217,11 @@ const NoticeModule = ({ allowedAudiences, isEmployeeView = false }) => {
                     </td>
                     <td>
                       <span className="audience-badge">
-                        {n.targetAudience}
-                        {n.targetDepartmentName && ` - ${n.targetDepartmentName}`}
-                        {n.targetCollegeName && ` - ${n.targetCollegeName}`}
+                        {n.targetAudience === 'DEPARTMENT' ? 'My Department Employees' : 
+                         n.targetAudience === 'COLLEGE_HEADS' ? 'College Department Heads' : 
+                         n.targetAudience === 'HR_MANAGER' ? 'HR Manager' : n.targetAudience}
+                        {n.targetDepartmentName && n.targetAudience !== 'DEPARTMENT' && ` - ${n.targetDepartmentName}`}
+                        {n.targetCollegeName && n.targetAudience !== 'COLLEGE_HEADS' && n.targetAudience !== 'COLLEGE' && ` - ${n.targetCollegeName}`}
                       </span>
                     </td>
                     <td>{n.createdByUsername}</td>
@@ -213,69 +248,75 @@ const NoticeModule = ({ allowedAudiences, isEmployeeView = false }) => {
             </div>
 
             <div className="notice-modal-body">
-              <div className="notice-split-layout">
-                {/* Left Column */}
-                <div className="notice-form-group">
-                  <label className="notice-form-label">Title (English) <span className="common-required-star">*</span></label>
-                  <input className="notice-form-input" type="text" placeholder="e.g. Weekly Meeting" value={formData.title} onChange={e => handleChange('title', e.target.value)} />
-                </div>
-                <div className="notice-form-group">
-                  <label className="notice-form-label">Title (Amharic)</label>
-                  <input className="notice-form-input" type="text" placeholder="ርዕስ..." value={formData.titleAmharic} onChange={e => handleChange('titleAmharic', e.target.value)} />
-                </div>
+              <div className="notice-form-group">
+                <label className="notice-form-label">{isAmharic ? 'ርዕስ' : 'Title'} <span className="common-required-star">*</span></label>
+                <input 
+                  className="notice-form-input" 
+                  type="text" 
+                  placeholder={isAmharic ? "ርዕስ..." : "e.g. Weekly Meeting"} 
+                  value={isAmharic ? formData.titleAmharic : formData.title} 
+                  onChange={e => handleChange(isAmharic ? 'titleAmharic' : 'title', e.target.value)} 
+                />
               </div>
 
               <div className="notice-split-layout">
                 <div className="notice-form-group">
-                  <label className="notice-form-label">Target Audience <span className="common-required-star">*</span></label>
+                  <label className="notice-form-label">{isAmharic ? 'ተደራሲያን' : 'Target Audience'} <span className="common-required-star">*</span></label>
                   <select className="notice-form-select" value={formData.targetAudience} onChange={e => handleChange('targetAudience', e.target.value)}>
-                    {(allowedAudiences || ["ALL", "DEPARTMENT", "COLLEGE", "HR_MANAGER", "INDIVIDUAL"]).map(aud => (
-                      <option key={aud} value={aud}>{aud}</option>
-                    ))}
+                    {(allowedAudiences || ["ALL", "DEPARTMENT", "COLLEGE", "HR_MANAGER", "INDIVIDUAL"]).map(aud => {
+                      let label = aud;
+                      if (aud === 'DEPARTMENT') label = 'My Department Employees';
+                      if (aud === 'COLLEGE_HEADS') label = 'College Department Heads';
+                      if (aud === 'HR_MANAGER') label = 'HR Manager';
+                      return <option key={aud} value={aud}>{label}</option>
+                    })}
                   </select>
                 </div>
                 <div className="notice-form-group">
-                  <label className="notice-form-label">Notice Type</label>
+                  <label className="notice-form-label">{isAmharic ? 'የማስታወቂያ ዓይነት' : 'Notice Type'}</label>
                   <select className="notice-form-select" value={formData.noticeType} onChange={e => handleChange('noticeType', e.target.value)}>
-                    <option value="GENERAL">General</option>
-                    <option value="POLICY">Policy</option>
-                    <option value="EVENT">Event</option>
-                    <option value="URGENT">Urgent</option>
+                    <option value="GENERAL">{isAmharic ? 'አጠቃላይ' : 'General'}</option>
+                    <option value="POLICY">{isAmharic ? 'ደንብ' : 'Policy'}</option>
+                    <option value="EVENT">{isAmharic ? 'ክስተት' : 'Event'}</option>
+                    <option value="URGENT">{isAmharic ? 'አስቸኳይ' : 'Urgent'}</option>
                   </select>
                 </div>
               </div>
 
-              {formData.targetAudience === 'DEPARTMENT' && (
+              {/* If HR Manager selects DEPARTMENT or COLLEGE, we still need manual selection. But Heads don't. */}
+              {formData.targetAudience === 'DEPARTMENT' && !allowedAudiences?.includes('DEPARTMENT') && (
                 <div className="notice-form-group">
-                  <label className="notice-form-label">Select Department <span className="common-required-star">*</span></label>
+                  <label className="notice-form-label">{isAmharic ? 'ክፍል ይምረጡ' : 'Select Department'} <span className="common-required-star">*</span></label>
                   <SearchableSelect 
-                    field={{ name: 'targetDepartmentId', options: departments.map(d => ({ value: d.id, label: d.departmentName })) }}
+                    options={departments.map(d => ({ value: d.id, label: d.departmentName }))}
                     value={formData.targetDepartmentId}
-                    onChange={(e) => handleChange('targetDepartmentId', e.target.value)}
+                    onChange={(val) => handleChange('targetDepartmentId', val)}
+                    placeholder="Search department..."
                   />
                 </div>
               )}
 
-              {formData.targetAudience === 'COLLEGE' && (
+              {formData.targetAudience === 'COLLEGE' && !allowedAudiences?.includes('COLLEGE') && (
                 <div className="notice-form-group">
-                  <label className="notice-form-label">Select College <span className="common-required-star">*</span></label>
-                  <select className="notice-form-select" value={formData.targetCollegeId} onChange={e => handleChange('targetCollegeId', e.target.value)}>
-                    <option value="">-- Select College --</option>
-                    {colleges.map(c => (
-                      <option key={c.id} value={c.id}>{c.collegeName}</option>
-                    ))}
-                  </select>
+                  <label className="notice-form-label">{isAmharic ? 'ኮሌጅ ይምረጡ' : 'Select College'} <span className="common-required-star">*</span></label>
+                  <SearchableSelect 
+                    options={colleges.map(c => ({ value: c.id, label: c.collegeName }))}
+                    value={formData.targetCollegeId}
+                    onChange={(val) => handleChange('targetCollegeId', val)}
+                    placeholder="Search college..."
+                  />
                 </div>
               )}
 
               <div className="notice-split-layout">
-                <div className="notice-form-group">
-                  <label className="notice-form-label">Content (English) <span className="common-required-star">*</span></label>
-                  <textarea className="notice-form-textarea" placeholder="Write the details here..." value={formData.content} onChange={e => handleChange('content', e.target.value)} />
-                </div>
-                <div className="notice-form-group">
-                  <label className="notice-form-label">Content (Amharic)</label>
-                  <textarea className="notice-form-textarea" placeholder="ዝርዝር መረጃ..." value={formData.contentAmharic} onChange={e => handleChange('contentAmharic', e.target.value)} />
+                <div className="notice-form-group" style={{ flex: 2 }}>
+                  <label className="notice-form-label">{isAmharic ? 'መልእክት' : 'Content'} <span className="common-required-star">*</span></label>
+                  <textarea 
+                    className="notice-form-textarea" 
+                    placeholder={isAmharic ? "መልእክትዎን እዚህ ይፃፉ..." : "Write your message here..."} 
+                    value={isAmharic ? formData.contentAmharic : formData.content} 
+                    onChange={e => handleChange(isAmharic ? 'contentAmharic' : 'content', e.target.value)}
+                  ></textarea>
                 </div>
               </div>
 

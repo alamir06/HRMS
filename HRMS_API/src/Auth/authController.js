@@ -52,7 +52,7 @@ export const login = async (req, res, next) => {
 
     const token = signToken({ userId: user.id, employeeId: user.employeeId, role: user.systemRole || user.employeeRole });
     await recordSuccessfulLogin(user.id);
-    
+
     // Automatically record attendance check-in based on login
     if (user.employeeId) {
       await attendanceService.autoCheckIn(user.employeeId);
@@ -77,7 +77,9 @@ export const login = async (req, res, next) => {
           phone: user.personalPhone,
           profilePicture: user.profilePicture,
           department: user.department,
+          departmentId: user.departmentId,
           collegeName: user.collegeName,
+          collegeId: user.collegeId,
           salary: user.salary,
           position: user.position,
           hireDate: user.hireDate,
@@ -112,7 +114,7 @@ export const createSystemUser = async (req, res, next) => {
 
     if (sendEmail !== false && contact?.email) {
       const subject = "Your HRMS Account Credentials";
-      
+
       // HTML email template with styling
       const html = `
 <!DOCTYPE html>
@@ -356,10 +358,10 @@ export const createSystemUser = async (req, res, next) => {
         `This is an automated message from the HR Management System.`;
 
       try {
-        await sendEmail({ 
-          to: contact.email, 
-          subject, 
-          text, 
+        await sendEmail({
+          to: contact.email,
+          subject,
+          text,
           html // Added HTML version
         });
         emailStatus = { delivered: true, to: contact.email };

@@ -211,6 +211,10 @@ export const benefitController = {
       const { employeeId } = req.params;
       const { status } = req.query;
 
+      if (req.user.role === 'EMPLOYEE' && req.user.employeeId !== employeeId) {
+        return res.status(403).json({ success: false, error: "Not authorized to view other's benefits" });
+      }
+
       const conditions = ["eb.employeeId = UUID_TO_BIN(?)"];
       const params = [employeeId];
 

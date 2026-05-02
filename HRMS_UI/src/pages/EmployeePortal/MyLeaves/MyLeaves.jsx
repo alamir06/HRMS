@@ -6,13 +6,14 @@ import { toast } from 'react-toastify';
 import EthiopianDateInput from '../../../components/common/EthiopianDateInput';
 import injLogo from '../../../assets/inj-logo.jpg';
 import stampImg from '../../../assets/stamp.svg';
-import { formatEthiopianDate, formatEthiopianDateTime } from '../../../utils/dateTime';
+import { formatEthiopianDate, formatEthiopianDateTime, getCurrentEthiopianDate } from '../../../utils/dateTime';
 import '../EmployeePortal.css';
 import './MyLeaves.css';
 
 const MyLeaves = () => {
   const { t, i18n } = useTranslation();
   const [leaveData, setLeaveData] = useState(null);
+  const [pendingRollovers, setPendingRollovers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -23,6 +24,8 @@ const MyLeaves = () => {
   const [limit, setLimit] = useState(10);
   const [viewedRequest, setViewedRequest] = useState(null);
   const [supportDocPreviewUrl, setSupportDocPreviewUrl] = useState(null);
+
+  const currentEthDate = getCurrentEthiopianDate();
 
 // New Request Form State
   const [newRequest, setNewRequest] = useState({
@@ -84,6 +87,14 @@ const MyLeaves = () => {
       if (res.success) {
         setLeaveData(res.data);
       }
+      try {
+        const rolloverRes = await leaveService.getPendingRollovers();
+        if (rolloverRes.success) {
+          setPendingRollovers(rolloverRes.data);
+        }
+      } catch (err) {
+         console.error("Failed to fetch pending rollovers", err);
+      }
     } catch (error) {
       toast.error(error?.response?.data?.error || "Failed to fetch leave data");
     } finally {
@@ -99,19 +110,9 @@ const MyLeaves = () => {
     start.setHours(0, 0, 0, 0);
     end.setHours(0, 0, 0, 0);
 
-    let count = 0;
-    let current = new Date(start);
-
-    while (current <= end) {
-      const dayOfWeek = current.getDay();
-      // Exclude Sunday (0) and Saturday (6)
-      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-        count++;
-      }
-      current.setDate(current.getDate() + 1);
-    }
-    
-    return count;
+    const diffTime = Math.abs(end - start);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+    return diffDays + 1;
   };
 
   const handleApplyLeave = async () => {
@@ -155,6 +156,18 @@ const MyLeaves = () => {
       toast.error(typeof msgs === 'string' ? msgs : "Validation Error");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleRolloverDecision = async (id, decision) => {
+    try {
+      const res = await leaveService.submitRolloverDecision(id, decision);
+      if (res.success) {
+        toast.success(res.message);
+        fetchMyLeaves();
+      }
+    } catch (err) {
+      toast.error(err?.response?.data?.error || "Failed to submit decision");
     }
   };
 
@@ -203,6 +216,32 @@ const MyLeaves = () => {
         <div className="loading-state">Loading leave data...</div>
       ) : (
         <>
+          {pendingRollovers.length > 0 && (
+            <div className="my-leave-request-rollover-banner" style={{ background: '#fef3c7', padding: '1rem', borderRadius: '8px', marginBottom: '1.5rem', border: '1px solid #f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <Info size={24} color="#d97706" />
+                  <div>
+                    <h3 style={{ margin: 0, color: '#92400e', fontSize: '1.1rem' }}>Action Required: Unused Annual Leave</h3>
+                    <p style={{ margin: 0, color: '#b45309', fontSize: '0.9rem' }}>You have {pendingRollovers[0].unusedDays} unused annual leave days from year {pendingRollovers[0].sourceYear}. Please choose an option below.</p>
+                  </div>
+               </div>
+               <div style={{ display: 'flex', gap: '10px' }}>
+                  <button 
+                     onClick={() => handleRolloverDecision(pendingRollovers[0].id, 'CARRY_FORWARD')}
+                     style={{ background: '#d97706', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+                  >
+                    Carry Forward
+                  </button>
+                  <button 
+                     onClick={() => handleRolloverDecision(pendingRollovers[0].id, 'ENCASH')}
+                     style={{ background: '#059669', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+                  >
+                    Encash to Salary
+                  </button>
+               </div>
+            </div>
+          )}
+
           <div className="my-leave-request-cards-grid">
             {leaveData?.balances?.map(balance => {
               const { color, Icon, subtitle } = getLeaveCardStyle(balance.leaveType);
@@ -435,6 +474,10 @@ const MyLeaves = () => {
                       onChange={(gregDate) => setNewRequest({ ...newRequest, startDate: gregDate })}
                       language={i18n.language}
                       required
+                      minYear={currentEthDate?.year || new Date().getFullYear() - 8}
+                      maxYear={currentEthDate?.year || new Date().getFullYear() - 8}
+                      minMonth={currentEthDate?.month}
+                      minDay={currentEthDate?.day}
                     />
                   </div>
                   {newRequest.leaveType !== 'ORGANIZATION_LEAVE' && (
@@ -445,6 +488,10 @@ const MyLeaves = () => {
                         onChange={(gregDate) => setNewRequest({ ...newRequest, endDate: gregDate })}
                         language={i18n.language}
                         required
+                        minYear={currentEthDate?.year || new Date().getFullYear() - 8}
+                        maxYear={currentEthDate?.year || new Date().getFullYear() - 8}
+                        minMonth={currentEthDate?.month}
+                        minDay={currentEthDate?.day}
                       />
                     </div>
                   )}
@@ -456,9 +503,6 @@ const MyLeaves = () => {
                   <div className="my-leave-request-duration-label">Calculated Duration</div>
                   <div className="my-leave-request-duration-val">
                     {calculateDuration()} <span>Days</span>
-                  </div>
-                  <div className="my-leave-request-duration-note">
-                    Excludes Weekends & Holidays
                   </div>
                 </div>
               )}
@@ -663,9 +707,7 @@ const MyLeaves = () => {
                       </li>
                       <li style={{marginBottom: '15px'}}> 
                         <strong>ፈቃድ የተሰጠበት ምክንያት:</strong>
-                        <div style={{marginTop: '5px', padding: '10px', border: '1px dashed #777', background: '#fafafa', borderRadius: '4px', display: 'block', maxWidth: '100%', wordWrap: 'break-word', overflowWrap: 'break-word'}}>
-                          {viewedRequest.reason || 'N/A'}
-                        </div>
+                        <span style={{marginLeft: '10px'}}>{viewedRequest.reason || 'N/A'}</span>
                       </li>
                       <li style={{marginBottom: '10px'}}> 
                         <strong>የጠየቁት ፈቃድ አይነት:</strong> <u>{viewedRequest.leaveType.replace('_', ' ')}</u>

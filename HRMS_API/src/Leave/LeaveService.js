@@ -9,23 +9,12 @@ const calculateWorkingDays = (startDate, endDate) => {
   const start = new Date(startDate);
   const end = new Date(endDate);
   
-  // Reset time portions for accurate day counting
   start.setHours(0, 0, 0, 0);
   end.setHours(0, 0, 0, 0);
 
-  let count = 0;
-  let current = new Date(start);
-
-  while (current <= end) {
-    const dayOfWeek = current.getDay();
-    // Exclude Sunday (0) and Saturday (6)
-    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-      count++;
-    }
-    current.setDate(current.getDate() + 1);
-  }
-
-  return count;
+  const diffTime = Math.abs(end - start);
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+  return diffDays + 1;
 };
 
 export class LeaveService extends CrudService {
@@ -70,6 +59,18 @@ export class LeaveService extends CrudService {
       );
       if (!empRows.length) throw new Error("Employee not found");
       const { employeeType, gender, hireDate } = empRows[0];
+
+      // Block if the employee has an active or pending leave request
+      const today = new Date().toISOString().slice(0, 10);
+      const [activeRequests] = await connection.query(
+        `SELECT id FROM leaveRequest 
+         WHERE employeeId = UUID_TO_BIN(?) 
+         AND (status = 'PENDING' OR (status = 'APPROVED' AND endDate >= ?))`,
+        [employeeId, today]
+      );
+      if (activeRequests.length > 0) {
+        throw new Error("You already have an active or pending leave request. You cannot submit another request until your current one is completed or rejected.");
+      }
 
       if (employeeType === 'ACADEMIC' && leaveType === 'ANNUAL') {
         throw new Error("Academic employees do not have annual leave.");
@@ -358,16 +359,124 @@ export class LeaveService extends CrudService {
     }
   }
 
-  async getEmployeeLeaveData(employeeId, year = new Date().getFullYear()) {
+  async syncAnniversaryBalances(employeeId) {
+    const connection = await pool.getConnection();
     try {
+      await connection.beginTransaction();
+      
+      const [empRows] = await connection.query(
+        `SELECT employeeType, hireDate FROM employee WHERE id = UUID_TO_BIN(?)`,
+        [employeeId]
+      );
+      if (!empRows.length || !empRows[0].hireDate) {
+         connection.release();
+         return;
+      }
+
+      const { employeeType, hireDate } = empRows[0];
+      const hd = new Date(hireDate);
+      const now = new Date();
+      
+      let anniversaryYear = now.getFullYear();
+      const anniversaryThisYear = new Date(now.getFullYear(), hd.getMonth(), hd.getDate());
+      if (now < anniversaryThisYear) {
+         anniversaryYear--;
+      }
+
+      // Check if we have balances for this anniversary year
+      const [currentBalances] = await connection.query(
+        `SELECT * FROM leaveBalance WHERE employeeId = UUID_TO_BIN(?) AND year = ?`,
+        [employeeId, anniversaryYear]
+      );
+
+      if (currentBalances.length === 0) {
+        const prevYear = anniversaryYear - 1;
+        
+        if (employeeType === 'ADMINISTRATIVE') {
+           const [prevAnnual] = await connection.query(
+              `SELECT remainingDays FROM leaveBalance WHERE employeeId = UUID_TO_BIN(?) AND year = ? AND leaveType = 'ANNUAL'`,
+              [employeeId, prevYear]
+           );
+           
+           if (prevAnnual.length > 0 && prevAnnual[0].remainingDays > 0) {
+              await connection.query(
+                 `INSERT INTO leaveRolloverRequest (employeeId, sourceYear, leaveType, unusedDays, decision, status)
+                  VALUES (UUID_TO_BIN(?), ?, 'ANNUAL', ?, 'PENDING', 'PENDING')`,
+                 [employeeId, prevYear, prevAnnual[0].remainingDays]
+              );
+              
+              const [userRows] = await connection.query(`SELECT BIN_TO_UUID(id) as userId FROM users WHERE employeeId = UUID_TO_BIN(?)`, [employeeId]);
+              if (userRows.length > 0) {
+                await connection.query(
+                  `INSERT INTO notifications (id, userId, title, message, notificationType, relatedModule)
+                   VALUES (UUID_TO_BIN(UUID()), UUID_TO_BIN(?), ?, ?, 'WARNING', 'leave')`,
+                  [userRows[0].userId, "Leave Rollover Action Required", `You have ${prevAnnual[0].remainingDays} unused annual leave days from your previous year. Please choose whether to carry them forward or encash them.`]
+                );
+              }
+           }
+        }
+        
+        const leaveAllocations = [
+          { type: 'ANNUAL', days: 20 },
+          { type: 'SICK', days: 14 },
+          { type: 'MEDICAL', days: 30 },
+          { type: 'PERSONAL', days: 5 },
+          { type: 'MATERNITY', days: 90 },
+          { type: 'PATERNITY', days: 5 },
+          { type: 'ORGANIZATION_LEAVE', days: 0 }
+        ];
+
+        const leaveQuery = `
+          INSERT INTO leaveBalance (
+            employeeId, leaveType, year, totalAllocatedDays, remainingDays
+          ) VALUES (UUID_TO_BIN(?), ?, ?, ?, ?)
+        `;
+        
+        for (const leave of leaveAllocations) {
+          await connection.query(leaveQuery, [
+            employeeId, 
+            leave.type, 
+            anniversaryYear, 
+            leave.days, 
+            leave.days
+          ]);
+        }
+      }
+      
+      await connection.commit();
+    } catch (error) {
+      await connection.rollback();
+      console.error("Error syncing anniversary balances:", error);
+    } finally {
+      connection.release();
+    }
+  }
+
+  async getEmployeeLeaveData(employeeId, year = null) {
+    try {
+      await this.syncAnniversaryBalances(employeeId);
+      
       const [empRows] = await pool.query(`SELECT e.employeeType, ep.gender, e.hireDate FROM employee e LEFT JOIN employeePersonal ep ON e.id = ep.employeeId WHERE e.id = UUID_TO_BIN(?)`, [employeeId]);
       const employee = empRows[0] || {};
+
+      let queryYear = year;
+      if (!queryYear) {
+         if (employee.hireDate) {
+            const hd = new Date(employee.hireDate);
+            const now = new Date();
+            let annYear = now.getFullYear();
+            if (now < new Date(now.getFullYear(), hd.getMonth(), hd.getDate())) annYear--;
+            queryYear = annYear;
+         } else {
+            queryYear = new Date().getFullYear();
+         }
+      }
 
       // 1. Get Balances
       let [balances] = await pool.query(
         `SELECT BIN_TO_UUID(id) as id, leaveType, year, totalAllocatedDays, usedDays, remainingDays, carryForwardDays 
          FROM leaveBalance WHERE employeeId = UUID_TO_BIN(?) AND year = ?`,
-        [employeeId, year]
+        [employeeId, queryYear]
       );
 
       // Filter balances based on rules
@@ -518,6 +627,70 @@ export class LeaveService extends CrudService {
         rejected: Number(summaryRow.rejected || 0)
       }
     };
+  }
+  async getPendingRolloverDecisions(employeeId) {
+    const [rows] = await pool.query(
+       `SELECT BIN_TO_UUID(id) as id, sourceYear, leaveType, unusedDays, decision, status 
+        FROM leaveRolloverRequest 
+        WHERE employeeId = UUID_TO_BIN(?) AND status = 'PENDING'`,
+       [employeeId]
+    );
+    return rows;
+  }
+
+  async submitRolloverDecision(employeeId, requestId, decision) {
+    const connection = await pool.getConnection();
+    try {
+      await connection.beginTransaction();
+      
+      const [requests] = await connection.query(
+        `SELECT unusedDays, sourceYear FROM leaveRolloverRequest WHERE id = UUID_TO_BIN(?) AND employeeId = UUID_TO_BIN(?) AND status = 'PENDING'`,
+        [requestId, employeeId]
+      );
+      if (requests.length === 0) throw new Error("Pending rollover request not found");
+      
+      const { unusedDays, sourceYear } = requests[0];
+      const targetYear = sourceYear + 1;
+      
+      if (decision === 'CARRY_FORWARD') {
+         await connection.query(
+           `UPDATE leaveBalance 
+            SET carryForwardDays = carryForwardDays + ?, remainingDays = remainingDays + ?
+            WHERE employeeId = UUID_TO_BIN(?) AND year = ? AND leaveType = 'ANNUAL'`,
+           [unusedDays, unusedDays, employeeId, targetYear]
+         );
+      } else if (decision === 'ENCASH') {
+         const [emp] = await connection.query(
+            `SELECT salary FROM employeeEmployment WHERE employeeId = UUID_TO_BIN(?)`,
+            [employeeId]
+         );
+         if (emp.length === 0 || !emp[0].salary) throw new Error("No salary defined for this employee to perform encashment");
+         
+         const baseSalary = parseFloat(emp[0].salary);
+         const encashmentAmount = (baseSalary / 30) * unusedDays;
+         const newSalary = baseSalary + encashmentAmount;
+         
+         await connection.query(
+            `UPDATE employeeEmployment SET salary = ? WHERE employeeId = UUID_TO_BIN(?)`,
+            [newSalary, employeeId]
+         );
+      } else {
+         throw new Error("Invalid decision. Must be CARRY_FORWARD or ENCASH");
+      }
+      
+      await connection.query(
+         `UPDATE leaveRolloverRequest SET decision = ?, status = 'PROCESSED' WHERE id = UUID_TO_BIN(?)`,
+         [decision, requestId]
+      );
+      
+      await connection.commit();
+      return { success: true, message: `Successfully processed rollover decision as ${decision}` };
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
   }
 }
 
