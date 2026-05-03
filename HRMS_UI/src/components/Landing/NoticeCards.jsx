@@ -1,34 +1,33 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Bell, Calendar, FileText } from 'lucide-react';
+import api from '../../services/api';
 import './NoticeCards.css';
 
 const NoticeCards = () => {
-  const notices = [
-    {
-      id: 1,
-      type: "notice",
-      icon: <Bell size={24} color="var(--primary-color)" />,
-      date: "Oct 12, 2026",
-      title: "New Employee Onboarding Session",
-      desc: "All new staff from September must attend the orientation."
-    },
-    {
-      id: 2,
-      type: "event",
-      icon: <Calendar size={24} color="var(--primary-color)" />,
-      date: "Nov 01, 2026",
-      title: "Annual Benefit Enrollment",
-      desc: "Open enrollment for medical and dental starts next month."
-    },
-    {
-      id: 3,
-      type: "policy",
-      icon: <FileText size={24} color="var(--primary-color)" />,
-      date: "Sep 25, 2026",
-      title: "Updated Leave Policy",
-      desc: "Please review the updated guidelines for annual leave requests."
-    }
-  ];
+  const [notices, setNotices] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPublicNotices = async () => {
+      try {
+        const response = await api.get('/notices/public');
+        if (response.data?.success) {
+          setNotices(response.data.data);
+        }
+      } catch (error) {
+        console.error('Error fetching public notices:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPublicNotices();
+  }, []);
+
+  const getIcon = (type) => {
+    if (type === 'EVENT') return <Calendar size={24} color="var(--primary-color)" />;
+    if (type === 'POLICY') return <FileText size={24} color="var(--primary-color)" />;
+    return <Bell size={24} color="var(--primary-color)" />;
+  };
 
   return (
     <section className="notices-section">
@@ -39,16 +38,27 @@ const NoticeCards = () => {
         </div>
         
         <div className="notices-grid">
-          {notices.map((notice) => (
-            <div key={notice.id} className="notice-card">
-              <div className="card-top">
-                <div className="card-icon">{notice.icon}</div>
-                <span className="card-date">{notice.date}</span>
+          {loading ? (
+            <p>Loading notices...</p>
+          ) : notices.length > 0 ? (
+            notices.map((notice) => (
+              <div key={notice.id} className="notice-card">
+                <div className="card-top">
+                  <div className="card-icon">{getIcon(notice.noticeType)}</div>
+                  <span className="card-date">{new Date(notice.publishDate).toLocaleDateString()}</span>
+                </div>
+                <h4 className="card-title">{notice.title}</h4>
+                <p className="card-desc" style={{ 
+                  display: '-webkit-box',
+                  WebkitLineClamp: 3,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden'
+                }}>{notice.content}</p>
               </div>
-              <h4 className="card-title">{notice.title}</h4>
-              <p className="card-desc">{notice.desc}</p>
-            </div>
-          ))}
+            ))
+          ) : (
+            <p>No recent notices found.</p>
+          )}
         </div>
       </div>
     </section>

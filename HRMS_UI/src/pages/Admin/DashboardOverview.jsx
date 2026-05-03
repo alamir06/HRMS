@@ -365,7 +365,7 @@ const DashboardOverview = () => {
       <div className="chart-card velocity-card">
          <div className="chart-header split">
             <div>
-               <h3>{isAmharic ? 'የሰው ኃይል እድገት' : 'Workforce Velocity'}</h3>
+               <h3>{isAmharic ? 'የሰው ኃይል እድገት' : 'Employee Registrations Growth'}</h3>
                <p className="velocity-subtitle">{isAmharic ? 'የእድገት አዝማሚያዎች' : 'Growth trends and retention forecasting'}</p>
             </div>
          </div>
@@ -389,7 +389,7 @@ const DashboardOverview = () => {
       <div className="bottom-grid-half">
          <div className="recent-appointments-card">
             <div className="card-header-split">
-               <h3>{isAmharic ? 'የቅርብ ጊዜ ቀጠሮዎች' : 'Recent Academic Appointments'}</h3>
+               <h3>{isAmharic ? 'የቅርብ ጊዜ ምደባዎች' : 'Recent Designations'}</h3>
                <button className="text-btn" onClick={() => setShowAllAppointments(!showAllAppointments)}>
                   {showAllAppointments ? (isAmharic ? 'ትንሽ አሳይ' : 'VIEW LESS') : (isAmharic ? 'ሁሉንም አሳይ' : 'VIEW ALL')}
                </button>

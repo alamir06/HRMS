@@ -652,7 +652,7 @@ export class EmployeeService extends CrudService {
       await connection.beginTransaction();
 
       // Validate file
-      fileUploadService.validateFile(file);
+      fileUploadService.validateFile(file, "document");
 
       // Generate file URL
       const fileUrl = fileUploadService.generateFileUrl(file);

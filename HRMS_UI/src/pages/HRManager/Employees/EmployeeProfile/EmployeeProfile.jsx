@@ -3,6 +3,7 @@ import { ArrowLeft, User, Briefcase, GraduationCap, FileText, UploadCloud, Trash
 import { toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
 import { employeeService } from '../../../../services/employeeService';
+import designationService from '../../../../services/designationService';
 import { formatEthiopianDate } from '../../../../utils/dateTime';
 import './EmployeeProfile.css';
 
@@ -106,6 +107,17 @@ const EmployeeProfileModal = ({ employeeId, onClose }) => {
            console.error("Failed to fetch documents", docErr);
            empData.documents = [];
          }
+         
+         // Fetch designations explicitly
+         try {
+           const desigRes = await designationService.getDesignations({ employeeId });
+           if (desigRes.success && Array.isArray(desigRes.data)) {
+             empData.designations = desigRes.data;
+           }
+         } catch (desigErr) {
+           console.error("Failed to fetch designations", desigErr);
+           empData.designations = [];
+         }
 
          setEmployee(empData);
       } else {
@@ -164,20 +176,6 @@ const EmployeeProfileModal = ({ employeeId, onClose }) => {
     return `http://localhost:5000/${path.replace(/^\//, '')}`;
   };
 
-  const handleDeleteDocument = async (docId) => {
-    if (!window.confirm("Are you sure you want to delete this document?")) return;
-    try {
-      const res = await employeeService.deleteDocument(docId);
-      if (res.success) {
-        toast.success("Document deleted!");
-        fetchEmployeeData();
-      } else {
-        toast.error("Failed to delete document: " + (res.message || res.error));
-      }
-    } catch (e) {
-      toast.error("Error deleting document");
-    }
-  };
 
   if (isLoading) return (
     <div className="employee-profile-overlay">
@@ -359,6 +357,38 @@ const EmployeeProfileModal = ({ employeeId, onClose }) => {
           </div>
         )}
 
+        {/* DESIGNATION DETAILS CARD */}
+        {employee.designations && employee.designations.find(d => d.status === 'ACTIVE') && (
+          <div className="profile-info-card full-span">
+             <div className="card-lbl-header"><Briefcase size={18}/> {isAmharic ? 'የስራ መደብ መረጃ' : 'Active Designation Details'}</div>
+             <div className="card-data-grid">
+               {(() => {
+                 const activeDesig = employee.designations.find(d => d.status === 'ACTIVE');
+                 return (
+                   <>
+                     <div className="data-group">
+                       <label>{isAmharic ? 'የስራ መደብ' : 'Designation Title'}</label>
+                       <span>{getLocalizedText(activeDesig.title, activeDesig.titleAmharic) || (isAmharic ? 'አልተገኘም' : 'N/A')}</span>
+                     </div>
+                     <div className="data-group">
+                       <label>{isAmharic ? 'ዓይነት' : 'Type'}</label>
+                       <span>{activeDesig.designationType || 'STANDARD'}</span>
+                     </div>
+                     <div className="data-group">
+                       <label>{isAmharic ? 'የደረጃ እርከን' : 'Grade Level'}</label>
+                       <span>{activeDesig.gradeLevel || (isAmharic ? 'አልተገለጸም' : 'Unspecified')}</span>
+                     </div>
+                     <div className="data-group">
+                       <label>{isAmharic ? 'የጀመረበት ቀን' : 'Start Date'}</label>
+                       <span>{displayEthDate(activeDesig.startDateEth, activeDesig.startDate) || (isAmharic ? 'አልተገኘም' : 'N/A')}</span>
+                     </div>
+                   </>
+                 );
+               })()}
+             </div>
+          </div>
+        )}
+
         {/* DOCUMENTS VAULT CARD */}
         <div className="profile-info-card full-span">
             <div className="card-lbl-header header-spread">
@@ -377,32 +407,23 @@ const EmployeeProfileModal = ({ employeeId, onClose }) => {
                       <div 
                         key={i} 
                         className="doc-card" 
-                        style={{ display: 'flex', flexDirection: 'column', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s', backgroundColor: '#fff' }}
+                        style={{ display: 'flex', flexDirection: 'column', border: '1px solid var(--border-color, #e2e8f0)', borderRadius: '12px', overflow: 'hidden', cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s', backgroundColor: 'var(--bg-primary, #fff)' }}
                         onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'; }}
                         onMouseLeave={(e) => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none'; }}
                         onClick={() => setViewDocModal(docUrl)}
                       >
-                        <div style={{ height: '140px', backgroundColor: '#edf2f7', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                        <div style={{ height: '140px', backgroundColor: 'var(--bg-secondary, #edf2f7)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
                           {isImage ? (
                             <img src={docUrl} alt={doc.documentType} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                           ) : (
-                            <FileText size={48} color="#cbd5e0" />
-                          )}
-                          {isHr && (
-                            <button 
-                              onClick={(e) => { e.stopPropagation(); handleDeleteDocument(doc.id); }} 
-                              style={{ position: 'absolute', top: '8px', right: '8px', background: 'rgba(255, 255, 255, 0.9)', border: 'none', borderRadius: '50%', padding: '6px', color: '#e53e3e', cursor: 'pointer', boxShadow: '0 2px 5px rgba(0,0,0,0.2)' }} 
-                                title={isAmharic ? 'ሰነድ ሰርዝ' : 'Delete Document'}
-                            >
-                              <Trash size={14} />
-                            </button>
+                            <FileText size={48} color="var(--text-secondary, #cbd5e0)" />
                           )}
                         </div>
-                        <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', borderTop: '1px solid #e2e8f0' }}>
-                           <strong style={{ fontSize: '0.9rem', color: '#2d3748', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', borderTop: '1px solid var(--border-color, #e2e8f0)' }}>
+                           <strong style={{ fontSize: '0.9rem', color: 'var(--text-primary, #2d3748)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                              {getLocalizedText(doc.documentName, doc.documentNameAmharic) || doc.fileName || doc.documentType}
                            </strong>
-                           <span style={{ fontSize: '0.75rem', color: '#718096', marginTop: '4px' }}>
+                           <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary, #718096)', marginTop: '4px' }}>
                              {doc.documentType} • {new Date(doc.createdAt).toLocaleDateString()}
                            </span>
                         </div>

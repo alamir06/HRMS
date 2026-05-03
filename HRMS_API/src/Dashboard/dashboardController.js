@@ -74,7 +74,7 @@ class DashboardController {
           ORDER BY year ASC
         `);
 
-        // 7. Recent Academic Appointments (Designations + employee details)
+        // 7. Recent Designations (Head, Dean, Administrative)
         const [recentAppointments] = await connection.query(`
           SELECT 
             BIN_TO_UUID(d.id) as id,
@@ -90,25 +90,27 @@ class DashboardController {
           LEFT JOIN employeePersonal ep ON e.id = ep.employeeId
           LEFT JOIN college col ON d.collegeId = col.id
           LEFT JOIN department dept ON d.departmentId = dept.id
-          WHERE d.title IN ('HEAD', 'DEAN') OR d.title LIKE '%head%' OR d.title LIKE '%dean%'
+          WHERE d.title IN ('HEAD', 'DEAN') OR d.title LIKE '%head%' OR d.title LIKE '%dean%' OR d.designationType = 'ADMINISTRATIVE'
           ORDER BY d.createdAt DESC 
           LIMIT 50
         `);
 
-        // 8. Recent Transfers (Approximated by recently updated employees)
+        // 8. Recent Transfers (Designations with title matching 'transfer')
         const [recentTransfers] = await connection.query(`
           SELECT 
-            BIN_TO_UUID(e.id) as id,
-            'TRANSFER' as title,
-            e.updatedAt as createdAt,
+            BIN_TO_UUID(d.id) as id,
+            d.title,
+            d.createdAt,
             ep.firstName,
             ep.lastName,
             ep.profilePicture,
             dept.departmentName
-          FROM employee e
+          FROM designations d
+          JOIN employee e ON d.employeeId = e.id
           LEFT JOIN employeePersonal ep ON e.id = ep.employeeId
-          LEFT JOIN department dept ON e.departmentId = dept.id
-          ORDER BY e.updatedAt DESC 
+          LEFT JOIN department dept ON d.departmentId = dept.id
+          WHERE d.title LIKE '%transfer%'
+          ORDER BY d.createdAt DESC 
           LIMIT 50
         `);
 

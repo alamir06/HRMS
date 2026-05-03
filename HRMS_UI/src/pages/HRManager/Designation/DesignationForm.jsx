@@ -214,32 +214,7 @@ const DesignationForm = ({ onClose, onSuccess }) => {
 
     setIsLoading(true);
     try {
-       // --- TRANSFER LOGIC (Update employee properties directly) ---
-       if (formData.title === 'TRANSFER') {
-         const targetDept = departments.find(d => d.id === formData.departmentId);
-         if (!targetDept) {
-            toast.error("Invalid target department selected.");
-            setIsLoading(false);
-            return;
-         }
-         
-         const payload = {
-           departmentId: formData.departmentId,
-           employeeType: targetDept.departmentType // Dynamically mapping correctly 
-         };
-
-         const empRes = await api.put(`/employees/${formData.employeeId}`, payload);
-         if (empRes.data && empRes.data.success) {
-            toast.success(isAmharic ? 'የሰራተኛ ቅየራ በተሳካ ሁኔታ ተጠናቋል!' : 'Employee Transferred Successfully!');
-            onSuccess();
-         } else {
-            toast.error("Failed to execute transfer.");
-         }
-         setIsLoading(false);
-         return;
-       }
-
-       // --- DESIGNATION LOGIC (Dean or Head) ---
+       // --- DESIGNATION LOGIC ---
        const payload = { ...formData };
        if (payload.minSalary) payload.minSalary = Number(payload.minSalary);
        if (payload.maxSalary) payload.maxSalary = Number(payload.maxSalary);
@@ -265,6 +240,8 @@ const DesignationForm = ({ onClose, onSuccess }) => {
            } else {
                payload.titleAmharic = 'ዲን';
            }
+       } else if (payload.title === 'TRANSFER') {
+           payload.titleAmharic = 'ዝውውር';
        } else if (payload.title === 'OTHER') {
            payload.title = customTitle.trim();
        }
@@ -399,6 +376,8 @@ const DesignationForm = ({ onClose, onSuccess }) => {
                         let passesRoleRestriction = true;
                         if (formData.title === 'HEAD' || formData.title === 'DEAN') {
                            passesRoleRestriction = emp.employeeType === 'ACADEMIC' || (emp.department && emp.department.departmentType === 'ACADEMIC');
+                        } else if (formData.title === 'TRANSFER') {
+                           passesRoleRestriction = emp.employeeType === 'ADMINISTRATIVE';
                         }
                         return `${emp.firstName} ${emp.lastName}`.toLowerCase().includes(empSearch.toLowerCase()) && passesRoleRestriction;
                     }).length === 0 && (
@@ -444,6 +423,7 @@ const DesignationForm = ({ onClose, onSuccess }) => {
                               .filter(d => {
                                  if (formData.title === 'MANAGER') return d.departmentType === 'ADMINISTRATIVE';
                                  if (formData.title === 'HEAD') return d.collegeId === formData.collegeId;
+                                 if (formData.title === 'TRANSFER') return d.departmentType === 'ADMINISTRATIVE';
                                  return true;
                               })
                               .map(d => ({
