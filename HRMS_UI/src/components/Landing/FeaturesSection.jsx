@@ -6,18 +6,18 @@ const FeaturesSection = () => {
   const features = [
     {
       icon: <Users size={28} color="var(--primary-color)" />,
-      title: "Unified Directory",
-      description: "Manage all university staff, tracking their academic roles, internal departments, administrative assignments, and third-party outsource records from a single centralized hub."
-    },
-    {
-      icon: <Banknote size={28} color="var(--primary-color)" />,
-      title: "Smart Payroll",
-      description: "Automate salary constraints, tax deductions, bonuses, and penalties synced directly to the attendance hardware across all campus boundaries."
+      title: "Employee Designation",
+      description: "Define and manage dynamic administrative and academic hierarchies, seamlessly tracking dual-roles, department transfers, and college assignments across the university."
     },
     {
       icon: <BarChart3 size={28} color="var(--primary-color)" />,
-      title: "Real-time Analytics",
-      description: "Generate immediate organizational charts, structural summaries, and performance matrices allowing HR executives to easily evaluate university operations."
+      title: "Leave Management",
+      description: "Streamline employee absence workflows with an automated leave engine that enforces strict entitlement constraints, hierarchical approvals, and dynamic balance rollovers."
+    },
+    {
+      icon: <Banknote size={28} color="var(--primary-color)" />,
+      title: "Staff Recruitment",
+      description: "Orchestrate end-to-end hiring pipelines from job vacancy postings to applicant tracking and seamless onboarding, ensuring a unified transition into the organizational directory."
     }
   ];
 

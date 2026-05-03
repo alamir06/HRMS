@@ -16,8 +16,8 @@ export const recommendationService = {
     return response.data;
   },
 
-  updateStatus: async (id, status, rejectionReason = '') => {
-    const response = await api.patch(`/recommendations/${id}/status`, { status, rejectionReason });
+  updateStatus: async (id, status, rejectionReason = '', additionalExperience = '') => {
+    const response = await api.patch(`/recommendations/${id}/status`, { status, rejectionReason, additionalExperience });
     return response.data;
   }
 };

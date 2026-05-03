@@ -114,7 +114,8 @@ const EmployeeWizard = ({ onClose, onSuccess, editEmployeeId }) => {
       name: '',
       phone: '',
       email: '',
-      documentFile: null
+      documentFile: null,
+      previewUrl: null
     },
     education: [],
     documents: []
@@ -927,24 +928,66 @@ const EmployeeWizard = ({ onClose, onSuccess, editEmployeeId }) => {
                         </div>
                         <div className="premium-form-group">
                           <label>Verification Document <span className="req">*</span></label>
-                          <div className="premium-dashboard-file-upload">
-                            <input
-                              type="file"
-                              required
-                              id="suretyDocumentFile"
-                              style={{ display: 'none' }}
-                              onChange={(e) => {
-                                if (e.target.files && e.target.files[0]) {
-                                  updateNested('surety', 'documentFile', e.target.files[0]);
-                                }
-                              }}
-                              accept=".pdf,.jpg,.jpeg,.png"
-                            />
-                            <label htmlFor="suretyDocumentFile" className="upload-label" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)' }}>
-                              <FileText size={18} />
-                              {formData.surety.documentFile ? formData.surety.documentFile.name : 'Click to Upload Surety Document'}
-                            </label>
-                          </div>
+                          <div className={`premium-dashboard-file-upload ${formData.surety.previewUrl ? 'has-image-preview' : ''}`} style={{ flex: 1, minHeight: '180px', position: 'relative' }}>
+                             {formData.surety.previewUrl ? (
+                               <img
+                                 src={formData.surety.previewUrl}
+                                 alt="Surety Document preview"
+                                 className="upload-image-preview"
+                               />
+                             ) : (
+                               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', pointerEvents: 'none' }}>
+                                 <div className="upload-icon"><FileUp size={32} /></div>
+                                 <div className="upload-text">Upload a File</div>
+                                 <div className="upload-subtext">Max size: 5MB</div>
+                               </div>
+                             )}
+                             
+                             {formData.surety.documentFile && (
+                                <div className="file-preview-meta" style={{ zIndex: 10 }}>
+                                   <button
+                                     type="button"
+                                     className="upload-clear-btn"
+                                     onClick={(e) => {
+                                       e.stopPropagation();
+                                       e.preventDefault();
+                                       updateNested('surety', 'documentFile', null);
+                                       updateNested('surety', 'previewUrl', null);
+                                       // Reset file input
+                                       const input = document.getElementById('suretyDocumentFile');
+                                       if(input) input.value = '';
+                                     }}
+                                     title="Remove selected file"
+                                   >
+                                     <X size={12} />
+                                   </button>
+                                   <span style={{ fontSize: '0.75rem', color: 'var(--primary-color)', fontWeight: '500', cursor: 'pointer', textDecoration: 'underline' }} 
+                                         onClick={(e) => { e.stopPropagation(); openPreview(formData.surety.documentFile); }}>
+                                     <File size={12} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} /> 
+                                     {formData.surety.documentFile.name}
+                                   </span>
+                                   <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>{formatFileSize(formData.surety.documentFile.size)}</span>
+                                </div>
+                             )}
+
+                             <input 
+                               type="file" 
+                               required={!formData.surety.documentFile} 
+                               id="suretyDocumentFile"
+                               accept=".pdf,.jpg,.jpeg,.png" 
+                               onChange={(e) => {
+                                 const file = e.target.files[0];
+                                 if (file) {
+                                    updateNested('surety', 'documentFile', file);
+                                    if (file.type.startsWith('image/')) {
+                                       updateNested('surety', 'previewUrl', URL.createObjectURL(file));
+                                    } else {
+                                       updateNested('surety', 'previewUrl', null);
+                                    }
+                                 }
+                               }} 
+                             />
+                           </div>
                         </div>
                       </div>
                     )}
