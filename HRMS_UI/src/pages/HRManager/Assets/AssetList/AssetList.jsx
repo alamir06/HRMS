@@ -125,10 +125,11 @@ const AssetList = () => {
       setIsSubmitting(true);
       const payload = { ...formData };
       
-      // Handle numeric fields on Items
+      // Handle numeric and date fields on Items
       if (activeTab === 'items') {
-        if (payload.purchaseCost) payload.purchaseCost = Number(payload.purchaseCost);
-        if (payload.currentValue) payload.currentValue = Number(payload.currentValue);
+        payload.purchaseCost = payload.purchaseCost === '' || payload.purchaseCost == null ? null : Number(payload.purchaseCost);
+        payload.currentValue = payload.currentValue === '' || payload.currentValue == null ? null : Number(payload.currentValue);
+        if (!payload.purchaseDate) payload.purchaseDate = null;
       }
 
       if (editingData) {
@@ -262,6 +263,72 @@ const AssetList = () => {
 
   const currentFields = activeTab === 'categories' ? categoryFormFields : itemFormFields;
 
+  const handleExportPdf = () => {
+    const printContent = document.getElementById('asset-catalog-table');
+    if (!printContent) return;
+
+    const printWindow = window.open('', '_blank', 'width=1000,height=800');
+    if (!printWindow) return;
+
+    let styles = '';
+    document.querySelectorAll('style, link[rel="stylesheet"]').forEach((el) => {
+      styles += el.outerHTML;
+    });
+
+    const reportTitle = activeTab === 'categories' ? 'Asset Categories Report' : 'Asset Items Report';
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>${reportTitle}</title>
+          ${styles}
+          <style>
+             @page { size: landscape; margin: 15mm; }
+             body { 
+               padding: 0; 
+               background: white; 
+               font-family: 'Inter', sans-serif; 
+               color: #1e293b;
+               -webkit-print-color-adjust: exact;
+               print-color-adjust: exact;
+             }
+             .asset-table-footer, 
+             .asset-table-actions,
+             .asset-page-limit-selector,
+             .asset-pagination-controls { 
+               display: none !important; 
+             }
+             th:last-child, td:last-child { display: none !important; }
+             table { 
+               width: 100%; 
+               border-collapse: collapse; 
+               margin-top: 15px; 
+             }
+             th, td { 
+               border: 1px solid #cbd5e1 !important; 
+               padding: 10px 12px !important; 
+               text-align: left !important; 
+               font-size: 10pt !important;
+             }
+             th { 
+               background-color: #f8fafc !important; 
+               color: #334155 !important; 
+               font-weight: 700 !important; 
+             }
+          </style>
+        </head>
+        <body>
+          <h2 style="text-align: center; margin-bottom: 20px;">${reportTitle}</h2>
+          ${printContent.innerHTML}
+          <script>
+            window.onload = function() { window.print(); window.close(); }
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
   return (
     <div className="asset-list-container">
       
@@ -291,7 +358,7 @@ const AssetList = () => {
             onChange={(e) => setSearch(e.target.value)}
           />
         </label>
-        <button className="asset-export-btn" onClick={() => toast.info('Export not fully implemented yet.')}>
+        <button className="asset-export-btn" onClick={handleExportPdf}>
           <Download size={18} /> {i18n.language === 'am' ? 'ወደ ፒዲኤፍ ላክ' : 'Export as PDF'}
         </button>
         <button className="asset-btn-add" onClick={handleOpenAdd}>
@@ -299,7 +366,7 @@ const AssetList = () => {
         </button>
       </div>
 
-      <div className="asset-table-card">
+      <div className="asset-table-card" id="asset-catalog-table">
         <div className="asset-table-responsive-wrapper">
           <table className="asset-modern-data-table">
             <thead>

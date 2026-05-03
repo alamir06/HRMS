@@ -266,7 +266,8 @@ const Departments = () => {
         toast.error(res.error || "Failed to delete department");
       }
     } catch (error) {
-      toast.error(error?.response?.data?.error || "Failed to delete from server");
+      const errMsg = error?.response?.data?.message || error?.response?.data?.error || "Failed to delete from server";
+      toast.error(errMsg);
     } finally {
       setDeleteModalOpen(false);
       setDeptToDelete(null);

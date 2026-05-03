@@ -126,7 +126,8 @@ const Colleges = () => {
         }
       }
     } catch (error) {
-      toast.error(error?.response?.data?.error || "An error occurred while saving");
+      const errMsg = error?.response?.data?.message || error?.response?.data?.error || "An error occurred while saving";
+      toast.error(errMsg);
     } finally {
       setIsSubmitting(false);
     }
@@ -148,7 +149,8 @@ const Colleges = () => {
         toast.error(res.error || "Failed to delete college");
       }
     } catch (error) {
-      toast.error(error?.response?.data?.error || "Failed to delete from server");
+      const errMsg = error?.response?.data?.message || error?.response?.data?.error || "Failed to delete from server";
+      toast.error(errMsg);
     } finally {
       setDeleteModalOpen(false);
       setCollegeToDelete(null);
@@ -307,7 +309,7 @@ const Colleges = () => {
       {/* Form Modal manually overlaid with backdrop */}
       {isFormModalOpen && (
         <div className="modal-overlay" onClick={closeFormModal}>
-          <div className="college-modal-form-wrapper" onClick={(e) => e.stopPropagation()}>
+          <div className="college-modal-form-wrapper college-wide-modal" onClick={(e) => e.stopPropagation()}>
             <div className="college-modal-form-header">
               <h3>{editingCollege 
                 ? (i18n.language === 'am' ? 'ኮሌጅ አስተካክል' : 'Edit College') 

@@ -56,12 +56,12 @@ const Attendance = () => {
   const loadGridData = async () => {
      setIsLoading(true);
      try {
-        const empRes = await employeeService.getAllEmployees(page, limit, search, "createdAt", "DESC", { period: "ALL" });
+        const empRes = await employeeService.getAllEmployees(page, limit, search, "createdAt", "DESC", { period: "ALL", employeeType: 'ADMINISTRATIVE' });
         const allEmps = empRes.success ? empRes.data.data || empRes.data : [];
         setPagination(empRes.pagination || { total: allEmps.length, pages: 1 });
         const activeEmps = allEmps.filter(e => !e.employmentStatus || String(e.employmentStatus).trim().toUpperCase() !== 'TERMINATED');
 
-        const systemEmpRes = await employeeService.getAllEmployees(1, 1000, search, "createdAt", "DESC", { period: "ALL" });
+        const systemEmpRes = await employeeService.getAllEmployees(1, 1000, search, "createdAt", "DESC", { period: "ALL", employeeType: 'ADMINISTRATIVE' });
         const globalEmps = systemEmpRes.success ? systemEmpRes.data.data || systemEmpRes.data : [];
         const validSystemEmps = globalEmps.filter(e => !e.employmentStatus || String(e.employmentStatus).trim().toUpperCase() !== 'TERMINATED');
 
@@ -421,45 +421,24 @@ const Attendance = () => {
 
                              
                              const groupedByDate = {};
-empRecords.forEach(r => {
+                             empRecords.forEach(r => {
                                const date = r.Date || r.date;
                                if (!groupedByDate[date]) groupedByDate[date] = [];
                                groupedByDate[date].push(r);
                              });
 
                              const todayDate = new Date();
-const empLeaves = leaveData.filter(l => l.employeeId === emp.id);
-let periodStart = new Date(todayDate); // initialize with todayDate, will be adjusted based on timeFilter
+                             const empLeaves = leaveData.filter(l => l.employeeId === emp.id);
+                             let periodStart = new Date(todayDate);
 
-// Calculate leave days for approved leave
-if (isEmpOnLeave && empLeaves.length > 0) {
-   const activeLeave = empLeaves.sort((a,b) => new Date(b.startDate) - new Date(a.startDate))[0];
-   if (activeLeave) {
-      const start = new Date(activeLeave.startDate);
-      const end = todayDate < new Date(activeLeave.endDate) ? todayDate : new Date(activeLeave.endDate);
-      let lDays = 0;
-      let curr = new Date(start);
-      while (curr <= end) {
-         const dayOfWeek = curr.getDay();
-         if (dayOfWeek !== 0 && dayOfWeek !== 6) lDays++;
-         curr.setDate(curr.getDate() + 1);
-      }
-      leaveDays = lDays;
-   }
-}
-
-                             const datesSet = new Set(Object.keys(groupedByDate));
-                             
-                             
+                             const datesSet = new Set();
                              
                              if (timeFilter === 'WEEKLY') {
-                               const day = todayDate.getDay();
-                               const diff = todayDate.getDate() - day + (day === 0 ? -6 : 1);
-                               periodStart.setDate(diff);
+                               periodStart.setDate(todayDate.getDate() - 6);
                              } else if (timeFilter === 'MONTHLY') {
-                               periodStart = new Date(todayDate.getFullYear(), todayDate.getMonth(), 1);
+                               periodStart.setDate(todayDate.getDate() - 29);
                              } else if (timeFilter === 'YEARLY') {
-                               periodStart = new Date(todayDate.getFullYear(), 0, 1);
+                               periodStart.setDate(todayDate.getDate() - 364);
                              }
                              
                              // Generate all local dates from periodStart to today
@@ -467,10 +446,7 @@ if (isEmpOnLeave && empLeaves.length > 0) {
                              
                              let currDate = new Date(periodStart);
                              while (currDate <= todayDate) {
-                               const dayOfWeek = currDate.getDay();
-                               if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Only count weekdays for potential attendance
-                                  datesSet.add(getLocalDateString(currDate));
-                               }
+                               datesSet.add(getLocalDateString(currDate));
                                currDate.setDate(currDate.getDate() + 1);
                              }
 
@@ -488,7 +464,7 @@ if (isEmpOnLeave && empLeaves.length > 0) {
                                }
 
                                if (isThisDateOnLeave) {
-                                  if (!isEmpOnLeave) leaveDays++; // count historical leave days if not actively on leave
+                                  leaveDays++; // Always count leave days bounded to the period
                                   return; // Skip attendance checks if they were on approved leave
                                }
                                
@@ -501,9 +477,7 @@ if (isEmpOnLeave && empLeaves.length > 0) {
                                  const aStatus = String(aRec.status || "").toUpperCase();
 
                                  if (mStatus === 'ON LEAVE' || aStatus === 'ON LEAVE') {
-                                    // If we didn't catch it via the active leave request, but the DB says ON LEAVE,
-                                    // increment it here to be safe (fallback).
-                                    if (!isEmpOnLeave) leaveDays++;
+                                    leaveDays++;
                                  }
                                  else if (mStatus === 'LATE' || aStatus === 'LATE' || mRec.lateMinutes > 0 || aRec.lateMinutes > 0) lateDays++;
                                  else if (mStatus === 'PRESENT' || aStatus === 'PRESENT') presentDays++;
