@@ -77,11 +77,25 @@ export class RecommendationService extends CrudService {
         ep.middleName,
         ep.lastName,
         ep.profilePicture,
-        d.departmentName
+        ep.dateOfBirth,
+        e.employeeCode,
+        e.hireDate,
+        ee.salary,
+        des.title as designationName,
+        d.departmentName,
+        c.collegeName,
+        ea.fieldOfSpecialization,
+        CONCAT(hep.firstName, ' ', hep.middleName) as approverName
       FROM recommendations r
       LEFT JOIN employeePersonal ep ON r.employeeId = ep.employeeId
       LEFT JOIN employee e ON r.employeeId = e.id
       LEFT JOIN department d ON e.departmentId = d.id
+      LEFT JOIN employeeEmployment ee ON r.employeeId = ee.employeeId
+      LEFT JOIN designations des ON des.employeeId = e.id
+      LEFT JOIN employeeAcademic ea ON r.employeeId = ea.employeeId
+      LEFT JOIN college c ON ea.collegeId = c.id
+      LEFT JOIN users u ON r.approvedBy = u.id
+      LEFT JOIN employeePersonal hep ON u.employeeId = hep.employeeId
       WHERE 1=1
     `;
     let countQuery = `
@@ -157,11 +171,25 @@ export class RecommendationService extends CrudService {
         ep.firstName,
         ep.middleName,
         ep.lastName,
-        d.departmentName
+        ep.dateOfBirth,
+        e.employeeCode,
+        e.hireDate,
+        ee.salary,
+        des.title as designationName,
+        d.departmentName,
+        c.collegeName,
+        ea.fieldOfSpecialization,
+        CONCAT(hep.firstName, ' ', hep.middleName) as approverName
       FROM recommendations r
       LEFT JOIN employeePersonal ep ON r.employeeId = ep.employeeId
       LEFT JOIN employee e ON r.employeeId = e.id
       LEFT JOIN department d ON e.departmentId = d.id
+      LEFT JOIN employeeEmployment ee ON r.employeeId = ee.employeeId
+      LEFT JOIN designations des ON des.employeeId = e.id
+      LEFT JOIN employeeAcademic ea ON r.employeeId = ea.employeeId
+      LEFT JOIN college c ON ea.collegeId = c.id
+      LEFT JOIN users u ON r.approvedBy = u.id
+      LEFT JOIN employeePersonal hep ON u.employeeId = hep.employeeId
       WHERE r.id = UUID_TO_BIN(?)
     `, [id]);
     
@@ -189,13 +217,25 @@ export class RecommendationService extends CrudService {
         throw new Error(`Cannot update request. Status is already ${reqDetails.status}`);
       }
 
-      const { rejectionReason } = payload;
+      const { rejectionReason, additionalExperience } = payload;
+      
+      let finalReason = reqDetails.reason;
+      if (additionalExperience) {
+         try {
+             let parsed = JSON.parse(finalReason || '{}');
+             if (typeof parsed !== 'object') parsed = { originalReason: finalReason };
+             parsed.additionalExperience = additionalExperience;
+             finalReason = JSON.stringify(parsed);
+         } catch(e) {
+             finalReason = JSON.stringify({ originalReason: finalReason, additionalExperience });
+         }
+      }
 
       await connection.query(
         `UPDATE recommendations 
-         SET status = ?, approvedBy = UUID_TO_BIN(?), approvedDate = CURDATE(), rejectionReason = ?
+         SET status = ?, approvedBy = UUID_TO_BIN(?), approvedDate = CURDATE(), rejectionReason = ?, reason = ?
          WHERE id = UUID_TO_BIN(?)`,
-        [status, approvedByUserId, rejectionReason || null, requestId]
+        [status, approvedByUserId, rejectionReason || null, finalReason, requestId]
       );
 
       // Create Notification

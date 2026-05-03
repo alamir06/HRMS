@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Search, Plus, Pencil, Trash2, Eye, ChevronLeft, ChevronRight, ArrowUpDown, ArrowDown, ArrowUp, Download, ChevronDown, Users, GraduationCap, BriefcaseBusiness, Building2 } from 'lucide-react';
+import { Search, Plus, Pencil, RefreshCw, Eye, ChevronLeft, ChevronRight, ArrowUpDown, ArrowDown, ArrowUp, Download, ChevronDown, Users, GraduationCap, BriefcaseBusiness, Building2 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
 import { employeeService } from '../../../../services/employeeService';
@@ -361,7 +361,7 @@ const Employees = () => {
                     <div className="th-content">Name {renderSortIcon('firstName')}</div>
                   </th>
                 )}
-                <th>{isAmharic ? 'የቅጥር ዓይነት' : 'Employment Type'}</th>
+
                 <th>{isAmharic ? 'ሚና/ዲፓርትመንት' : 'Role/Department'}</th>
                 <th>{isAmharic ? 'ሁኔታ' : 'Status'}</th>
                 <th className="sortable-header" onClick={() => handleSort('hireDate')}>
@@ -373,11 +373,11 @@ const Employees = () => {
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan="7" style={{ textAlign: 'center' }}>{isAmharic ? 'ሰራተኞችን በመጫን ላይ...' : 'Loading...'}</td>
+                  <td colSpan="6" style={{ textAlign: 'center' }}>{isAmharic ? 'ሰራተኞችን በመጫን ላይ...' : 'Loading...'}</td>
                 </tr>
               ) : employees.length === 0 ? (
                 <tr>
-                  <td colSpan="7" style={{ textAlign: 'center' }}>{isAmharic ? 'ምንም ሰራተኛ አልተገኘም.' : 'No employees found.'}</td>
+                  <td colSpan="6" style={{ textAlign: 'center' }}>{isAmharic ? 'ምንም ሰራተኛ አልተገኘም.' : 'No employees found.'}</td>
                 </tr>
               ) : (
                 employees.map(emp => (
@@ -402,11 +402,7 @@ const Employees = () => {
                          {emp.officialEmail || emp.personalEmail || (isAmharic ? "ኢሜል አልተገኘም" : "No Email")}
                        </span>
                     </td>
-                    <td>
-                      <span className={`badge ${emp.employmentType === 'OUTSOURCED' ? 'badge-outsource' : `badge-${(emp.employeeType || 'academic').toLowerCase()}`}`}>
-                        {getEmploymentTypeLabel(emp.employmentType) || getEmployeeTypeLabel(emp.employeeType) || "UNKNOWN"}
-                      </span>
-                    </td>
+
                     <td>
                       {getLocalizedText(emp.departmentName, emp.departmentNameAmharic) || (isAmharic ? "ዲፓርትመንት አልተመደበም" : "No Department")}
                     </td>
@@ -424,8 +420,8 @@ const Employees = () => {
                         <button className="action-btn-light" onClick={() => triggerEdit(emp)} title={isAmharic ? 'አስተካክል' : "Edit"}>
                           <Pencil size={14} />
                         </button>
-                        <button className="action-btn-light action-btn-danger" onClick={() => triggerDelete(emp)} title={isAmharic ? 'ሰርዝ' : "Delete"}>
-                          <Trash2 size={14} />
+                        <button className="action-btn-light action-btn-danger" onClick={() => triggerDelete(emp)} title={isAmharic ? 'ሁኔታ አዘምን' : "Update Status"}>
+                          <RefreshCw size={14} />
                         </button>
                       </div>
                     </td>
@@ -491,13 +487,13 @@ const Employees = () => {
 
       <ConfirmModal 
         isOpen={deleteModalOpen}
-        title={i18n.language === 'am' ? "ሰራተኛ ሰርዝ" : "Delete Employee"}
+        title={i18n.language === 'am' ? "የሰራተኛ ሁኔታን አዘምን" : "Update Employee Status"}
         message={
           i18n.language === 'am' 
-            ? `"${employeeToDelete?.firstNameAmharic || employeeToDelete?.firstName} ${employeeToDelete?.lastNameAmharic || employeeToDelete?.lastName}" ን በቋሚነት መሰረዝ እንደሚፈልጉ እርግጠኛ ነዎት? ይህ እርምጃ ሊቀለበስ አይችልም።`
-            : `Are you sure you want to permanently delete "${employeeToDelete?.firstName} ${employeeToDelete?.lastName}"? This action cannot be undone.`
+            ? `የ "${employeeToDelete?.firstNameAmharic || employeeToDelete?.firstName} ${employeeToDelete?.lastNameAmharic || employeeToDelete?.lastName}" ሁኔታን መቀየር እንደሚፈልጉ እርግጠኛ ነዎት?`
+            : `Are you sure you want to update the status for "${employeeToDelete?.firstName} ${employeeToDelete?.lastName}"?`
         }
-        confirmText={i18n.language === 'am' ? "መሰረዙን ያረጋግጡ" : "Confirm Delete"}
+        confirmText={i18n.language === 'am' ? "አረጋግጥ" : "Confirm Update"}
         isDestructive={true}
         onConfirm={confirmDelete}
         onCancel={() => setDeleteModalOpen(false)}

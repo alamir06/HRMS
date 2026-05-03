@@ -602,7 +602,7 @@
 }
 
 @media (max-width: 900px) {
-  .charts-grid, .bottom-grid {
+  .charts-grid, .bottom-grid, .bottom-grid-half {
     grid-template-columns: 1fr;
   }
 }

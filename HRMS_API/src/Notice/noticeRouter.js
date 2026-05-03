@@ -3,6 +3,7 @@ import { authenticateToken } from "../../middleware/auth.js";
 import {
   createNotice,
   listNotices,
+  listPublicNotices,
   getNoticeById,
   updateNotice,
   publishNotice,
@@ -11,6 +12,9 @@ import {
 import { noticeValidationSchema, validateNotice } from "./noticeValidation.js";
 
 const router = Router();
+
+// Public route must be before authenticateToken
+router.get("/public", listPublicNotices);
 
 // Apply authentication to all notice routes since they rely on req.user
 router.use(authenticateToken);

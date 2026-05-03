@@ -256,6 +256,12 @@
   overflow: hidden;
 }
 
+.table-responsive-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 .table-avatar {
   width: 36px;
   height: 36px;
@@ -382,5 +388,11 @@
   .employees-export-btn {
     width: 100%;
     height: 46px;
+  }
+
+  .table-actions {
+    display: flex;
+    flex-wrap: nowrap;
+    white-space: nowrap;
   }
 }

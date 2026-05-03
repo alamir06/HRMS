@@ -288,7 +288,14 @@ designationRouter.post(
             jobDescription, jobDescriptionAmharic, status
           ) VALUES (
             UUID_TO_BIN(?), UUID_TO_BIN(?), UUID_TO_BIN(?), UUID_TO_BIN(?), ?, ?, ?, ?, ?
-          )`,
+          ) ON DUPLICATE KEY UPDATE
+            departmentId = VALUES(departmentId),
+            collegeId = VALUES(collegeId),
+            title = VALUES(title),
+            titleAmharic = VALUES(titleAmharic),
+            jobDescription = VALUES(jobDescription),
+            jobDescriptionAmharic = VALUES(jobDescriptionAmharic),
+            status = VALUES(status)`,
           [
             id,
             employeeId,

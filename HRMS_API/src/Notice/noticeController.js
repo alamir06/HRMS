@@ -24,6 +24,37 @@ const mapNoticeRecord = (record) => ({
   updatedAt: record.updatedAt,
 });
 
+export const listPublicNotices = async (req, res, next) => {
+  try {
+    const query = `
+      SELECT
+        BIN_TO_UUID(n.id) AS id,
+        n.title,
+        n.titleAmharic,
+        n.content,
+        n.contentAmharic,
+        n.noticeType,
+        n.targetAudience,
+        n.publishDate,
+        n.expiryDate
+      FROM notices n
+      WHERE n.targetAudience = 'ALL' 
+        AND n.isPublished = 1 
+        AND n.publishDate <= CURDATE() 
+        AND (n.expiryDate IS NULL OR n.expiryDate >= CURDATE())
+      ORDER BY n.publishDate DESC, n.createdAt DESC
+      LIMIT 3
+    `;
+    const [rows] = await pool.query(query);
+    res.json({
+      success: true,
+      data: rows,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const createNotice = async (req, res, next) => {
   const connection = await pool.getConnection();
   try {
