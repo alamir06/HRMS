@@ -110,7 +110,7 @@ const EmployeeProfileModal = ({ employeeId, onClose }) => {
          
          // Fetch designations explicitly
          try {
-           const desigRes = await designationService.getDesignations({ employeeId });
+           const desigRes = await designationService.getDesignations({ employeeId, include: 'department,college' });
            if (desigRes.success && Array.isArray(desigRes.data)) {
              empData.designations = desigRes.data;
            }
@@ -244,7 +244,12 @@ const EmployeeProfileModal = ({ employeeId, onClose }) => {
              </span>
            </div>
            <p className="hero-subtitle">{getLocalizedText(employee.departmentName, employee.departmentNameAmharic) || (isAmharic ? 'ዲፓርትመንት አልተገኘም' : 'No Linked Department')}</p>
-           {employee.designationTitle && (
+           {employee.designationTitle && !employee.designations?.some(d => d.status === 'ACTIVE' && (
+             ['DEPARTMENT_HEAD', 'DEAN', 'DUAL_ROLE'].includes(d.designationType) || 
+             (d.title || '').toLowerCase().includes('manager') ||
+             (d.title || '').toLowerCase().includes('head') ||
+             (d.title || '').toLowerCase().includes('dean')
+           )) && (
              <p className="hero-subtitle" style={{fontWeight: 500, marginTop: '4px', color: 'var(--text-primary)'}}>
                {getLocalizedText(employee.designationTitle, employee.designationTitleAmharic)}
                {employee.designationGradeLevel && ` (${employee.designationGradeLevel})`}
@@ -371,16 +376,32 @@ const EmployeeProfileModal = ({ employeeId, onClose }) => {
                        <span>{getLocalizedText(activeDesig.title, activeDesig.titleAmharic) || (isAmharic ? 'አልተገኘም' : 'N/A')}</span>
                      </div>
                      <div className="data-group">
-                       <label>{isAmharic ? 'ዓይነት' : 'Type'}</label>
+                       <label>{isAmharic ? 'ዓይነት' : 'Role Type'}</label>
                        <span>{activeDesig.designationType || 'STANDARD'}</span>
                      </div>
+                     {((activeDesig.designationType === 'DEPARTMENT_HEAD' || activeDesig.designationType === 'DUAL_ROLE' || (activeDesig.title || '').toLowerCase().includes('manager') || (activeDesig.title || '').toLowerCase().includes('head')) && activeDesig.department) && (
+                       <div className="data-group" style={{ gridColumn: 'span 2' }}>
+                         <label>{isAmharic ? 'የሚመራው የስራ ክፍል' : 'Leading Department'}</label>
+                         <span style={{ fontWeight: 600, color: 'var(--primary-color)' }}>
+                           {getLocalizedText(activeDesig.department.departmentName, activeDesig.department.departmentNameAmharic)}
+                         </span>
+                       </div>
+                     )}
+                     {((activeDesig.designationType === 'DEAN' || activeDesig.designationType === 'DUAL_ROLE' || (activeDesig.title || '').toLowerCase().includes('dean')) && activeDesig.college) && (
+                       <div className="data-group" style={{ gridColumn: 'span 2' }}>
+                         <label>{isAmharic ? 'የሚመራው ኮሌጅ' : 'Leading College'}</label>
+                         <span style={{ fontWeight: 600, color: 'var(--primary-color)' }}>
+                           {getLocalizedText(activeDesig.college.collegeName, activeDesig.college.collegeNameAmharic)}
+                         </span>
+                       </div>
+                     )}
                      <div className="data-group">
                        <label>{isAmharic ? 'የደረጃ እርከን' : 'Grade Level'}</label>
                        <span>{activeDesig.gradeLevel || (isAmharic ? 'አልተገለጸም' : 'Unspecified')}</span>
                      </div>
                      <div className="data-group">
                        <label>{isAmharic ? 'የጀመረበት ቀን' : 'Start Date'}</label>
-                       <span>{displayEthDate(activeDesig.startDateEth, activeDesig.startDate) || (isAmharic ? 'አልተገኘም' : 'N/A')}</span>
+                       <span>{displayEthDate(null, activeDesig.createdAt) || (isAmharic ? 'አልተገኘም' : 'N/A')}</span>
                      </div>
                    </>
                  );

@@ -50,5 +50,10 @@ export const benefitService = {
     const query = benefitId ? `?benefitId=${encodeURIComponent(benefitId)}` : '';
     const response = await api.get(`/benefits/enrollments/all${query}`);
     return response.data;
+  },
+
+  deleteEnrollment: async (enrollmentId) => {
+    const response = await api.delete(`/benefits/enrollments/${enrollmentId}`);
+    return response.data;
   }
 };

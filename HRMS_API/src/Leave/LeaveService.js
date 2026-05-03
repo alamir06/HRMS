@@ -590,11 +590,11 @@ export class LeaveService extends CrudService {
       if (normalizedPeriod === "DAILY") {
         periodClause = ` AND DATE(lr.createdAt) = CURDATE()`;
       } else if (normalizedPeriod === "WEEKLY") {
-        periodClause = ` AND YEARWEEK(lr.createdAt, 1) = YEARWEEK(CURDATE(), 1)`;
+        periodClause = ` AND lr.createdAt >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)`;
       } else if (normalizedPeriod === "MONTHLY") {
-        periodClause = ` AND YEAR(lr.createdAt) = YEAR(CURDATE()) AND MONTH(lr.createdAt) = MONTH(CURDATE())`;
+        periodClause = ` AND lr.createdAt >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)`;
       } else if (normalizedPeriod === "YEARLY") {
-        periodClause = ` AND YEAR(lr.createdAt) = YEAR(CURDATE())`;
+        periodClause = ` AND lr.createdAt >= DATE_SUB(CURDATE(), INTERVAL 365 DAY)`;
       }
 
       if (periodClause) {

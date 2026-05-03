@@ -176,13 +176,29 @@ export const listNotices = async (req, res, next) => {
         (
           n.createdBy = UUID_TO_BIN(?) 
           OR n.targetAudience = 'ALL'
-          OR n.targetEmployeeId = UUID_TO_BIN(?)
-          OR (n.targetAudience = 'DEPARTMENT' AND n.targetDepartmentId = (SELECT departmentId FROM employee WHERE id = UUID_TO_BIN(?)))
-          OR (n.targetAudience = 'COLLEGE' AND n.targetCollegeId = (SELECT d.collegeId FROM employee e JOIN department d ON e.departmentId = d.id WHERE e.id = UUID_TO_BIN(?)))
-          OR (n.targetAudience = 'COLLEGE_HEADS' AND '${req.user.role}' IN ('HEAD', 'HROFFICER', 'DEAN') AND n.targetCollegeId = (SELECT d.collegeId FROM employee e JOIN department d ON e.departmentId = d.id WHERE e.id = UUID_TO_BIN(?)))
+          OR (n.targetAudience = 'INDIVIDUAL' AND n.targetEmployeeId = UUID_TO_BIN(?))
+          OR (n.targetAudience = 'INDIVIDUAL' AND '${req.user.role}' = 'HEAD' AND 
+              (SELECT COALESCE(des.departmentId, e2.departmentId) FROM employee e2 LEFT JOIN designations des ON des.employeeId = e2.id AND des.status = 'ACTIVE' WHERE e2.id = n.targetEmployeeId LIMIT 1) = 
+              (SELECT COALESCE(des.departmentId, e3.departmentId) FROM employee e3 LEFT JOIN designations des ON des.employeeId = e3.id AND des.status = 'ACTIVE' WHERE e3.id = UUID_TO_BIN(?) LIMIT 1)
+             )
+          OR (n.targetAudience = 'INDIVIDUAL' AND '${req.user.role}' = 'DEAN' AND 
+              (SELECT COALESCE(des.collegeId, d.collegeId) FROM employee e2 LEFT JOIN department d ON e2.departmentId = d.id LEFT JOIN designations des ON des.employeeId = e2.id AND des.status = 'ACTIVE' WHERE e2.id = n.targetEmployeeId LIMIT 1) = 
+              (SELECT COALESCE(des.collegeId, d.collegeId) FROM employee e3 LEFT JOIN department d ON e3.departmentId = d.id LEFT JOIN designations des ON des.employeeId = e3.id AND des.status = 'ACTIVE' WHERE e3.id = UUID_TO_BIN(?) LIMIT 1)
+             )
+          OR (n.targetAudience = 'DEPARTMENT' AND n.targetDepartmentId = (SELECT COALESCE(des.departmentId, e.departmentId) FROM employee e LEFT JOIN designations des ON des.employeeId = e.id AND des.status = 'ACTIVE' WHERE e.id = UUID_TO_BIN(?) LIMIT 1))
+          OR (n.targetAudience = 'COLLEGE' AND '${req.user.role}' = 'DEAN' AND n.targetCollegeId = (SELECT COALESCE(des.collegeId, d.collegeId) FROM employee e LEFT JOIN department d ON e.departmentId = d.id LEFT JOIN designations des ON des.employeeId = e.id AND des.status = 'ACTIVE' WHERE e.id = UUID_TO_BIN(?) LIMIT 1))
+          OR (n.targetAudience = 'COLLEGE_HEADS' AND '${req.user.role}' IN ('HEAD', 'HROFFICER', 'DEAN') AND n.targetCollegeId = (SELECT COALESCE(des.collegeId, d.collegeId) FROM employee e LEFT JOIN department d ON e.departmentId = d.id LEFT JOIN designations des ON des.employeeId = e.id AND des.status = 'ACTIVE' WHERE e.id = UUID_TO_BIN(?) LIMIT 1))
         )
       `);
-      params.push(req.user.id, req.user.employeeId, req.user.employeeId, req.user.employeeId, req.user.employeeId);
+      params.push(
+        req.user.id,          // createdBy
+        req.user.employeeId,  // INDIVIDUAL target
+        req.user.employeeId,  // INDIVIDUAL HEAD scope
+        req.user.employeeId,  // INDIVIDUAL DEAN scope
+        req.user.employeeId,  // DEPARTMENT scope
+        req.user.employeeId,  // COLLEGE scope
+        req.user.employeeId   // COLLEGE_HEADS scope
+      );
     }
 
     if (noticeType) {

@@ -85,37 +85,6 @@ const MyAttendance = () => {
 
   return (
     <div className="employee-portal-container">
-      <div className="portal-header">
-        <h1>My Attendance</h1>
-        <p>Monitor your daily clock-ins, clock-outs, and accumulated hours automatically synced with your login activity.</p>
-        <p style={{ fontSize: '0.8rem', color: '#6b7280', marginTop: '4px' }}>Debug ID: {employeeId || 'None'}</p>
-      </div>
-
-      <div className="my-attendance-summary-grid">
-        <div className="my-attendance-summary-card approved">
-          <div className="my-attendance-summary-icon"><CheckCircle2 size={24} /></div>
-          <div>
-            <span className="my-attendance-summary-label">PRESENT</span>
-            <div className="my-attendance-summary-value">{summary.present}</div>
-          </div>
-        </div>
-
-        <div className="my-attendance-summary-card rejected">
-          <div className="my-attendance-summary-icon"><Clock size={24} /></div>
-          <div>
-            <span className="my-attendance-summary-label">LATE ARRIVALS</span>
-            <div className="my-attendance-summary-value">{summary.late}</div>
-          </div>
-        </div>
-
-        <div className="my-attendance-summary-card total">
-          <div className="my-attendance-summary-icon"><AlertCircle size={24} /></div>
-          <div>
-            <span className="my-attendance-summary-label">ABSENCES</span>
-            <div className="my-attendance-summary-value">{summary.absent}</div>
-          </div>
-        </div>
-      </div>
 
       <div className="portal-recent-activity">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>

@@ -125,6 +125,21 @@ export class EmployeeController {
     }
   };
 
+  // Terminate employee
+  terminate = async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { reason } = req.body;
+      employeeValidationSchema.id.parse({ id });
+      
+      const result = await employeeService.terminateEmployee(id, reason);
+      
+      res.status(200).json(result);
+    } catch (error) {
+      this.handleError(res, error, "Terminate employee failed");
+    }
+  };
+
   // Delete employee (soft delete via inherited service)
   delete = async (req, res) => {
     try {

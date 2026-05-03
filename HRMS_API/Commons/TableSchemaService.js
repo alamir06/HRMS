@@ -46,6 +46,38 @@ export class TableSchemaService {
           },
         },
       },
+      designations: {
+        columns: [
+          "id",
+          "employeeId",
+          "departmentId",
+          "collegeId",
+          "academicDepartmentId",
+          "title",
+          "titleAmharic",
+          "designationType",
+          "jobDescription",
+          "jobDescriptionAmharic",
+          "gradeLevel",
+          "minSalary",
+          "maxSalary",
+          "designationType",
+          "status",
+          "createdAt",
+          "updatedAt",
+        ],
+        uuidFields: ["id", "employeeId", "departmentId", "collegeId", "academicDepartmentId"],
+        relations: {
+          department: {
+            join: "LEFT JOIN department ON designations.departmentId = department.id",
+            fields: ["departmentName", "departmentNameAmharic"],
+          },
+          college: {
+            join: "LEFT JOIN college ON designations.collegeId = college.id",
+            fields: ["collegeName", "collegeNameAmharic"],
+          },
+        },
+      },
       hrRoles: {
         columns: [
           "id",
@@ -97,7 +129,7 @@ export class TableSchemaService {
           "createdAt",
           "updatedAt",
         ],
-        uuidFields: ["id", "companyId", "collegeId", "managerId"],
+        uuidFields: ["id", "companyId", "collegeId", "managerId", "parentDepartmentId"],
         relations: {
           company: {
             join: "LEFT JOIN company ON department.companyId = company.id",

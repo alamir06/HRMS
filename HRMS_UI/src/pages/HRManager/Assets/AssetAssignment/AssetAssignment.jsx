@@ -213,6 +213,70 @@ const AssetAssignment = () => {
     return fields;
   }, [i18n.language]);
 
+  const handleExportPdf = () => {
+    const printContent = document.getElementById('asset-assignment-table');
+    if (!printContent) return;
+
+    const printWindow = window.open('', '_blank', 'width=1000,height=800');
+    if (!printWindow) return;
+
+    let styles = '';
+    document.querySelectorAll('style, link[rel="stylesheet"]').forEach((el) => {
+      styles += el.outerHTML;
+    });
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Asset Assignment Report</title>
+          ${styles}
+          <style>
+             @page { size: landscape; margin: 15mm; }
+             body { 
+               padding: 0; 
+               background: white; 
+               font-family: 'Inter', sans-serif; 
+               color: #1e293b;
+               -webkit-print-color-adjust: exact;
+               print-color-adjust: exact;
+             }
+             .asset-table-footer, 
+             .asset-table-actions,
+             .asset-page-limit-selector,
+             .asset-pagination-controls { 
+               display: none !important; 
+             }
+             th:last-child, td:last-child { display: none !important; }
+             table { 
+               width: 100%; 
+               border-collapse: collapse; 
+               margin-top: 15px; 
+             }
+             th, td { 
+               border: 1px solid #cbd5e1 !important; 
+               padding: 10px 12px !important; 
+               text-align: left !important; 
+               font-size: 10pt !important;
+             }
+             th { 
+               background-color: #f8fafc !important; 
+               color: #334155 !important; 
+               font-weight: 700 !important; 
+             }
+          </style>
+        </head>
+        <body>
+          <h2 style="text-align: center; margin-bottom: 20px;">Asset Assignment Report</h2>
+          ${printContent.innerHTML}
+          <script>
+            window.onload = function() { window.print(); window.close(); }
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
   return (
     <div className="asset-assign-container">
       <div className="asset-top-toolbar" style={{ marginBottom: '1.5rem', display: 'flex', gap: '1rem', width: '100%' }}>
@@ -226,7 +290,7 @@ const AssetAssignment = () => {
             onChange={(e) => setSearch(e.target.value)}
           />
         </label>
-        <button className="asset-export-btn" onClick={() => toast.info('Export not fully implemented yet.')}>
+        <button className="asset-export-btn" onClick={handleExportPdf}>
           <Download size={18} /> {i18n.language === 'am' ? 'ወደ ፒዲኤፍ ላክ' : 'Export as PDF'}
         </button>
         <button className="asset-btn-add" onClick={handleOpenAssign}>
@@ -234,7 +298,7 @@ const AssetAssignment = () => {
         </button>
       </div>
 
-      <div className="asset-table-card">
+      <div className="asset-table-card" id="asset-assignment-table">
         <div className="asset-table-responsive-wrapper">
           <table className="asset-modern-data-table">
             <thead>
@@ -389,9 +453,21 @@ const AssetAssignment = () => {
         confirmText="Confirm Delete"
         isDestructive={true}
         onConfirm={async () => {
-          // Note: we don't have delete assignment in service currently. I will implement it real quick.
-          setDeleteModalOpen(false);
-          toast.warning("Delete assignment is not fully implemented on server side yet.");
+          if (!assignmentToDelete) return;
+          try {
+            const res = await assetService.deleteAssignment(assignmentToDelete.id);
+            if (res.success !== false) {
+              toast.success("Assignment deleted successfully");
+              loadAssignments();
+            } else {
+              toast.error(res.message || "Failed to delete assignment");
+            }
+          } catch (error) {
+            toast.error(error?.response?.data?.message || "Error deleting assignment");
+          } finally {
+            setDeleteModalOpen(false);
+            setAssignmentToDelete(null);
+          }
         }}
         onCancel={() => setDeleteModalOpen(false)}
       />

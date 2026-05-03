@@ -134,6 +134,13 @@ export const benefitController = {
     try {
       const { id } = req.params;
 
+      // Lazy expiration: automatically expire past benefits
+      await pool.query(
+        `UPDATE employeeBenefits 
+         SET status = 'CANCELLED' 
+         WHERE status = 'ACTIVE' AND endDate IS NOT NULL AND endDate < CURDATE()`
+      );
+
       const [benefitRows] = await pool.query(
         `SELECT 
            BIN_TO_UUID(id) as id,
@@ -211,6 +218,13 @@ export const benefitController = {
       const { employeeId } = req.params;
       const { status } = req.query;
 
+      // Lazy expiration: automatically expire past benefits
+      await pool.query(
+        `UPDATE employeeBenefits 
+         SET status = 'CANCELLED' 
+         WHERE status = 'ACTIVE' AND endDate IS NOT NULL AND endDate < CURDATE()`
+      );
+
       if (req.user.role === 'EMPLOYEE' && req.user.employeeId !== employeeId) {
         return res.status(403).json({ success: false, error: "Not authorized to view other's benefits" });
       }
@@ -259,6 +273,13 @@ export const benefitController = {
   getAllEnrollments: async (req, res) => {
     try {
       const { benefitId } = req.query;
+
+      // Lazy expiration: automatically expire past benefits
+      await pool.query(
+        `UPDATE employeeBenefits 
+         SET status = 'CANCELLED' 
+         WHERE status = 'ACTIVE' AND endDate IS NOT NULL AND endDate < CURDATE()`
+      );
 
       const conditions = [];
       const params = [];

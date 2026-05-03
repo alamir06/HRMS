@@ -557,12 +557,13 @@ export class EmployeeService extends CrudService {
           des.gradeLevel as designationGradeLevel,
           col.collegeName,
           col.collegeNameAmharic,
+          BIN_TO_UUID(ea.collegeId) as collegeId,
           ea.academicRank,
           ea.academicRankAmharic,
           ea.academicStatus,
           ea.fieldOfSpecialization,
           ea.fieldOfSpecializationAmharic,
-          eo.outsourcingCompanyId,
+          BIN_TO_UUID(eo.outsourcingCompanyId) as outsourcingCompanyId,
           eo.contractStartDate,
           eo.contractEndDate,
           eo.serviceType,
@@ -1489,6 +1490,50 @@ export class EmployeeService extends CrudService {
         "documents",
         "EDUCATION",
       ]);
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
+  }
+  async terminateEmployee(employeeId, reason) {
+    const connection = await pool.getConnection();
+    try {
+      await connection.beginTransaction();
+
+      // 1. Update employee status
+      const [updateResult] = await connection.query(
+        `UPDATE employee SET employmentStatus = 'TERMINATED', terminationDate = CURDATE() WHERE id = UUID_TO_BIN(?)`,
+        [employeeId]
+      );
+
+      if (updateResult.affectedRows === 0) {
+        throw new Error("Employee not found");
+      }
+
+      // 2. Clear any designations to avoid constraints and active duties
+      await connection.query(
+        `UPDATE designations SET status = 'INACTIVE' WHERE employeeId = UUID_TO_BIN(?)`,
+        [employeeId]
+      );
+      
+      // 3. Disable user account if present
+      await connection.query(
+        `UPDATE users SET isActive = FALSE WHERE employeeId = UUID_TO_BIN(?)`,
+        [employeeId]
+      );
+
+      // 4. Create offboarding record
+      await connection.query(
+        `INSERT INTO offboarding (
+          id, employeeId, separationDate, separationType, reason, status
+        ) VALUES (UUID_TO_BIN(UUID()), UUID_TO_BIN(?), CURDATE(), 'TERMINATION', ?, 'COMPLETED')`,
+        [employeeId, reason || '']
+      );
+
+      await connection.commit();
+      return { success: true, message: "Employee terminated successfully" };
     } catch (error) {
       await connection.rollback();
       throw error;

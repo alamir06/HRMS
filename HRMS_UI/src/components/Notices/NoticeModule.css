@@ -300,3 +300,16 @@
   background: rgba(59, 130, 246, 0.1);
   color: #3b82f6;
 }
+
+@media (max-width: 768px) {
+  .notice-top-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .notice-split-layout {
+    grid-template-columns: 1fr;
+  }
+  .notice-modal-wrapper {
+    max-height: 95vh;
+  }
+}

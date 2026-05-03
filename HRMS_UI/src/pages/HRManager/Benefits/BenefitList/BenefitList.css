@@ -286,6 +286,14 @@
   animation: scaleIn 0.2s ease-out;
 }
 
+.benefit-modal-form-wrapper.benefit-wide-modal {
+  border-radius: var(--radius-lg);
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
 .benefit-modal-form-header {
   display: flex;
   justify-content: space-between;
@@ -325,5 +333,8 @@
   }
   .benefit-pagination-controls {
     justify-content: space-between;
+  }
+  .benefit-modal-form-wrapper.benefit-wide-modal {
+    width: 95%;
   }
 }

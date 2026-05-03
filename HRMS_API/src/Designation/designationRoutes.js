@@ -7,7 +7,7 @@ import { authenticateToken, authorize } from "../../middleware/auth.js";
 import designationCustomController from "./designationController.js";
 import { sendEmail } from "../../utils/emailService.js";
 
-const assignManagerForDesignation = async (connection, designationId) => {
+const assignManagerForDesignation = async (connection, designationId, creatorId) => {
   const [rows] = await connection.query(
     `SELECT des.title,
             BIN_TO_UUID(des.employeeId) AS employeeId,
@@ -192,6 +192,28 @@ const assignManagerForDesignation = async (connection, designationId) => {
       console.error("Failed to email designation notice", e);
     }
   }
+
+  // 5. Send automated notice inside system
+  if (creatorId) {
+    try {
+      const noticeId = uuidv4();
+      await connection.query(`
+        INSERT INTO notices (
+          id, title, content, noticeType, targetAudience, targetEmployeeId, publishDate, isPublished, createdBy
+        ) VALUES (
+          UUID_TO_BIN(?), ?, ?, 'GENERAL', 'INDIVIDUAL', UUID_TO_BIN(?), CURDATE(), 1, UUID_TO_BIN(?)
+        )
+      `, [
+        noticeId,
+        `New Designation Assigned: ${title}`,
+        `Congratulations ${firstName || 'Employee'} ${lastName || ''},\n\nYou have been officially designated as ${title}. Please review your new portal access and responsibilities.`,
+        employeeId,
+        creatorId
+      ]);
+    } catch (e) {
+      console.error("Failed to insert designation notice", e);
+    }
+  }
 };
 
 const designationRouter = express.Router();
@@ -309,7 +331,7 @@ designationRouter.post(
           ]
         );
 
-        await assignManagerForDesignation(connection, id);
+        await assignManagerForDesignation(connection, id, req.user.id);
 
         const [newDesig] = await connection.query(`
           SELECT 
@@ -485,7 +507,7 @@ designationRouter.put(
           throw new Error("Designation not found");
         }
 
-        await assignManagerForDesignation(connection, id);
+        await assignManagerForDesignation(connection, id, req.user.id);
 
         await connection.commit();
 

@@ -169,6 +169,20 @@ const EmployeeWizard = ({ onClose, onSuccess, editEmployeeId }) => {
                   salary: e.salary || '',
                   qualification: e.qualification || '',
                   qualificationAmharic: e.qualificationAmharic || ''
+                },
+                academic: {
+                  collegeId: e.collegeId || '',
+                  academicRank: e.academicRank || '',
+                  academicRankAmharic: e.academicRankAmharic || '',
+                  academicStatus: e.academicStatus || 'ACTIVE',
+                  fieldOfSpecialization: e.fieldOfSpecialization || '',
+                  fieldOfSpecializationAmharic: e.fieldOfSpecializationAmharic || ''
+                },
+                outsource: {
+                  outsourcingCompanyId: e.outsourcingCompanyId || '',
+                  contractStartDate: e.contractStartDate ? toGregorianInputDate(e.contractStartDate) : '',
+                  contractEndDate: e.contractEndDate ? toGregorianInputDate(e.contractEndDate) : '',
+                  serviceType: e.serviceType || 'SECURITY'
                 }
              }));
           }
@@ -1094,6 +1108,18 @@ const EmployeeWizard = ({ onClose, onSuccess, editEmployeeId }) => {
                                   <option value="MECHANICAL">Mechanical</option>
                                   <option value="OTHER">Other</option>
                                 </select>
+                              </div>
+                            </div>
+                            <div className="premium-form-group">
+                              <label>Contract Start Date <span className="req">*</span></label>
+                              <div className="premium-input-wrap">
+                                <Calendar size={18} className="input-icon" />
+                                <EthiopianDateInput
+                                  value={formData.outsource.contractStartDate}
+                                  onChange={(gregDate) => updateNested('outsource', 'contractStartDate', gregDate)}
+                                  language={i18n.language}
+                                  required
+                                />
                               </div>
                             </div>
                             <div className="premium-form-group">

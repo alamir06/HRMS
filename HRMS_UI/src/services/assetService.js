@@ -62,7 +62,10 @@ export const assetService = {
   // --- Assignment APIs ---
   getAllAssignments: async (page = 1, limit = 10, search = '', sortBy = 'createdAt', sortOrder = 'DESC') => {
     return handleResponse(() => api.get('/assets/assignments', {
-      params: { page, limit, search, sortBy, sortOrder }
+      params: { 
+        page, limit, search, sortBy, sortOrder,
+        ...(search ? { searchFields: 'assignmentReason' } : {})
+      }
     }));
   },
 
@@ -72,6 +75,10 @@ export const assetService = {
 
   returnAsset: async (id, returnData) => {
     return handleResponse(() => api.post(`/assets/assignments/${id}/return`, returnData));
+  },
+
+  deleteAssignment: async (id) => {
+    return handleResponse(() => api.delete(`/assets/assignments/${id}`));
   },
 
   getEmployeeAssets: async (employeeId) => {
