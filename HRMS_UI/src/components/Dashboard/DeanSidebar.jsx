@@ -41,6 +41,8 @@ const DeanSidebar = ({ onOpenProfile, mobileOpen = false, onCloseMobile }) => {
   }, []);
 
   const { t } = useTranslation();
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'https://hrms-6mfv.onrender.com/api';
+  const apiOrigin = apiBaseUrl.replace(/\/api\/?$/, '');
 
   const navItems = [
     { name: t('sidebar.overview', 'Overview'), path: '/dean-portal', icon: <LayoutDashboard size={20} /> },
@@ -100,7 +102,7 @@ const DeanSidebar = ({ onOpenProfile, mobileOpen = false, onCloseMobile }) => {
                 authUser?.profilePicture 
                   ? (authUser.profilePicture.startsWith('http') 
                       ? authUser.profilePicture 
-                      : `http://localhost:5000/${authUser.profilePicture.replace(/^\//, '')}`)
+                      : `${apiOrigin}/${authUser.profilePicture.replace(/^\//, '')}`)
                   : `https://ui-avatars.com/api/?name=${encodeURIComponent(authUser?.name || "Dean")}&background=0B8255&color=fff`
               } 
               onError={(e) => { 
