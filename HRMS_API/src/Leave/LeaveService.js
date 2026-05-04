@@ -137,6 +137,94 @@ export class LeaveService extends CrudService {
     }
   }
 
+  async updateLeaveRequest(requestId, employeeId, payload) {
+    const connection = await pool.getConnection();
+    try {
+      await connection.beginTransaction();
+
+      const [requestRows] = await connection.query(
+        `SELECT status FROM leaveRequest WHERE id = UUID_TO_BIN(?) AND employeeId = UUID_TO_BIN(?)`,
+        [requestId, employeeId]
+      );
+
+      if (!requestRows.length) throw new Error("Leave request not found or unauthorized");
+      if (requestRows[0].status !== "PENDING") {
+        throw new Error("Only pending leave requests can be updated.");
+      }
+
+      const { leaveType, startDate, endDate, reason, reasonAmharic, supportDocument } = payload;
+      const totalDays = calculateWorkingDays(startDate, endDate);
+      const year = new Date(startDate).getFullYear();
+
+      if (leaveType !== "ORGANIZATION_LEAVE" && leaveType !== "SABBATICAL") {
+        const [balanceCheck] = await connection.query(
+          `SELECT remainingDays 
+           FROM leaveBalance 
+           WHERE employeeId = UUID_TO_BIN(?) AND leaveType = ? AND year = ?`,
+          [employeeId, leaveType, year]
+        );
+
+        if (!balanceCheck || balanceCheck.length === 0) {
+          throw new Error(`No balance record found for ${leaveType} in year ${year}.`);
+        }
+
+        if (balanceCheck[0].remainingDays < totalDays) {
+          throw new Error(
+            `Insufficient balance. Requested: ${totalDays} days, Remaining: ${balanceCheck[0].remainingDays} days.`
+          );
+        }
+      }
+
+      const updateQuery = `
+        UPDATE leaveRequest 
+        SET leaveType = ?, startDate = ?, endDate = ?, totalDays = ?, reason = ?, reasonAmharic = ?, supportDocument = COALESCE(?, supportDocument)
+        WHERE id = UUID_TO_BIN(?)
+      `;
+
+      await connection.query(updateQuery, [
+        leaveType, startDate, endDate, totalDays, reason || null, reasonAmharic || null, supportDocument || null, requestId
+      ]);
+
+      await connection.commit();
+      return { success: true, message: "Leave request updated successfully." };
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
+  }
+
+  async cancelLeaveRequest(requestId, employeeId) {
+    const connection = await pool.getConnection();
+    try {
+      await connection.beginTransaction();
+
+      const [requestRows] = await connection.query(
+        `SELECT status FROM leaveRequest WHERE id = UUID_TO_BIN(?) AND employeeId = UUID_TO_BIN(?)`,
+        [requestId, employeeId]
+      );
+
+      if (!requestRows.length) throw new Error("Leave request not found or unauthorized");
+      if (requestRows[0].status !== "PENDING") {
+        throw new Error("Only pending leave requests can be cancelled.");
+      }
+
+      await connection.query(
+        `DELETE FROM leaveRequest WHERE id = UUID_TO_BIN(?)`,
+        [requestId]
+      );
+
+      await connection.commit();
+      return { success: true, message: "Leave request cancelled successfully." };
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
+  }
+
   async approveLeave(requestId, approvedBy, payload = {}) {
     const connection = await pool.getConnection();
     let approvalEmailPayload = null;

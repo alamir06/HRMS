@@ -20,6 +20,24 @@ export const leaveValidation = {
     supportDocument: z.string().nullable().optional(),
   }),
 
+  updateLeave: z.object({
+    leaveType: z.enum([
+      "ANNUAL",
+      "SICK",
+      "MEDICAL",
+      "PERSONAL",
+      "MATERNITY",
+      "PATERNITY",
+      "ORGANIZATION_LEAVE",
+      "SABBATICAL"
+    ]),
+    startDate: z.string(),
+    endDate: z.string(),
+    reason: z.string().nullable().optional(),
+    reasonAmharic: z.string().nullable().optional(),
+    supportDocument: z.string().nullable().optional(),
+  }),
+
   approveLeave: z.object({
     comments: z.string().nullable().optional(),
     commentsAmharic: z.string().nullable().optional(),

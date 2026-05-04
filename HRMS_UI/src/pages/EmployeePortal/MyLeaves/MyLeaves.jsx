@@ -18,6 +18,7 @@ const MyLeaves = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [user, setUser] = useState(null);
+  const [editingRequestId, setEditingRequestId] = useState(null);
 
   // Pagination states
   const [page, setPage] = useState(1);
@@ -143,10 +144,17 @@ const MyLeaves = () => {
         };
       }
 
-      const res = await leaveService.requestLeave(payload);
+      let res;
+      if (editingRequestId) {
+        res = await leaveService.updateLeaveRequest(editingRequestId, payload);
+      } else {
+        res = await leaveService.requestLeave(payload);
+      }
+
       if (res.success) {
-        toast.success("Leave request submitted successfully");
+        toast.success(editingRequestId ? "Leave request updated successfully" : "Leave request submitted successfully");
         setIsFormOpen(false);
+        setEditingRequestId(null);
         setNewRequest({ leaveType: 'ANNUAL', startDate: '', endDate: '', reason: '', supportDocument: null });
         setSupportDocPreviewUrl(null);
         fetchMyLeaves(); 
@@ -156,6 +164,20 @@ const MyLeaves = () => {
       toast.error(typeof msgs === 'string' ? msgs : "Validation Error");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleCancelLeave = async (id) => {
+    if (window.confirm("Are you sure you want to cancel this leave request?")) {
+      try {
+        const res = await leaveService.cancelLeaveRequest(id);
+        if (res.success) {
+          toast.success(res.message || "Leave request cancelled successfully");
+          fetchMyLeaves();
+        }
+      } catch (error) {
+        toast.error(error?.response?.data?.error || "Failed to cancel request");
+      }
     }
   };
 
@@ -169,6 +191,36 @@ const MyLeaves = () => {
     } catch (err) {
       toast.error(err?.response?.data?.error || "Failed to submit decision");
     }
+  };
+
+  const handleExport = () => {
+    const allReqs = leaveData?.requests || [];
+    if (!allReqs || allReqs.length === 0) {
+      toast.info("No records to export.");
+      return;
+    }
+    
+    const headers = ["Start Date", "End Date", "Leave Type", "Duration (Days)", "Status", "Reason"];
+    const csvContent = [
+      headers.join(","),
+      ...allReqs.map(req => {
+        const sDate = displayEthDate(req.startDateEth, req.startDate);
+        const eDate = displayEthDate(req.endDateEth, req.endDate);
+        const type = req.leaveType.replace('_', ' ');
+        const duration = req.requestedDays || req.totalDays || 0;
+        const reason = req.reason ? `"${req.reason.replace(/"/g, '""')}"` : "";
+        return `"${sDate}","${eDate}","${type}","${duration}","${req.status}",${reason}`;
+      })
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `My_Leave_Requests_${currentEthDate?.year || new Date().getFullYear()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const getLeaveCardStyle = (type) => {
@@ -195,8 +247,8 @@ const MyLeaves = () => {
 
   // Dynamic header computation
   const headerTitle = newRequest.leaveType 
-    ? `Create ${newRequest.leaveType.replace('_', ' ').toLowerCase().replace(/\b\w/g, c => c.toUpperCase())} Request`
-    : 'Create Request';
+    ? `${editingRequestId ? 'Edit' : 'Create'} ${newRequest.leaveType.replace('_', ' ').toLowerCase().replace(/\b\w/g, c => c.toUpperCase())} Request`
+    : `${editingRequestId ? 'Edit' : 'Create'} Request`;
 
   return (
     <div className="my-leave-request-ledger-container">
@@ -206,6 +258,62 @@ const MyLeaves = () => {
         <div className="loading-state">Loading leave data...</div>
       ) : (
         <>
+          <div className="my-leave-request-ledger-header">
+            <div className="my-leave-request-title-sec">
+              <h1>My Leaves</h1>
+              <p>Manage your leave balances and track requests.</p>
+            </div>
+            <div className="my-leave-request-action-sec">
+              <button className="my-leave-request-btn-new-request" onClick={() => {
+                setEditingRequestId(null);
+                setNewRequest({ leaveType: 'ANNUAL', startDate: '', endDate: '', reason: '', supportDocument: null });
+                setSupportDocPreviewUrl(null);
+                setIsFormOpen(true);
+              }}>
+                <Plus size={18} strokeWidth={2.5} /> New Request
+              </button>
+            </div>
+          </div>
+
+          <div className="my-leave-request-cards-grid">
+            {leaveData?.balances && leaveData.balances.map(balance => {
+              const { color, Icon, subtitle } = getLeaveCardStyle(balance.leaveType);
+              const progress = balance.totalAllocatedDays > 0 
+                ? ((balance.totalAllocatedDays - balance.remainingDays) / balance.totalAllocatedDays) * 100 
+                : 0;
+
+              return (
+                <div key={balance.id} className="my-leave-request-card">
+                  <div className="my-leave-request-card-header">
+                    <span className="my-leave-request-card-title" style={{ color }}>
+                      {balance.leaveType.replace('_', ' ')}
+                    </span>
+                    <div className="my-leave-request-card-watermark" style={{ color: `${color}20` }}>
+                      <Icon size={40} />
+                    </div>
+                  </div>
+                  <div className="my-leave-request-card-body">
+                    <span className="my-leave-request-card-remaining" style={{ color }}>
+                      {balance.remainingDays}
+                    </span>
+                    <span className="my-leave-request-card-total">
+                      / {balance.totalAllocatedDays} Days
+                    </span>
+                  </div>
+                  <div className="my-leave-request-progress-track">
+                    <div 
+                      className="my-leave-request-progress-fill" 
+                      style={{ width: `${progress}%`, backgroundColor: color }}
+                    ></div>
+                  </div>
+                  <div className="my-leave-request-card-footer-note">
+                    {subtitle}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
           {pendingRollovers.length > 0 && (
             <div className="my-leave-request-rollover-banner" style={{ background: '#fef3c7', padding: '1rem', borderRadius: '8px', marginBottom: '1.5rem', border: '1px solid #f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -238,11 +346,7 @@ const MyLeaves = () => {
             <div className="my-leave-request-trans-header-row">
               <h2 className="my-leave-request-trans-title">Recent Transactions</h2>
               <div className="my-leave-request-trans-actions">
-                <button className="my-leave-request-btn-new-request" onClick={() => setIsFormOpen(true)} style={{ marginRight: '8px' }}>
-                  <Plus size={18} strokeWidth={2.5} /> New Request
-                </button>
-                <button className="my-leave-request-btn-secondary"><Filter size={14} /> Filter</button>
-                <button className="my-leave-request-btn-secondary"><Download size={14} /> Export</button>
+                <button className="my-leave-request-btn-secondary" onClick={handleExport}><Download size={14} /> Export</button>
               </div>
             </div>
 
@@ -285,16 +389,27 @@ const MyLeaves = () => {
                                 {req.leaveType.replace('_', ' ').toLowerCase().replace(/\b\w/g, c => c.toUpperCase())}
                               </div>
                             </td>
-                            <td>{req.requestedDays} {req.requestedDays === 1 ? 'Day' : 'Days'}</td>
+                            <td>{req.totalDays || req.requestedDays || 0} {(req.totalDays || req.requestedDays || 0) === 1 ? 'Day' : 'Days'}</td>
                             <td><span className={statusClass}>{statusLabel}</span></td>
                             <td>
                               <div className="my-leave-request-table-actions">
                                 {req.status === 'PENDING' ? (
                                   <>
-                                    <button className="my-leave-request-action-btn-light" title="Edit">
+                                    <button className="my-leave-request-action-btn-light" title="Edit" onClick={() => {
+                                      setEditingRequestId(req.id);
+                                      setNewRequest({
+                                        leaveType: req.leaveType,
+                                        startDate: req.startDate ? req.startDate.split('T')[0] : '',
+                                        endDate: req.endDate ? req.endDate.split('T')[0] : '',
+                                        reason: req.reason || '',
+                                        supportDocument: null 
+                                      });
+                                      setSupportDocPreviewUrl(null);
+                                      setIsFormOpen(true);
+                                    }}>
                                       <Edit2 size={14} />
                                     </button>
-                                    <button className="my-leave-request-action-btn-light my-leave-request-action-btn-danger" title="Cancel">
+                                    <button className="my-leave-request-action-btn-light my-leave-request-action-btn-danger" title="Cancel" onClick={() => handleCancelLeave(req.id)}>
                                       <XCircle size={14} />
                                     </button>
                                   </>
@@ -542,9 +657,9 @@ const MyLeaves = () => {
 
             {/* Footer */}
             <div className="my-leave-request-form-footer">
-              <button className="my-leave-request-draft-btn" onClick={() => setIsFormOpen(false)}>Cancel Request</button>
+              <button className="my-leave-request-draft-btn" onClick={() => setIsFormOpen(false)}>Cancel</button>
               <button className="my-leave-request-submit-btn" onClick={handleApplyLeave} disabled={isSubmitting}>
-                {isSubmitting ? 'Submitting...' : 'Submit Leave Request'}
+                {isSubmitting ? (editingRequestId ? 'Updating...' : 'Submitting...') : (editingRequestId ? 'Update Leave Request' : 'Submit Leave Request')}
               </button>
             </div>
 
