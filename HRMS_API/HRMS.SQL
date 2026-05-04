@@ -153,6 +153,7 @@ CREATE TABLE employeeDocuments (
     fileSize INT,
     mimeType VARCHAR(100),
     issueDate DATE,
+    
     expiryDate DATE,
     issuingAuthority VARCHAR(255),
     description TEXT,
