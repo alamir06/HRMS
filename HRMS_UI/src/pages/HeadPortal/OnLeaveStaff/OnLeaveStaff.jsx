@@ -10,6 +10,8 @@ import '../../EmployeePortal/EmployeePortal.css';
 const OnLeaveStaff = () => {
   const { t, i18n } = useTranslation();
   const isAmharic = i18n.language === 'am';
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'https://hrms-6mfv.onrender.com/api';
+  const apiOrigin = apiBaseUrl.replace(/\/api\/?$/, '');
   
   const [employees, setEmployees] = useState([]);
   const [departments, setDepartments] = useState([]);
@@ -163,7 +165,7 @@ const OnLeaveStaff = () => {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <div style={{ width: '30px', height: '30px', borderRadius: '50%', backgroundColor: '#edf2f7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         {emp.profilePicture ? (
-                           <img src={emp.profilePicture.startsWith('http') ? emp.profilePicture : `http://localhost:5000/${emp.profilePicture.replace(/^\//, '')}`} alt="avatar" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                          <img src={emp.profilePicture.startsWith('http') ? emp.profilePicture : `${apiOrigin}/${emp.profilePicture.replace(/^\//, '')}`} alt="avatar" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
                         ) : (
                            <User size={16} color="#a0aec0" />
                         )}

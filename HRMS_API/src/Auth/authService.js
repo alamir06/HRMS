@@ -654,7 +654,8 @@ export const generatePasswordResetToken = async (email) => {
   );
 
   // Send email
-  const resetUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/reset-password?token=${resetToken}`;
+  const baseUrl = process.env.FRONTEND_URL || process.env.CLIENT_URL || 'http://localhost:5173';
+  const resetUrl = `${baseUrl}/reset-password?token=${resetToken}`;
   
   const subject = "Password Reset Request - HRMS";
   const html = `

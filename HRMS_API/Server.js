@@ -28,9 +28,15 @@ const limiter = rateLimit({
   legacyHeaders: false,
 });
 
+const parseOrigins = (value) => (value ? value.split(',').map((origin) => origin.trim()).filter(Boolean) : []);
 const allowedOrigins = process.env.NODE_ENV === 'production'
-  ? [process.env.CLIENT_URL]
-  : ['http://localhost:3000', 'http://localhost:5173'];
+  ? [...parseOrigins(process.env.FRONTEND_URL), ...parseOrigins(process.env.CLIENT_URL)]
+  : [
+      'http://localhost:3000',
+      'http://localhost:5173',
+      ...parseOrigins(process.env.FRONTEND_URL),
+      ...parseOrigins(process.env.CLIENT_URL),
+    ];
 
 //By Group1:Middleware
 app.use(helmet());
@@ -176,10 +182,11 @@ async function startServer() {
   startLeaveCronJobs();
 
   app.listen(PORT, () => {
+    const baseUrl = process.env.BACKEND_URL || `http://localhost:${PORT}`;
     console.log(`HRMS Server running on port ${PORT}`);
     console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`Health check: http://localhost:${PORT}/health`);
-    console.log(`API Base URL: http://localhost:${PORT}/api`);
+    console.log(`Health check: ${baseUrl}/health`);
+    console.log(`API Base URL: ${baseUrl}/api`);
     console.log(`Started at: ${new Date().toISOString()}`);
   });
 }
