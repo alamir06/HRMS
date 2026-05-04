@@ -9,6 +9,28 @@ export const requestLeave = async (req, res) => {
   }
 };
 
+export const updateLeaveRequest = async (req, res) => {
+  try {
+    const employeeId = req.user.employeeId;
+    const requestId = req.params.id;
+    const result = await leaveService.updateLeaveRequest(requestId, employeeId, req.body);
+    res.status(200).json({ success: true, message: result.message, data: result });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+};
+
+export const cancelLeaveRequest = async (req, res) => {
+  try {
+    const employeeId = req.user.employeeId;
+    const requestId = req.params.id;
+    const result = await leaveService.cancelLeaveRequest(requestId, employeeId);
+    res.status(200).json({ success: true, message: result.message, data: result });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+};
+
 export const approveLeave = async (req, res) => {
   try {
     const requestId = req.params.id;

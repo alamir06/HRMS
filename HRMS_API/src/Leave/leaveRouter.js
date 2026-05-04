@@ -7,7 +7,9 @@ import {
   getMyLeaves,
   getAllRequests,
   getPendingRolloverDecisions,
-  submitRolloverDecision
+  submitRolloverDecision,
+  updateLeaveRequest,
+  cancelLeaveRequest
 } from "./leaveController.js";
 import { leaveValidation } from "./leaveValidation.js";
 import { authenticateToken, authorize } from "../../middleware/auth.js";
@@ -47,6 +49,21 @@ router.post(
   validateBody(leaveValidation.createLeave), 
   requestLeave
 );
+
+router.put(
+  "/:id",
+  fileUploadService.uploadSingleDocument("supportDocument"),
+  (req, res, next) => {
+    if (req.file) {
+      req.body.supportDocument = req.file.path;
+    }
+    next();
+  },
+  validateBody(leaveValidation.updateLeave),
+  updateLeaveRequest
+);
+
+router.delete("/:id", cancelLeaveRequest);
 
 // Management accessible routes
 router.use(authorize("HRMANAGER", "admin", "superAdmin")); 
