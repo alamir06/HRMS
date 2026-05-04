@@ -193,11 +193,14 @@ const EmployeeOverview = () => {
     }
   };
 
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'https://hrms-6mfv.onrender.com/api';
+  const apiOrigin = apiBaseUrl.replace(/\/api\/?$/, '');
+
   const getDocPath = (doc) => {
     const path = doc.filePath || doc.documentUrl || doc.fileUrl || doc.path || doc.url;
     if (!path) return '#';
     if (path.startsWith('http')) return path;
-    return `http://localhost:5000/${path.replace(/^\//, '')}`;
+    return `${apiOrigin}/${path.replace(/^\//, '')}`;
   };
 
   if (isLoading) {
