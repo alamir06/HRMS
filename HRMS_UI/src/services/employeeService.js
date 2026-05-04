@@ -57,6 +57,10 @@ export const employeeService = {
     return handleResponse(() => api.delete(`/employees/${id}`));
   },
 
+  terminateEmployee: async (id, reason) => {
+    return handleResponse(() => api.put(`/employees/${id}/terminate`, { reason }));
+  },
+
   // MEDIA & FILE UPLOADS
   uploadProfilePicture: async (id, file) => {
     const formData = new FormData();

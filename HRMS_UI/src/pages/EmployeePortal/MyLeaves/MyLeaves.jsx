@@ -200,17 +200,7 @@ const MyLeaves = () => {
 
   return (
     <div className="my-leave-request-ledger-container">
-      <div className="my-leave-request-ledger-header">
-        <div className="my-leave-request-title-sec">
-          <h1>Leave Overview</h1>
-          <p>Manage your professional time off and track your ledger balances.</p>
-        </div>
-        <div className="my-leave-request-action-sec">
-          <button className="my-leave-request-btn-new-request" onClick={() => setIsFormOpen(true)}>
-            <Plus size={18} strokeWidth={2.5} /> New Request
-          </button>
-        </div>
-      </div>
+
 
       {isLoading ? (
         <div className="loading-state">Loading leave data...</div>
@@ -242,36 +232,15 @@ const MyLeaves = () => {
             </div>
           )}
 
-          <div className="my-leave-request-cards-grid">
-            {leaveData?.balances?.map(balance => {
-              const { color, Icon, subtitle } = getLeaveCardStyle(balance.leaveType);
-              const percent = balance.totalAllocatedDays > 0 
-                ? (balance.remainingDays / balance.totalAllocatedDays) * 100 
-                : 0;
 
-              return (
-                <div key={balance.id} className="my-leave-request-card">
-                  <div className="my-leave-request-card-watermark"><Icon size={56} opacity={0.15} strokeWidth={1} /></div>
-                  <div className="my-leave-request-card-header">
-                    <span className="my-leave-request-card-title" style={{ color }}>{balance.leaveType.replace('_', ' ')}</span>
-                  </div>
-                  <div className="my-leave-request-card-body">
-                    <span className="my-leave-request-card-remaining" style={{ color }}>{String(balance.remainingDays).padStart(2, '0')}</span>
-                    <span className="my-leave-request-card-total">/ {String(balance.totalAllocatedDays).padStart(2, '0')} days</span>
-                  </div>
-                  <div className="my-leave-request-progress-track">
-                    <div className="my-leave-request-progress-fill" style={{ width: `${percent}%`, backgroundColor: color }}></div>
-                  </div>
-                  <div className="my-leave-request-card-footer-note">{subtitle}</div>
-                </div>
-              );
-            })}
-          </div>
 
           <div className="my-leave-request-transactions-section">
             <div className="my-leave-request-trans-header-row">
               <h2 className="my-leave-request-trans-title">Recent Transactions</h2>
               <div className="my-leave-request-trans-actions">
+                <button className="my-leave-request-btn-new-request" onClick={() => setIsFormOpen(true)} style={{ marginRight: '8px' }}>
+                  <Plus size={18} strokeWidth={2.5} /> New Request
+                </button>
                 <button className="my-leave-request-btn-secondary"><Filter size={14} /> Filter</button>
                 <button className="my-leave-request-btn-secondary"><Download size={14} /> Export</button>
               </div>

@@ -64,6 +64,14 @@ employeeRouter.delete(
   employeeController.delete
 );
 
+employeeRouter.put(
+  "/:id/terminate",
+  authenticateToken,
+  authorize("HRMANAGER", "HROFFICER"),
+  validateEmployee(employeeIdSchema),
+  employeeController.terminate
+);
+
 // ========== PROFILE PICTURE ROUTES ==========
 employeeRouter.post(
   "/:id/profile-picture",

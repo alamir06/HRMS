@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useMemo } from 'react';
 import { toast } from 'react-toastify';
 import {
   Search,
@@ -10,8 +10,10 @@ import {
   ChevronRight,
   ArrowUpDown,
   ArrowDown,
-  ArrowUp
+  ArrowUp,
+  Download
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { benefitService } from '../../../../services/benefitService';
 import CommonForm from '../../../../components/common/CommonForm';
 import ConfirmModal from '../../../../components/common/ConfirmModal';
@@ -20,6 +22,7 @@ import './BenefitList.css';
 
 const BENEFIT_TYPES = ['HEALTH', 'RETIREMENT', 'INSURANCE', 'WELLNESS', 'OTHER'];
 
+<<<<<<< HEAD
 const benefitFormFields = [
   { name: 'benefitName', label: 'Benefit Name', type: 'text', required: true },
   { name: 'benefitNameAmharic', label: 'Name (Amharic)', type: 'text' },
@@ -45,10 +48,63 @@ const benefitFormFields = [
   { name: 'descriptionAmharic', label: 'Description (Amharic)', type: 'textarea', fullWidth: true }
 ];
 
+=======
+>>>>>>> 00e5d6b074a465353b0fbf77c899ee35e64611d1
 const BenefitList = () => {
+  const { t, i18n } = useTranslation();
   const [benefits, setBenefits] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const benefitFormFields = useMemo(() => {
+    if (i18n.language === 'am') {
+      return [
+        { name: 'benefitNameAmharic', label: 'የጥቅም ስም (Amharic Name)', type: 'text', required: true },
+        {
+          name: 'benefitType',
+          label: 'ዓይነት',
+          type: 'select',
+          required: true,
+          options: BENEFIT_TYPES.map((item) => ({ value: item.toUpperCase(), label: item }))
+        },
+        { name: 'costToCompany', label: 'የኩባንያ ወጪ', type: 'number', min: 0 },
+        {
+          name: 'isActive',
+          label: 'ሁኔታ',
+          type: 'select',
+          required: true,
+          options: [
+            { value: 'true', label: 'ገባሪ (Active)' },
+            { value: 'false', label: 'ቦዝኗል (Inactive)' }
+          ]
+        },
+        { name: 'descriptionAmharic', label: 'መግለጫ (Amharic Description)', type: 'textarea', fullWidth: true }
+      ];
+    }
+    
+    return [
+      { name: 'benefitName', label: 'Benefit Name', type: 'text', required: true },
+      {
+        name: 'benefitType',
+        label: 'Type',
+        type: 'select',
+        required: true,
+        options: BENEFIT_TYPES.map((item) => ({ value: item.toUpperCase(), label: item }))
+      },
+      { name: 'costToCompany', label: 'Cost To Company', type: 'number', min: 0 },
+      {
+        name: 'isActive',
+        label: 'Status',
+        type: 'select',
+        required: true,
+        options: [
+          { value: 'true', label: 'Active' },
+          { value: 'false', label: 'Inactive' }
+        ]
+      },
+      { name: 'description', label: 'Description', type: 'textarea', fullWidth: true }
+    ];
+  }, [i18n.language]);
 
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
@@ -123,6 +179,7 @@ const BenefitList = () => {
   };
 
   const handleFormSubmit = async (formData) => {
+<<<<<<< HEAD
     const payload = {
       benefitName: formData.benefitName,
       benefitNameAmharic: formData.benefitNameAmharic || null,
@@ -132,6 +189,11 @@ const BenefitList = () => {
       costToCompany: formData.costToCompany === '' ? null : Number(formData.costToCompany),
       isActive: formData.isActive === true || formData.isActive === 'true',
     };
+=======
+    const payload = { ...formData };
+    payload.costToCompany = payload.costToCompany === '' || payload.costToCompany == null ? null : Number(payload.costToCompany);
+    payload.isActive = payload.isActive === true || payload.isActive === 'true';
+>>>>>>> 00e5d6b074a465353b0fbf77c899ee35e64611d1
 
     try {
       setIsSubmitting(true);
@@ -186,6 +248,70 @@ const BenefitList = () => {
     }
   };
 
+  const handleExportPdf = () => {
+    const printContent = document.getElementById('benefit-catalog-table');
+    if (!printContent) return;
+
+    const printWindow = window.open('', '_blank', 'width=1000,height=800');
+    if (!printWindow) return;
+
+    let styles = '';
+    document.querySelectorAll('style, link[rel="stylesheet"]').forEach((el) => {
+      styles += el.outerHTML;
+    });
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Benefit Catalog Report</title>
+          ${styles}
+          <style>
+             @page { size: landscape; margin: 15mm; }
+             body { 
+               padding: 0; 
+               background: white; 
+               font-family: 'Inter', sans-serif; 
+               color: #1e293b;
+               -webkit-print-color-adjust: exact;
+               print-color-adjust: exact;
+             }
+             .benefit-table-footer, 
+             .benefit-table-actions,
+             .benefit-page-limit-selector,
+             .benefit-pagination-controls { 
+               display: none !important; 
+             }
+             th:last-child, td:last-child { display: none !important; }
+             table { 
+               width: 100%; 
+               border-collapse: collapse; 
+               margin-top: 15px; 
+             }
+             th, td { 
+               border: 1px solid #cbd5e1 !important; 
+               padding: 10px 12px !important; 
+               text-align: left !important; 
+               font-size: 10pt !important;
+             }
+             th { 
+               background-color: #f8fafc !important; 
+               color: #334155 !important; 
+               font-weight: 700 !important; 
+             }
+          </style>
+        </head>
+        <body>
+          <h2 style="text-align: center; margin-bottom: 20px;">Benefit Catalog Report</h2>
+          ${printContent.innerHTML}
+          <script>
+            window.onload = function() { window.print(); window.close(); }
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
   return (
     <div className="benefit-container">
       <div className="benefit-top-toolbar">
@@ -199,63 +325,70 @@ const BenefitList = () => {
             onChange={(event) => setSearch(event.target.value)}
           />
         </label>
+        <button className="benefit-btn-add" onClick={handleExportPdf}>
+          <Download size={18} /> {i18n.language === 'am' ? 'ወደ ፒዲኤፍ ላክ' : 'Export as PDF'}
+        </button>
         <button className="benefit-btn-add" onClick={handleOpenAdd}>
           <Plus size={18} /> Add Benefit
         </button>
       </div>
 
-      <div className="benefit-table-card">
+      <div className="benefit-table-card" id="benefit-catalog-table">
         <div className="benefit-table-responsive-wrapper">
           <table className="benefit-modern-data-table">
             <thead>
               <tr>
-                <th className="benefit-sortable-header" onClick={() => handleSort('benefitName')}>
-                  <div className="benefit-th-content">Benefit Name {renderSortIcon('benefitName')}</div>
-                </th>
-                <th className="benefit-sortable-header" onClick={() => handleSort('benefitNameAmharic')}>
-                  <div className="benefit-th-content">Name (Amharic) {renderSortIcon('benefitNameAmharic')}</div>
-                </th>
+                {i18n.language === 'am' ? (
+                  <th className="benefit-sortable-header" onClick={() => handleSort('benefitNameAmharic')}>
+                    <div className="benefit-th-content">የጥቅም ስም {renderSortIcon('benefitNameAmharic')}</div>
+                  </th>
+                ) : (
+                  <th className="benefit-sortable-header" onClick={() => handleSort('benefitName')}>
+                    <div className="benefit-th-content">Benefit Name {renderSortIcon('benefitName')}</div>
+                  </th>
+                )}
                 <th className="benefit-sortable-header" onClick={() => handleSort('benefitType')}>
-                  <div className="benefit-th-content">Type {renderSortIcon('benefitType')}</div>
+                  <div className="benefit-th-content">{i18n.language === 'am' ? 'ዓይነት' : 'Type'} {renderSortIcon('benefitType')}</div>
                 </th>
                 <th className="benefit-sortable-header" onClick={() => handleSort('costToCompany')}>
-                  <div className="benefit-th-content">Cost {renderSortIcon('costToCompany')}</div>
+                  <div className="benefit-th-content">{i18n.language === 'am' ? 'ወጪ' : 'Cost'} {renderSortIcon('costToCompany')}</div>
                 </th>
-                <th>Status</th>
+                <th>{i18n.language === 'am' ? 'ሁኔታ' : 'Status'}</th>
                 <th className="benefit-sortable-header" onClick={() => handleSort('createdAt')}>
-                  <div className="benefit-th-content">Created Date {renderSortIcon('createdAt')}</div>
+                  <div className="benefit-th-content">{i18n.language === 'am' ? 'የተፈጠረበት ቀን' : 'Created Date'} {renderSortIcon('createdAt')}</div>
                 </th>
-                <th>Actions</th>
+                <th>{i18n.language === 'am' ? 'እርምጃዎች' : 'Actions'}</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan="7" style={{ textAlign: 'center' }}>Loading...</td>
+                  <td colSpan="6" style={{ textAlign: 'center' }}>{i18n.language === 'am' ? 'በመጫን ላይ...' : 'Loading...'}</td>
                 </tr>
               ) : benefits.length === 0 ? (
                 <tr>
-                  <td colSpan="7" style={{ textAlign: 'center' }}>No benefits found.</td>
+                  <td colSpan="6" style={{ textAlign: 'center' }}>{i18n.language === 'am' ? 'ምንም ጥቅማጥቅሞች አልተገኙም' : 'No benefits found.'}</td>
                 </tr>
               ) : (
                 benefits.map((benefit) => (
                   <tr key={benefit.id}>
-                    <td className="col-primary-text">{benefit.benefitName}</td>
-                    <td>{benefit.benefitNameAmharic || '-'}</td>
+                    <td className="col-primary-text">
+                      {i18n.language === 'am' ? (benefit.benefitNameAmharic || benefit.benefitName) : benefit.benefitName}
+                    </td>
                     <td>{benefit.benefitType}</td>
                     <td>{benefit.costToCompany ?? '-'}</td>
                     <td>
                       <span className={`benefit-status-badge benefit-status-${benefit.isActive}`}>
-                        {benefit.isActive ? 'Active' : 'Inactive'}
+                        {benefit.isActive ? (i18n.language === 'am' ? 'ገባሪ' : 'Active') : (i18n.language === 'am' ? 'ቦዝኗል' : 'Inactive')}
                       </span>
                     </td>
                     <td>{formatEthiopianDate(benefit.createdAt)}</td>
                     <td>
                       <div className="benefit-table-actions">
-                        <button className="benefit-action-btn-light" onClick={() => handleOpenEdit(benefit)} title="Edit">
+                        <button className="benefit-action-btn-light" onClick={() => handleOpenEdit(benefit)} title={i18n.language === 'am' ? 'አስተካክል' : 'Edit'}>
                           <Pencil size={14} />
                         </button>
-                        <button className="benefit-action-btn-light benefit-action-btn-danger" onClick={() => triggerDelete(benefit)} title="Delete">
+                        <button className="benefit-action-btn-light benefit-action-btn-danger" onClick={() => triggerDelete(benefit)} title={i18n.language === 'am' ? 'ሰርዝ' : 'Delete'}>
                           <Trash2 size={14} />
                         </button>
                       </div>
@@ -305,7 +438,7 @@ const BenefitList = () => {
 
       {isFormModalOpen && (
         <div className="modal-overlay" onClick={closeFormModal}>
-          <div className="benefit-modal-form-wrapper" onClick={(event) => event.stopPropagation()}>
+          <div className="benefit-modal-form-wrapper benefit-wide-modal" onClick={(event) => event.stopPropagation()}>
             <div className="benefit-modal-form-header">
               <h3>{editingBenefit ? 'Edit Benefit' : 'Add New Benefit'}</h3>
               <button className="benefit-close-btn" onClick={closeFormModal}><X size={20} /></button>

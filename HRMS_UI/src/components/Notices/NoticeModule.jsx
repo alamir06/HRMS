@@ -5,6 +5,7 @@ import { toast } from 'react-toastify';
 import { noticeService } from '../../services/noticeService';
 import { departmentService } from '../../services/departmentService';
 import { collegeService } from '../../services/collegeService';
+import { employeeService } from '../../services/employeeService';
 import { formatEthiopianDate } from '../../utils/dateTime';
 import SearchableSelect from '../common/SearchableSelect';
 import './NoticeModule.css';
@@ -16,11 +17,13 @@ const NoticeModule = ({ allowedAudiences, isEmployeeView = false }) => {
   const [notices, setNotices] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [colleges, setColleges] = useState([]);
+  const [employees, setEmployees] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [search, setSearch] = useState('');
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedNotice, setSelectedNotice] = useState(null);
   
   // Get logged in user data to auto-assign department/college context
   const currentUser = JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user') || '{}');
@@ -53,6 +56,9 @@ const NoticeModule = ({ allowedAudiences, isEmployeeView = false }) => {
 
       const collRes = await collegeService.getAllColleges();
       if (collRes.success) setColleges(collRes.data || []);
+
+      const empRes = await employeeService.getAllEmployees(1, 1000);
+      if (empRes.success) setEmployees(empRes.data || []);
     } catch (error) {
       toast.error(error.message || "Failed to load notices");
     } finally {
@@ -90,6 +96,8 @@ const NoticeModule = ({ allowedAudiences, isEmployeeView = false }) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const isAdmin = !allowedAudiences || allowedAudiences.includes('ALL');
+
   const handleSubmit = async () => {
     const payload = { ...formData };
 
@@ -111,11 +119,18 @@ const NoticeModule = ({ allowedAudiences, isEmployeeView = false }) => {
 
     // Auto-attach department and college logic based on user's role
     if (payload.targetAudience === 'DEPARTMENT') {
-      if (!currentUser.departmentId) {
-        toast.error('You do not belong to a department. Cannot send departmental notice.');
-        return;
+      if (isAdmin) {
+        if (!payload.targetDepartmentId) {
+          toast.error(isAmharic ? 'እባክዎ ክፍል ይምረጡ' : 'Please select a department');
+          return;
+        }
+      } else {
+        if (!currentUser.departmentId) {
+          toast.error('You do not belong to a department. Cannot send departmental notice.');
+          return;
+        }
+        payload.targetDepartmentId = currentUser.departmentId;
       }
-      payload.targetDepartmentId = currentUser.departmentId;
     }
 
     if (payload.targetAudience === 'COLLEGE_HEADS') {
@@ -127,13 +142,24 @@ const NoticeModule = ({ allowedAudiences, isEmployeeView = false }) => {
       payload.targetCollegeId = currentUser.collegeId;
     }
 
-    if (payload.targetAudience === 'COLLEGE' && !payload.targetCollegeId) {
-      if (currentUser.collegeId) {
-         payload.targetCollegeId = currentUser.collegeId;
+    if (payload.targetAudience === 'COLLEGE') {
+      if (isAdmin) {
+        if (!payload.targetCollegeId) {
+           toast.error(isAmharic ? 'እባክዎ ኮሌጅ ይምረጡ' : 'Please select a college');
+           return;
+        }
       } else {
-         toast.error('Please select a college');
-         return;
+        if (!currentUser.collegeId) {
+           toast.error('You do not belong to a college. Cannot send college notice.');
+           return;
+        }
+        payload.targetCollegeId = currentUser.collegeId;
       }
+    }
+
+    if (payload.targetAudience === 'INDIVIDUAL' && !payload.targetEmployeeId) {
+      toast.error('Please select an employee');
+      return;
     }
 
     try {
@@ -193,6 +219,7 @@ const NoticeModule = ({ allowedAudiences, isEmployeeView = false }) => {
                 <th>{i18n.language === 'am' ? "የላኪ ስም" : "Created By"}</th>
                 <th>{i18n.language === 'am' ? "የወጣበት ቀን" : "Date"}</th>
                 {!isEmployeeView && <th>{i18n.language === 'am' ? "ሁኔታ" : "Status"}</th>}
+                <th>{i18n.language === 'am' ? "ድርጊት" : "Actions"}</th>
               </tr>
             </thead>
             <tbody>
@@ -202,7 +229,7 @@ const NoticeModule = ({ allowedAudiences, isEmployeeView = false }) => {
                 </tr>
               ) : filteredNotices.length === 0 ? (
                 <tr>
-                  <td colSpan={isEmployeeView ? "5" : "6"} style={{ textAlign: 'center' }}>{i18n.language === 'am' ? "ምንም መረጃ አልተገኘም" : "No records found."}</td>
+                  <td colSpan={isEmployeeView ? "6" : "7"} style={{ textAlign: 'center' }}>{i18n.language === 'am' ? "ምንም መረጃ አልተገኘም" : "No records found."}</td>
                 </tr>
               ) : (
                 filteredNotices.map(n => (
@@ -217,11 +244,14 @@ const NoticeModule = ({ allowedAudiences, isEmployeeView = false }) => {
                     </td>
                     <td>
                       <span className="audience-badge">
-                        {n.targetAudience === 'DEPARTMENT' ? 'My Department Employees' : 
+                        {n.targetAudience === 'DEPARTMENT' ? (isAdmin ? 'Specific Department' : 'My Department Employees') : 
                          n.targetAudience === 'COLLEGE_HEADS' ? 'College Department Heads' : 
-                         n.targetAudience === 'HR_MANAGER' ? 'HR Manager' : n.targetAudience}
+                         n.targetAudience === 'HR_MANAGER' ? 'HR Manager' : 
+                         n.targetAudience === 'INDIVIDUAL' ? 'Specific Employee' : n.targetAudience}
                         {n.targetDepartmentName && n.targetAudience !== 'DEPARTMENT' && ` - ${n.targetDepartmentName}`}
+                        {n.targetDepartmentName && n.targetAudience === 'DEPARTMENT' && isAdmin && ` - ${n.targetDepartmentName}`}
                         {n.targetCollegeName && n.targetAudience !== 'COLLEGE_HEADS' && n.targetAudience !== 'COLLEGE' && ` - ${n.targetCollegeName}`}
+                        {n.targetEmployeeName && n.targetAudience === 'INDIVIDUAL' && ` - ${n.targetEmployeeName}`}
                       </span>
                     </td>
                     <td>{n.createdByUsername}</td>
@@ -231,6 +261,14 @@ const NoticeModule = ({ allowedAudiences, isEmployeeView = false }) => {
                         {n.isPublished ? <span className="status-badge published">Published</span> : <span className="status-badge draft">Draft</span>}
                       </td>
                     )}
+                    <td>
+                      <button 
+                        onClick={() => setSelectedNotice(n)} 
+                        style={{ background: 'none', border: 'none', color: 'var(--primary-color)', cursor: 'pointer', padding: '4px', textDecoration: 'underline', fontSize: '0.9rem', fontWeight: '500' }}
+                      >
+                        {isAmharic ? 'ዝርዝር እይ' : 'View Details'}
+                      </button>
+                    </td>
                   </tr>
                 ))
               )}
@@ -263,11 +301,13 @@ const NoticeModule = ({ allowedAudiences, isEmployeeView = false }) => {
                 <div className="notice-form-group">
                   <label className="notice-form-label">{isAmharic ? 'ተደራሲያን' : 'Target Audience'} <span className="common-required-star">*</span></label>
                   <select className="notice-form-select" value={formData.targetAudience} onChange={e => handleChange('targetAudience', e.target.value)}>
-                    {(allowedAudiences || ["ALL", "DEPARTMENT", "COLLEGE", "HR_MANAGER", "INDIVIDUAL"]).map(aud => {
+                    {(allowedAudiences || ["ALL", "DEPARTMENT", "COLLEGE", "INDIVIDUAL"]).map(aud => {
                       let label = aud;
-                      if (aud === 'DEPARTMENT') label = 'My Department Employees';
-                      if (aud === 'COLLEGE_HEADS') label = 'College Department Heads';
+                      if (aud === 'DEPARTMENT') label = isAdmin ? 'Specific Department' : 'My Department Employees';
+                      if (aud === 'COLLEGE') label = 'Specific College';
+                      if (aud === 'INDIVIDUAL') label = 'Specific Employee';
                       if (aud === 'HR_MANAGER') label = 'HR Manager';
+                      if (aud === 'COLLEGE_HEADS') label = 'College Department Heads';
                       return <option key={aud} value={aud}>{label}</option>
                     })}
                   </select>
@@ -284,26 +324,35 @@ const NoticeModule = ({ allowedAudiences, isEmployeeView = false }) => {
               </div>
 
               {/* If HR Manager selects DEPARTMENT or COLLEGE, we still need manual selection. But Heads don't. */}
-              {formData.targetAudience === 'DEPARTMENT' && !allowedAudiences?.includes('DEPARTMENT') && (
+              {formData.targetAudience === 'DEPARTMENT' && isAdmin && (
                 <div className="notice-form-group">
                   <label className="notice-form-label">{isAmharic ? 'ክፍል ይምረጡ' : 'Select Department'} <span className="common-required-star">*</span></label>
                   <SearchableSelect 
-                    options={departments.map(d => ({ value: d.id, label: d.departmentName }))}
+                    field={{ name: 'targetDepartmentId', label: isAmharic ? 'ክፍል' : 'Department', options: departments.map(d => ({ value: d.id, label: d.departmentName })) }}
                     value={formData.targetDepartmentId}
-                    onChange={(val) => handleChange('targetDepartmentId', val)}
-                    placeholder="Search department..."
+                    onChange={(e) => handleChange(e.target.name, e.target.value)}
                   />
                 </div>
               )}
 
-              {formData.targetAudience === 'COLLEGE' && !allowedAudiences?.includes('COLLEGE') && (
+              {formData.targetAudience === 'COLLEGE' && isAdmin && (
                 <div className="notice-form-group">
                   <label className="notice-form-label">{isAmharic ? 'ኮሌጅ ይምረጡ' : 'Select College'} <span className="common-required-star">*</span></label>
                   <SearchableSelect 
-                    options={colleges.map(c => ({ value: c.id, label: c.collegeName }))}
+                    field={{ name: 'targetCollegeId', label: isAmharic ? 'ኮሌጅ' : 'College', options: colleges.map(c => ({ value: c.id, label: c.collegeName })) }}
                     value={formData.targetCollegeId}
-                    onChange={(val) => handleChange('targetCollegeId', val)}
-                    placeholder="Search college..."
+                    onChange={(e) => handleChange(e.target.name, e.target.value)}
+                  />
+                </div>
+              )}
+
+              {formData.targetAudience === 'INDIVIDUAL' && (
+                <div className="notice-form-group">
+                  <label className="notice-form-label">{isAmharic ? 'ሰራተኛ ይምረጡ' : 'Select Employee'} <span className="common-required-star">*</span></label>
+                  <SearchableSelect 
+                    field={{ name: 'targetEmployeeId', label: isAmharic ? 'ሰራተኛ' : 'Employee', options: employees.map(e => ({ value: e.id, label: `${e.firstName} ${e.lastName} ${e.departmentName ? `(${e.departmentName})` : ''}` })) }}
+                    value={formData.targetEmployeeId}
+                    onChange={(e) => handleChange(e.target.name, e.target.value)}
                   />
                 </div>
               )}
@@ -341,6 +390,34 @@ const NoticeModule = ({ allowedAudiences, isEmployeeView = false }) => {
               <button className="btn-submit" onClick={handleSubmit} disabled={isSubmitting}>
                 {isSubmitting ? "Submitting..." : (isEmployeeView ? "Send Request" : "Publish Notice")}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selectedNotice && (
+        <div className="modal-overlay" onClick={() => setSelectedNotice(null)}>
+          <div className="notice-modal-wrapper" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+            <div className="notice-modal-header">
+              <h3>{isAmharic ? 'የማስታወቂያ ዝርዝር' : 'Notice Details'}</h3>
+              <button className="notice-close-btn" onClick={() => setSelectedNotice(null)}><X size={20} /></button>
+            </div>
+            <div className="notice-modal-body" style={{ padding: '24px' }}>
+              <div style={{ marginBottom: '20px' }}>
+                <span className="status-badge" style={{ background: '#f1f5f9', color: '#475569', marginBottom: '12px', display: 'inline-block' }}>
+                  {selectedNotice.noticeType}
+                </span>
+                <h2 style={{ fontSize: '1.4rem', color: 'var(--text-primary)', marginBottom: '8px', lineHeight: '1.3' }}>
+                  {isAmharic ? (selectedNotice.titleAmharic || selectedNotice.title) : selectedNotice.title}
+                </h2>
+                <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center' }}>
+                  <span><strong>{isAmharic ? 'የላኪ ስም:' : 'From:'}</strong> {selectedNotice.createdByUsername}</span>
+                  <span><strong>{isAmharic ? 'የወጣበት ቀን:' : 'Date:'}</strong> {formatEthiopianDate(selectedNotice.createdAt)}</span>
+                </div>
+              </div>
+              <div style={{ background: '#f8fafc', padding: '20px', borderRadius: '8px', border: '1px solid #e2e8f0', minHeight: '120px', whiteSpace: 'pre-wrap', color: 'var(--text-primary)', lineHeight: '1.6', fontSize: '1rem' }}>
+                {isAmharic ? (selectedNotice.contentAmharic || selectedNotice.content) : selectedNotice.content}
+              </div>
             </div>
           </div>
         </div>

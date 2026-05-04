@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Search, Plus, Trash2, ArrowUpDown, ArrowDown, ArrowUp, Pencil, X, ChevronLeft, ChevronRight, BarChart3 } from 'lucide-react';
+import { Search, Plus, Trash2, ArrowUpDown, ArrowDown, ArrowUp, Pencil, X, ChevronLeft, ChevronRight, BarChart3, Download } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { benefitService } from '../../../../services/benefitService';
 import { employeeService } from '../../../../services/employeeService';
@@ -9,7 +9,7 @@ import { formatEthiopianDate } from '../../../../utils/dateTime';
 import '../BenefitList/BenefitList.css'; 
 import './BenefitAssignment.css';
 
-const ENROLLMENT_STATUSES = ['ACTIVE', 'CANCELLED', 'SUSPENDED'];
+const ENROLLMENT_STATUSES = ['ACTIVE', 'CANCELLED', 'SUSPENDED', 'EXPIRED'];
 
 const BenefitAssignment = () => {
   const [enrollments, setEnrollments] = useState([]);
@@ -143,7 +143,7 @@ const BenefitAssignment = () => {
   };
 
   const enrollmentFormFields = useMemo(() => [
-    { name: 'employeeId', label: 'Employee', type: 'select', required: true, options: employees.map(emp => ({ value: emp.id, label: `${(emp.firstName || '').trim()} ${(emp.lastName || '').trim()} (${emp.id})` })) },
+    { name: 'employeeId', label: 'Employee', type: 'select', required: true, options: employees.map(emp => ({ value: emp.id, label: `${(emp.firstName || '').trim()} ${(emp.lastName || '').trim()}` })) },
     { name: 'benefitId', label: 'Benefit', type: 'select', required: true, options: benefitOptions.map(item => ({ value: item.id, label: `${item.benefitName} (${item.benefitType})` })) },
     { name: 'enrollmentDate', label: 'Enrollment Date', type: 'date', required: true },
     { name: 'status', label: 'Status', type: 'select', options: ENROLLMENT_STATUSES.map(s => ({ value: s, label: s })) },
@@ -157,6 +157,70 @@ const BenefitAssignment = () => {
     { name: 'status', label: 'New Status', type: 'select', required: true, options: ENROLLMENT_STATUSES.map(s => ({ value: s, label: s })) },
     { name: 'endDate', label: 'End Date', type: 'date' }
   ];
+
+  const handleExportPdf = () => {
+    const printContent = document.getElementById('benefit-assignment-table');
+    if (!printContent) return;
+
+    const printWindow = window.open('', '_blank', 'width=1000,height=800');
+    if (!printWindow) return;
+
+    let styles = '';
+    document.querySelectorAll('style, link[rel="stylesheet"]').forEach((el) => {
+      styles += el.outerHTML;
+    });
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Benefit Assignment Report</title>
+          ${styles}
+          <style>
+             @page { size: landscape; margin: 15mm; }
+             body { 
+               padding: 0; 
+               background: white; 
+               font-family: 'Inter', sans-serif; 
+               color: #1e293b;
+               -webkit-print-color-adjust: exact;
+               print-color-adjust: exact;
+             }
+             .benefit-table-footer, 
+             .benefit-table-actions,
+             .benefit-page-limit-selector,
+             .benefit-pagination-controls { 
+               display: none !important; 
+             }
+             th:last-child, td:last-child { display: none !important; }
+             table { 
+               width: 100%; 
+               border-collapse: collapse; 
+               margin-top: 15px; 
+             }
+             th, td { 
+               border: 1px solid #cbd5e1 !important; 
+               padding: 10px 12px !important; 
+               text-align: left !important; 
+               font-size: 10pt !important;
+             }
+             th { 
+               background-color: #f8fafc !important; 
+               color: #334155 !important; 
+               font-weight: 700 !important; 
+             }
+          </style>
+        </head>
+        <body>
+          <h2 style="text-align: center; margin-bottom: 20px;">Benefit Assignment Report</h2>
+          ${printContent.innerHTML}
+          <script>
+            window.onload = function() { window.print(); window.close(); }
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
 
   return (
     <div className="benefit-container">
@@ -184,12 +248,15 @@ const BenefitAssignment = () => {
           ))}
         </select>
 
+        <button className="benefit-btn-add" onClick={handleExportPdf}>
+          <Download size={18} /> Export as PDF
+        </button>
         <button className="benefit-btn-add" onClick={() => setIsEnrollModalOpen(true)}>
           <Plus size={18} /> Enroll Employee
         </button>
       </div>
 
-      <div className="benefit-table-card">
+      <div className="benefit-table-card" id="benefit-assignment-table">
         <div className="benefit-table-responsive-wrapper">
           <table className="benefit-modern-data-table">
             <thead>
@@ -221,7 +288,7 @@ const BenefitAssignment = () => {
                       <td>{enr.coverageAmount ?? '-'}</td>
                       <td>
                          <span className={`benefit-status-badge benefit-status-${enr.status === 'ACTIVE' || enr.status === 'Active' ? 'true' : 'false'}`}>
-                           {enr.status}
+                           {enr.status === 'EXPIRED' ? 'RELEASED' : enr.status}
                          </span>
                       </td>
                       <td>
@@ -273,7 +340,7 @@ const BenefitAssignment = () => {
 
       {isEnrollModalOpen && (
         <div className="modal-overlay" onClick={closeModals}>
-          <div className="benefit-modal-form-wrapper" onClick={(e) => e.stopPropagation()}>
+          <div className="benefit-modal-form-wrapper benefit-wide-modal" onClick={(e) => e.stopPropagation()}>
             <div className="benefit-modal-form-header">
               <h3>Enroll Employee</h3>
               <button className="benefit-close-btn" onClick={closeModals}><X size={20} /></button>
@@ -324,8 +391,21 @@ const BenefitAssignment = () => {
         confirmText="Confirm Delete"
         isDestructive={true}
         onConfirm={async () => {
-          setDeleteModalOpen(false);
-          toast.warning("Delete enrollment is not fully supported on the backend yet.");
+          if (!enrollmentToDelete) return;
+          try {
+            const res = await benefitService.deleteEnrollment(enrollmentToDelete.enrollmentId);
+            if (res.success) {
+              toast.success("Enrollment deleted successfully");
+              loadEnrollments();
+            } else {
+              toast.error(res.error || "Failed to delete enrollment");
+            }
+          } catch (error) {
+            toast.error(error?.response?.data?.error || "Error deleting enrollment");
+          } finally {
+            setDeleteModalOpen(false);
+            setEnrollmentToDelete(null);
+          }
         }}
         onCancel={() => setDeleteModalOpen(false)}
       />

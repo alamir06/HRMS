@@ -107,7 +107,7 @@ const OnLeaveStaff = () => {
 
   return (
     <div className="employee-portal-container">
-      <div className="portal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div className="portal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <h1>{isAmharic ? 'በፈቃድ ላይ ያሉ ሰራተኞች' : 'On-Leave Staff'}</h1>
           <p>{isAmharic ? 'በአሁኑ ሰዓት ፈቃድ ላይ ያሉ ሰራተኞች ዝርዝር' : 'List of employees currently on leave under your supervision.'}</p>

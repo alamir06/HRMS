@@ -252,6 +252,16 @@
   animation: scaleIn 0.2s ease-out;
 }
 
+.college-modal-form-wrapper.college-wide-modal {
+  border-radius: var(--radius-lg);
+  padding: 2.5rem;
+  width: 90%;
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
 .college-modal-form-header {
   display: flex;
   justify-content: space-between;
@@ -303,5 +313,9 @@
   }
   .college-pagination-controls {
     justify-content: space-between;
+  }
+  .college-modal-form-wrapper.college-wide-modal {
+    padding: 1.5rem;
+    width: 95%;
   }
 }

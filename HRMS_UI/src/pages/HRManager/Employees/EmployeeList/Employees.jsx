@@ -41,6 +41,7 @@ const Employees = () => {
   // Delete confirm states
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [employeeToDelete, setEmployeeToDelete] = useState(null);
+  const [terminationReason, setTerminationReason] = useState('');
 
   const displayEthDate = (ethValue, gregValue) => {
     if (ethValue) return ethValue;
@@ -165,18 +166,19 @@ const Employees = () => {
   const confirmDelete = async () => {
     if (!employeeToDelete) return;
     try {
-      const resp = await employeeService.deleteEmployee(employeeToDelete.id);
+      const resp = await employeeService.terminateEmployee(employeeToDelete.id, terminationReason);
       if (resp.success) {
-        toast.success("Employee deleted successfully.");
+        toast.success("Employee terminated successfully.");
         loadEmployees();
       } else {
-        toast.error(resp.message || "Failed to delete employee.");
+        toast.error(resp.message || "Failed to terminate employee.");
       }
     } catch (error) {
-      toast.error("Failed to delete from server");
+      toast.error("Failed to terminate from server");
     } finally {
       setDeleteModalOpen(false);
       setEmployeeToDelete(null);
+      setTerminationReason('');
     }
   };
 
@@ -209,19 +211,74 @@ const Employees = () => {
           <title>Employee Directory Report</title>
           ${styles}
           <style>
-            body { padding: 40px; background: white; font-family: Inter, sans-serif; }
-            .table-actions, .table-footer { display: none !important; }
-            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-            th, td { border: 1px solid #e2e8f0; padding: 12px; text-align: left; }
-            th { border-bottom: 2px solid #cbd5e1; }
-            h1 { color: #2d3748; margin-bottom: 10px; }
-            .report-header { margin-bottom: 24px; }
+             @page { size: landscape; margin: 15mm; }
+             body { 
+               padding: 0; 
+               background: white; 
+               font-family: 'Inter', sans-serif; 
+               color: #1e293b;
+               -webkit-print-color-adjust: exact;
+               print-color-adjust: exact;
+             }
+             /* Hide irrelevant details */
+             .table-footer, 
+             .table-actions,
+             .page-limit-selector,
+             .pagination-controls { 
+               display: none !important; 
+             }
+             /* Hide Actions column entirely */
+             th:last-child, td:last-child { display: none !important; }
+             
+             /* Clean up table style */
+             table { 
+               width: 100%; 
+               border-collapse: collapse; 
+               margin-top: 15px; 
+             }
+             th, td { 
+               border: 1px solid #cbd5e1 !important; 
+               padding: 10px 12px !important; 
+               text-align: left !important; 
+               font-size: 10pt !important;
+               vertical-align: middle !important;
+             }
+             th { 
+               background-color: #f8fafc !important; 
+               color: #334155 !important; 
+               font-weight: 700 !important; 
+               text-transform: uppercase !important; 
+               font-size: 9pt !important;
+             }
+             
+             .table-avatar { display: none !important; }
+             .col-primary-text { gap: 2px !important; }
+             
+             h1 { font-family: 'Inter', sans-serif; color: #0f172a; margin: 0 0 5px 0; font-size: 20pt; }
+             .report-header { margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; }
+             .report-meta { color: #64748b; font-size: 10pt; margin: 0; display: flex; justify-content: space-between; }
+             
+             /* Ensure responsive layout in print */
+             .table-responsive-wrapper {
+               overflow: visible !important;
+               width: 100% !important;
+             }
+             .employees-table-card {
+               box-shadow: none !important;
+               border: none !important;
+               background: transparent !important;
+             }
+             
+             td strong { color: #0f172a !important; }
           </style>
         </head>
         <body>
           <div class="report-header">
             <h1>Employee Directory Report</h1>
-            <p>Generated on: ${dateStr}</p>
+            <div class="report-meta">
+              <span>Generated on: ${dateStr}</span>
+              <span>Total Records: ${employees.length}</span>
+            </div>
           </div>
           ${printContent.innerHTML}
         </body>
@@ -398,7 +455,7 @@ const Employees = () => {
                     </td>
                     <td className="col-primary-text">
                        {getEmployeeDisplayName(emp)}
-                       <span style={{display: 'block', fontSize: '0.75rem', color: '#6b7280', fontWeight: 'normal'}}>
+                       <span style={{display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary, #6b7280)', fontWeight: 'normal'}}>
                          {emp.officialEmail || emp.personalEmail || (isAmharic ? "ኢሜል አልተገኘም" : "No Email")}
                        </span>
                     </td>
@@ -488,15 +545,37 @@ const Employees = () => {
       <ConfirmModal 
         isOpen={deleteModalOpen}
         title={i18n.language === 'am' ? "የሰራተኛ ሁኔታን አዘምን" : "Update Employee Status"}
-        message={
-          i18n.language === 'am' 
-            ? `የ "${employeeToDelete?.firstNameAmharic || employeeToDelete?.firstName} ${employeeToDelete?.lastNameAmharic || employeeToDelete?.lastName}" ሁኔታን መቀየር እንደሚፈልጉ እርግጠኛ ነዎት?`
-            : `Are you sure you want to update the status for "${employeeToDelete?.firstName} ${employeeToDelete?.lastName}"?`
+        content={
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%', textAlign: 'left' }}>
+            <p style={{ margin: 0, color: 'var(--text-secondary)' }}>
+              {i18n.language === 'am' 
+                ? `የ "${employeeToDelete?.firstNameAmharic || employeeToDelete?.firstName} ${employeeToDelete?.lastNameAmharic || employeeToDelete?.lastName}" ሁኔታን መቀየር እንደሚፈልጉ እርግጠኛ ነዎት?`
+                : `Are you sure you want to update the status to TERMINATED for "${employeeToDelete?.firstName} ${employeeToDelete?.lastName}"?`}
+            </p>
+            <div className="premium-form-group" style={{ margin: 0 }}>
+              <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.5rem', display: 'block' }}>
+                {i18n.language === 'am' ? 'የማቋረጥ ምክንያት' : 'Termination Reason'} <span className="req">*</span>
+              </label>
+              <div className="premium-input-wrap">
+                <textarea 
+                  value={terminationReason}
+                  onChange={(e) => setTerminationReason(e.target.value)}
+                  placeholder={i18n.language === 'am' ? 'ምክንያትዎን ያስገቡ...' : 'Enter termination reason...'}
+                  style={{ width: '100%', minHeight: '80px', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', resize: 'vertical', fontFamily: 'inherit' }}
+                  required
+                />
+              </div>
+            </div>
+          </div>
         }
         confirmText={i18n.language === 'am' ? "አረጋግጥ" : "Confirm Update"}
         isDestructive={true}
+        confirmDisabled={!terminationReason.trim()}
         onConfirm={confirmDelete}
-        onCancel={() => setDeleteModalOpen(false)}
+        onCancel={() => {
+          setDeleteModalOpen(false);
+          setTerminationReason('');
+        }}
       />
     </div>
   );
