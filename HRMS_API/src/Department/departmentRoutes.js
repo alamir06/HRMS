@@ -97,7 +97,7 @@ const validateDepartmentDeletion = async (req, res, next) => {
 
 const departmentCrudRouter = createCrudRouter({
   routePath: "/",
-  tableName: "DEPARTMENT",
+  tableName: "department",
   validationSchema: departmentValidationSchema,
   uuidEnabled: true,
   displayNameField: "departmentName",
