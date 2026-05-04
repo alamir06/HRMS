@@ -49,6 +49,8 @@ const Sidebar = ({ onOpenProfile, mobileOpen = false, onCloseMobile }) => {
   }, []);
 
   const { t } = useTranslation();
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'https://hrms-6mfv.onrender.com/api';
+  const apiOrigin = apiBaseUrl.replace(/\/api\/?$/, '');
 
   const navItems = [
     { name: t('sidebar.dashboard', 'Dashboard'), path: '/dashboard', icon: <LayoutDashboard size={20} /> },
@@ -163,9 +165,9 @@ const Sidebar = ({ onOpenProfile, mobileOpen = false, onCloseMobile }) => {
             <img 
               src={
                 authUser?.profilePicture 
-                  ? (authUser.profilePicture.startsWith('http') 
+                    ? (authUser.profilePicture.startsWith('http') 
                       ? authUser.profilePicture 
-                      : `http://localhost:5000/${authUser.profilePicture.replace(/^\//, '')}`)
+                      : `${apiOrigin}/${authUser.profilePicture.replace(/^\//, '')}`)
                   : `https://ui-avatars.com/api/?name=${encodeURIComponent(authUser?.name || "Admin User")}&background=0B8255&color=fff`
               } 
               onError={(e) => { 

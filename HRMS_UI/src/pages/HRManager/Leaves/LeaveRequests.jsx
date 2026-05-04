@@ -9,6 +9,8 @@ import './LeaveRequests.css';
 
 const LeaveRequests = () => {
   const { t, i18n } = useTranslation();
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'https://hrms-6mfv.onrender.com/api';
+  const apiOrigin = apiBaseUrl.replace(/\/api\/?$/, '');
   const [requests, setRequests] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   
@@ -495,7 +497,7 @@ const LeaveRequests = () => {
                        </div>
                        <div 
                           className="hr-leave-request-doc-card" 
-                          onClick={() => setPreviewDoc(viewRequest.supportDocument.startsWith('http') ? viewRequest.supportDocument : `http://localhost:5000/${viewRequest.supportDocument.replace(/^\//, '')}`)}
+                          onClick={() => setPreviewDoc(viewRequest.supportDocument.startsWith('http') ? viewRequest.supportDocument : `${apiOrigin}/${viewRequest.supportDocument.replace(/^\//, '')}`)}
                        >
                           <div className="hr-leave-request-doc-card-icon">
                              <FileText size={24} />
