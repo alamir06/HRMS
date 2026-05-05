@@ -8,6 +8,7 @@ import {
 import '../Leaves/LeaveRequests.css';
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import injLogo from '../../../assets/inj-logo.jpg';
+import { formatEthiopianDate } from '../../../utils/dateTime';
 
 const REC_TYPES = [
   { id: 'EDUCATION', icon: <GraduationCap size={20} />, labelEn: 'Education' },
@@ -20,7 +21,7 @@ const REC_TYPES = [
 ];
 
 const Recommendations = () => {
-  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'https://hrms-6mfv.onrender.com/api';
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
   const apiOrigin = apiBaseUrl.replace(/\/api\/?$/, '');
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -57,7 +58,7 @@ const Recommendations = () => {
           title: '',
           content: `
             <div style="display: flex; justify-content: space-between; margin-bottom: 50px; font-weight: bold;">
-              <div>ቀን <u>&nbsp;&nbsp;${new Date(req.requestDate || Date.now()).toLocaleDateString('am-ET')}&nbsp;&nbsp;</u></div>
+              <div>ቀን <u>&nbsp;&nbsp;${formatEthiopianDate(req.requestDate || new Date())}&nbsp;&nbsp;</u></div>
               <div>አ.ዲ. ቁጥር <u>&nbsp;&nbsp;${req.employeeCode || '____________'}&nbsp;&nbsp;</u></div>
             </div>
             <div style="font-weight: bold; margin-bottom: 20px;">
@@ -92,7 +93,7 @@ const Recommendations = () => {
           title: '',
           content: `
             <div style="text-align: center; margin-bottom: 40px; font-weight: bold;">
-              ቀን <u>&nbsp;&nbsp;${new Date(req.requestDate || Date.now()).toLocaleDateString('am-ET')}&nbsp;&nbsp;</u>
+              ቀን <u>&nbsp;&nbsp;${formatEthiopianDate(req.requestDate || new Date())}&nbsp;&nbsp;</u>
             </div>
             <div style="font-weight: bold; margin-bottom: 20px;">
               ለብቃትና ለሰው ሀብት አስተዳደር ሥራ አስፈፃሚ<br/>
@@ -104,7 +105,7 @@ const Recommendations = () => {
             <div style="line-height: 2;">
               የእንጅባራ ዩኒቨርሲቲ የስራ ባልደረባ የሆንኩት ዶ/ር/አቶ/ወ/ሮ/ወ/ሪት <u>&nbsp;&nbsp;<strong>${fullName}</strong>&nbsp;&nbsp;</u><br/>
               <br/>
-              1. በእንጅባራ ዩኒቨርሲቲ የቅጥር ቀን <u>&nbsp;&nbsp;<strong>${req.hireDate ? new Date(req.hireDate).toLocaleDateString('am-ET') : '_____ወር_____ዓ/ም_____'}</strong>&nbsp;&nbsp;</u><br/>
+              1. በእንጅባራ ዩኒቨርሲቲ የቅጥር ቀን <u>&nbsp;&nbsp;<strong>${req.hireDate ? formatEthiopianDate(req.hireDate) : '_____ወር_____ዓ/ም_____'}</strong>&nbsp;&nbsp;</u><br/>
               2. የሙያ መስክ (Specialization) <u>&nbsp;&nbsp;<strong>${req.fieldOfSpecialization || req.designationName || '__________________________________'}</strong>&nbsp;&nbsp;</u><br/>
               3. የአ.ዲ. ቁጥር <u>&nbsp;&nbsp;<strong>${req.employeeCode || '__________________________________'}</strong>&nbsp;&nbsp;</u><br/>
               <br/>
@@ -135,9 +136,9 @@ const Recommendations = () => {
               የእንጅባራ ዩኒቨርሲቲ የስራ ባልደረባ የሆንኩት <u>&nbsp;&nbsp;<strong>${fullName}</strong>&nbsp;&nbsp;</u><br/>
               ከ <strong>${req.institutionName || 'እንጅባራ ከተማ አስተዳደር ከንቲባ ጽ/ቤት'}</strong> ${req.reason ? `<strong>${req.reason}</strong> ` : 'ቲን ናምበር ለማውጣት '}ስለፈለጉኝ 
               የእንጅባራ ዩኒቨርሲቲ ሰራተኛ ስለመሆኔ እና የቅጥር ዘመኔን የሚገልፅ ማስረጃ 
-              ይፃፍልኝ ሲሉ በቀን <u>&nbsp;&nbsp;<strong>${new Date(req.requestDate || Date.now()).toLocaleDateString('am-ET')}</strong>&nbsp;&nbsp;</u> ባቀረቡት ማመልከቻ ጠይቀዋል፤፤<br/>
+              ይፃፍልኝ ሲሉ በቀን <u>&nbsp;&nbsp;<strong>${formatEthiopianDate(req.requestDate || new Date())}</strong>&nbsp;&nbsp;</u> ባቀረቡት ማመልከቻ ጠይቀዋል፤፤<br/>
               <br/>
-              በዚህም መሰረት ከላይ ስማቸው የተጠቀሰው ከ <u>&nbsp;&nbsp;<strong>${req.hireDate ? new Date(req.hireDate).toLocaleDateString('am-ET') : '_____ወር_____ዓ/ም_____'}</strong>&nbsp;&nbsp;</u> ጀምሮ 
+              በዚህም መሰረት ከላይ ስማቸው የተጠቀሰው ከ <u>&nbsp;&nbsp;<strong>${req.hireDate ? formatEthiopianDate(req.hireDate) : '_____ወር_____ዓ/ም_____'}</strong>&nbsp;&nbsp;</u> ጀምሮ 
               በእንጅባራ ዩኒቨርሲቲ <u>&nbsp;&nbsp;<strong>${req.designationName || '_________________'}</strong>&nbsp;&nbsp;</u> ሆነው 
               በቋሚነት ተቀጥረው እያገለገሉ የሚገኙ መሆናቸውን እየገለፅን፤በእናንተ በኩል አስፈላጊውን 
               ትብብር እንዲደረግላቸው እናሳስባለን ፡፡
@@ -153,7 +154,7 @@ const Recommendations = () => {
           title: '',
           content: `
             <div style="text-align: center; margin-bottom: 40px; font-weight: bold;">
-              ቀን <u>&nbsp;&nbsp;${new Date(req.requestDate || Date.now()).toLocaleDateString('am-ET')}&nbsp;&nbsp;</u>
+              ቀን <u>&nbsp;&nbsp;${formatEthiopianDate(req.requestDate || new Date())}&nbsp;&nbsp;</u>
             </div>
             <div style="font-weight: bold; margin-bottom: 20px;">
               ለ <strong>${req.institutionName || 'ትምህርት ሚኒስቴር'}</strong>
@@ -164,7 +165,7 @@ const Recommendations = () => {
             <div style="line-height: 2;">
               የእንጅባራ ዩኒቨርሲቲ የስራ ባልደረባ የሆንኩት ዶ/ር/አቶ/ወ/ሮ/ወ/ሪት <u>&nbsp;&nbsp;<strong>${fullName}</strong>&nbsp;&nbsp;</u><br/>
               <br/>
-              1. በእንጅባራ ዩኒቨርሲቲ የቅጥር ቀን <u>&nbsp;&nbsp;<strong>${req.hireDate ? new Date(req.hireDate).toLocaleDateString('am-ET') : '_____ወር_____ዓ/ም_____'}</strong>&nbsp;&nbsp;</u><br/>
+              1. በእንጅባራ ዩኒቨርሲቲ የቅጥር ቀን <u>&nbsp;&nbsp;<strong>${req.hireDate ? formatEthiopianDate(req.hireDate) : '_____ወር_____ዓ/ም_____'}</strong>&nbsp;&nbsp;</u><br/>
               2. የሙያ መስክ (Specialization) <u>&nbsp;&nbsp;<strong>${req.fieldOfSpecialization || req.designationName || '__________________________________'}</strong>&nbsp;&nbsp;</u><br/>
               3. የአ.ዲ. ቁጥር <u>&nbsp;&nbsp;<strong>${req.employeeCode || '__________________________________'}</strong>&nbsp;&nbsp;</u><br/>
               <br/>
@@ -193,12 +194,12 @@ const Recommendations = () => {
           title: 'የመምህራንና የአስተዳደር ሠራተኞች ማስረጃ መጠየቂያ ቅጽ',
           content: `
             <div style="line-height: 2;">
-              1. ቅጹ የተሞላበት ቀን <u>&nbsp;&nbsp;${new Date(req.requestDate || Date.now()).toLocaleDateString('am-ET')}&nbsp;&nbsp;</u><br/>
+              1. ቅጹ የተሞላበት ቀን <u>&nbsp;&nbsp;${formatEthiopianDate(req.requestDate || new Date())}&nbsp;&nbsp;</u><br/>
               2. ማስረጃ እንዲፃፍለት ያመለከተው ሠራተኛ ስም ከነአያት <u>&nbsp;&nbsp;<strong>${fullName}</strong>&nbsp;&nbsp;</u><br/>
               3. የቅጥር ዋስትና &nbsp;[${gTypes.includes('EMPLOYMENT') ? ' ✔ ' : '&nbsp;&nbsp;&nbsp;'}]<br/>
               4. የትምህርት ዋስትና &nbsp;[${gTypes.includes('EDUCATION') ? ' ✔ ' : '&nbsp;&nbsp;&nbsp;'}]<br/>
               5. የገንዘብ ብድር ዋስትና &nbsp;[${gTypes.includes('LOAN') ? ' ✔ ' : '&nbsp;&nbsp;&nbsp;'}]<br/>
-              6. የተወለደበት ቀን <u>&nbsp;&nbsp;<strong>${req.dateOfBirth ? new Date(req.dateOfBirth).toLocaleDateString('am-ET') : '________ ወር ________ ዓ/ም _________'}</strong>&nbsp;&nbsp;</u><br/>
+              6. የተወለደበት ቀን <u>&nbsp;&nbsp;<strong>${req.dateOfBirth ? formatEthiopianDate(req.dateOfBirth) : '________ ወር ________ ዓ/ም _________'}</strong>&nbsp;&nbsp;</u><br/>
               7. የሥራ ክፍል ት/ቤት/ኮሌጅ <u>&nbsp;&nbsp;<strong>${departmentName}</strong>&nbsp;&nbsp;</u><br/>
               8. የሥራ መደብ መጠሪያ <u>&nbsp;&nbsp;<strong>${req.jobTitle || req.designationName || '_________________'}</strong>&nbsp;&nbsp;</u><br/>
               9. የሠራተኛው መታወቂያ ቁጥር <u>&nbsp;&nbsp;<strong>${req.employeeCode || '_________________'}</strong>&nbsp;&nbsp;</u><br/>
@@ -212,7 +213,7 @@ const Recommendations = () => {
               <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px;">
                 <div>የአመልካች ፊርማ ______________________</div>
                 <div>የአመልካች ስም <u>&nbsp;&nbsp;<strong>${fullName}</strong>&nbsp;&nbsp;</u></div>
-                <div>ቀን <u>&nbsp;&nbsp;${new Date(req.requestDate || Date.now()).toLocaleDateString('am-ET')}&nbsp;&nbsp;</u></div>
+                <div>ቀን <u>&nbsp;&nbsp;${formatEthiopianDate(req.requestDate || new Date())}&nbsp;&nbsp;</u></div>
               </div>
             </div>
           `
@@ -261,13 +262,13 @@ const Recommendations = () => {
             </div>
             <div style="line-height: 2;">
               የእንጅባራ ዩኒቨርሲቲ የስራ ባልደረባ የነበሩት <u>&nbsp;&nbsp;<strong>${fullName}</strong>&nbsp;&nbsp;</u> የስራ ልምድ ማስረጃ ኮፒ 
-              እንዲሰጣቸው በቀን <u>&nbsp;&nbsp;${new Date(req.requestDate || Date.now()).toLocaleDateString('am-ET')}&nbsp;&nbsp;</u> በተፃፈ ማመልከቻ ጠይቀዋል፡፡<br/><br/>
+              እንዲሰጣቸው በቀን <u>&nbsp;&nbsp;${formatEthiopianDate(req.requestDate || new Date())}&nbsp;&nbsp;</u> በተፃፈ ማመልከቻ ጠይቀዋል፡፡<br/><br/>
               
               <strong><u>በዚህ መሰረት ፤</u></strong><br/>
               <ul style="list-style-type: none; padding-left: 20px; margin-bottom: 20px;">
                 <li style="position: relative; padding-left: 20px;">
                   <span style="position: absolute; left: 0;">➢</span> 
-                  ከ ${req.hireDate ? new Date(req.hireDate).toLocaleDateString('am-ET') : '_____ወር_____ዓ/ም_____'} ጀምሮ ይህ ደብዳቤ ወጥቶ እስከሆነበት ድረስ በእንጅባራ ዩኒቨርሲቲ ስር 
+                  ከ ${req.hireDate ? formatEthiopianDate(req.hireDate) : '_____ወር_____ዓ/ም_____'} ጀምሮ ይህ ደብዳቤ ወጥቶ እስከሆነበት ድረስ በእንጅባራ ዩኒቨርሲቲ ስር 
                   በ${departmentName} ክፍል በ${req.designationName || '_________________'} ደረጃ የወር ደመወዝ ብር ${req.salary ? req.salary : '_________________'} 
                   እየተከፈላቸው እያገለገሉ ያሉ መሆናቸውን እንገልፃለን፡፡
                 </li>
@@ -518,7 +519,7 @@ const Recommendations = () => {
                         </span>
                       </td>
                       <td>
-                        {new Date(req.requestDate).toLocaleDateString()}
+                        {formatEthiopianDate(req.requestDate)}
                       </td>
                       <td>
                         <span className={`hr-leave-request-badge ${statusClass}`}>
@@ -632,7 +633,7 @@ const Recommendations = () => {
                       
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', fontWeight: 'bold' }}>
                         <div>ቁጥር፡ <u> {selectedReq.id.slice(0,8).toUpperCase()} </u></div>
-                        <div>ቀን፡ <u> {new Date().toLocaleDateString('am-ET')} </u></div>
+                        <div>ቀን፡ <u> {formatEthiopianDate(new Date())} </u></div>
                       </div>
                     </>
                   )}
@@ -648,7 +649,7 @@ const Recommendations = () => {
                       {selectedReq.recommendationType === 'HOUSING_COOPERATIVE' && (
                         <div style={{ marginBottom: '30px' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-                            <div>ቀን፡ <u> {new Date().toLocaleDateString('am-ET')} </u></div>
+                            <div>ቀን፡ <u> {formatEthiopianDate(new Date())} </u></div>
                             <div>አይ/ቁጥር፡ <u> {selectedReq.id.slice(0,8).toUpperCase()} </u></div>
                           </div>
                           <h4 style={{ margin: '5px 0', fontSize: '16px' }}>ለብቃትና ሰው ሀብት አስተዳደር ሥራ አስፈፃሚ</h4>

@@ -9,7 +9,7 @@ import './LeaveRequests.css';
 
 const LeaveRequests = () => {
   const { t, i18n } = useTranslation();
-  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'https://hrms-6mfv.onrender.com/api';
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
   const apiOrigin = apiBaseUrl.replace(/\/api\/?$/, '');
   const [requests, setRequests] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
