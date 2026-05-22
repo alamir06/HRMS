@@ -29,7 +29,7 @@ const limiter = rateLimit({
 });
 
 const parseOrigins = (value) => (value ? value.split(',').map((origin) => origin.trim()).filter(Boolean) : []);
-const defaultFrontendUrl = 'https://hrms-ui-emgn.onrender.com';
+const defaultFrontendUrl = 'http://localhost:5173';
 const allowedOrigins = process.env.NODE_ENV === 'production'
   ? [...parseOrigins(process.env.FRONTEND_URL), ...parseOrigins(process.env.CLIENT_URL), defaultFrontendUrl]
   : [
