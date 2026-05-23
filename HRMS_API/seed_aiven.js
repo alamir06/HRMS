@@ -74,7 +74,7 @@ async function seed() {
         await connection.query(statements[i]);
       } catch (err) {
         // Suppress "already exists" errors to allow script to re-run gracefully
-        if(err.code !== 'ER_TABLE_EXISTS_ERROR' && err.code !== 'ER_TRG_ALREADY_EXISTS') {
+        if(err.code !== 'ER_TABLE_EXISTS_ERROR' && err.code !== 'ER_TRG_ALREADY_EXISTS' && err.code !== 'ER_DUP_KEYNAME') {
            console.error(`\n❌ Error on statement ${i + 1}:`, err.message);
            console.log(`Statement snippet: ${statements[i].substring(0, 100)}...`);
            throw err;
