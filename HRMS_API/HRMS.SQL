@@ -851,19 +851,7 @@ BEGIN
     END IF;
 END//
 
--- Trigger to prevent wrong employee type data in HR table
-CREATE TRIGGER preventWrongTypeHr
-BEFORE INSERT ON employeeHr
-FOR EACH ROW
-BEGIN
-    DECLARE empType ENUM('ACADEMIC', 'HROFFICER', 'OUTSOURCE');
-    SELECT employeeType INTO empType FROM employee WHERE id = NEW.employeeId;
-    
-    IF empType != 'HROFFICER' THEN
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'HR information can only be added for HR officer employees';
-    END IF;
-END//
+-- Removed missing employeeHr trigger
 
 -- Trigger to prevent wrong employee type data in outsource table
 CREATE TRIGGER preventWrongTypeOutsource
@@ -892,7 +880,6 @@ SELECT
     ee.officialEmail, ee.officialPhone, ee.salary,
     ea.academicRank, ea.academicRankAmharic,
     ea.fieldOfSpecialization, ea.fieldOfSpecializationAmharic,
-    eh.hrSpecialization, eh.hrLevel,
     d.departmentName, d.departmentNameAmharic,
     d.departmentType,
     des.title as designationTitle, des.titleAmharic as designationTitleAmharic,
@@ -913,7 +900,6 @@ FROM employee e
 LEFT JOIN employeePersonal ep ON e.id = ep.employeeId
 LEFT JOIN employeeEmployment ee ON e.id = ee.employeeId
 LEFT JOIN employeeAcademic ea ON e.id = ea.employeeId
-LEFT JOIN employeeHr eh ON e.id = eh.employeeId
 LEFT JOIN department d ON e.departmentId = d.id
 LEFT JOIN designations des ON des.employeeId = e.id
 LEFT JOIN users u ON e.id = u.employeeId;
