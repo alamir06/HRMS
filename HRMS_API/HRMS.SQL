@@ -697,7 +697,7 @@ ALTER TABLE company ADD CONSTRAINT uniqueCompanyEmail UNIQUE (companyEmail);
 ALTER TABLE company ADD CONSTRAINT uniqueCompanyPhone UNIQUE (companyPhone);
 ALTER TABLE college ADD CONSTRAINT uniqueCollegePerCompany UNIQUE (companyId, collegeName);
 -- Remove old unique constraint if exists
-ALTER TABLE department DROP INDEX uniqueDepartmentPerCompany;
+-- ALTER TABLE department DROP INDEX uniqueDepartmentPerCompany;
 -- Add new unique constraint: for academic departments, uniqueness is (collegeId, departmentName); for administrative, (companyId, departmentName, parentDepartmentId)
 CREATE UNIQUE INDEX uniqueAcademicDepartmentPerCollege ON department (collegeId, departmentName) WHERE departmentType = 'ACADEMIC';
 CREATE UNIQUE INDEX uniqueAdminDepartmentPerCompanyParent ON department (companyId, departmentName, parentDepartmentId) WHERE departmentType = 'ADMINISTRATIVE';
