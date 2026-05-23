@@ -5,15 +5,24 @@ dotenv.config();
 
 async function seed() {
   try {
+    const host = process.env.DB_HOST || 'mysql-1946dd8f-hrms-123.f.aivencloud.com';
+    const port = Number(process.env.DB_PORT) || 18319;
+    const user = process.env.DB_USER || 'avnadmin';
+    const password = process.env.DB_PASSWORD;
+    const database = process.env.DB_NAME || 'defaultdb';
+
+    console.log(`\nDEBUG VARIABLES: host=${host}, port=${port}, user=${user}, db=${database}`);
+    console.log(`PASSWORD EXISTS?: ${!!password}`);
+
     console.log("\nConnecting to your Aiven MySQL database...");
     
     // We will pull the connection details directly from your .env variables!
     const connection = await mysql.createConnection({
-      host: process.env.DB_HOST || 'mysql-1946dd8f-hrms-123.f.aivencloud.com',
-      port: process.env.DB_PORT || 25060,
-      user: process.env.DB_USER || 'avnadmin',
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_NAME || 'defaultdb',
+      host: host,
+      port: port,
+      user: user,
+      password: password,
+      database: database,
       ssl: {
           rejectUnauthorized: false
       },
