@@ -445,9 +445,9 @@ const Employees = () => {
                           const displayName = getEmployeeDisplayName(emp);
                           return (
                         <img 
-                           src={emp.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=0B8255&color=fff`} 
+                           src={emp.profilePicture || `${import.meta.env.VITE_AVATAR_API_URL}?name=${encodeURIComponent(displayName)}&background=0B8255&color=fff`} 
                            alt="avatar" 
-                           onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=0B8255&color=fff` }}
+                           onError={(e) => { e.target.src = `${import.meta.env.VITE_AVATAR_API_URL}?name=${encodeURIComponent(displayName)}&background=0B8255&color=fff` }}
                         />
                           );
                         })()}

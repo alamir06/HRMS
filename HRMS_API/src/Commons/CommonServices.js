@@ -93,7 +93,7 @@ export const createTelegramNotifier = () => {
         formData.append("caption", message);
         formData.append("photo", new Blob([imageBuffer], { type: "image/png" }), "vacancy.png");
 
-        await fetchImpl(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
+        await fetchImpl(`${process.env.TELEGRAM_API_BASE_URL}/bot${botToken}/sendPhoto`, {
           method: "POST",
           body: formData,
         });

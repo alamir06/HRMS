@@ -244,7 +244,7 @@ const StaffAttendance = () => {
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                           <div className="hr-attendance-avatar">
-                            <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(getFullName(entry))}&background=0B8255&color=fff`} alt="avatar"/>
+                            <img src={`${import.meta.env.VITE_AVATAR_API_URL}?name=${encodeURIComponent(getFullName(entry))}&background=0B8255&color=fff`} alt="avatar"/>
                           </div>
                           <div className="hr-attendance-col-primary-text" style={{ display: 'flex', flexDirection: 'column' }}>
                             <strong>{getFullName(entry)}</strong>

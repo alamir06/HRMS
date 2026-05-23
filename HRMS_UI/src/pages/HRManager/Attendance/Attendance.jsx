@@ -376,7 +376,7 @@ const Attendance = () => {
                         <td>
                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                               <div className="hr-attendance-avatar">
-                                 <img src={emp.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent((emp.firstName || "") + ' ' + (emp.lastName || ""))}&background=0B8255&color=fff`} alt="avatar"/>
+                                 <img src={emp.profilePicture || `${import.meta.env.VITE_AVATAR_API_URL}?name=${encodeURIComponent((emp.firstName || "") + ' ' + (emp.lastName || ""))}&background=0B8255&color=fff`} alt="avatar"/>
                               </div>
                               <div className="hr-attendance-col-primary-text" style={{ display: 'flex', flexDirection: 'column' }}>
                                  <strong>{emp.firstName} {emp.lastName}</strong>

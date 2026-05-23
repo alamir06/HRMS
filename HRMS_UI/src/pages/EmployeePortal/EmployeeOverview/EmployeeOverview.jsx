@@ -193,7 +193,7 @@ const EmployeeOverview = () => {
     }
   };
 
-  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
   const apiOrigin = apiBaseUrl.replace(/\/api\/?$/, '');
 
   const getDocPath = (doc) => {
@@ -254,10 +254,10 @@ const EmployeeOverview = () => {
             <div className="profile-avatar-section">
               <div className="avatar-wrapper-lg">
                 <img 
-                  src={employee.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(getEmployeeDisplayName(employee))}&background=0B8255&color=fff`} 
+                  src={employee.profilePicture || `${import.meta.env.VITE_AVATAR_API_URL}?name=${encodeURIComponent(getEmployeeDisplayName(employee))}&background=0B8255&color=fff`} 
                   alt="Profile" 
                   style={{ opacity: isUploadingPic ? 0.5 : 1 }}
-                  onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(getEmployeeDisplayName(employee))}&background=0B8255&color=fff` }}
+                  onError={(e) => { e.target.src = `${import.meta.env.VITE_AVATAR_API_URL}?name=${encodeURIComponent(getEmployeeDisplayName(employee))}&background=0B8255&color=fff` }}
                 />
                 <div 
                   className="profile-pic-edit-badge" 

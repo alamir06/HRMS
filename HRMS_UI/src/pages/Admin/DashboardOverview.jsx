@@ -401,7 +401,7 @@ const DashboardOverview = () => {
                ) : (
                   (showAllAppointments ? recentAppointments : recentAppointments.slice(0, 5)).map(app => (
                      <div className="appointment-item" key={app.id}>
-                        <img src={app.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(app.firstName)}+${encodeURIComponent(app.lastName)}&background=0B8255&color=fff`} className="app-avatar" alt="avatar" />
+                        <img src={app.profilePicture || `${import.meta.env.VITE_AVATAR_API_URL}?name=${encodeURIComponent(app.firstName)}+${encodeURIComponent(app.lastName)}&background=0B8255&color=fff`} className="app-avatar" alt="avatar" />
                         <div className="app-details">
                            <h4>{app.firstName} {app.lastName}</h4>
                            <p>{app.title} • {app.collegeName || app.departmentName}</p>
@@ -430,7 +430,7 @@ const DashboardOverview = () => {
                ) : (
                   (showAllTransfers ? recentTransfers : recentTransfers.slice(0, 5)).map(app => (
                      <div className="appointment-item" key={app.id}>
-                        <img src={app.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(app.firstName)}+${encodeURIComponent(app.lastName)}&background=0B8255&color=fff`} className="app-avatar" alt="avatar" />
+                        <img src={app.profilePicture || `${import.meta.env.VITE_AVATAR_API_URL}?name=${encodeURIComponent(app.firstName)}+${encodeURIComponent(app.lastName)}&background=0B8255&color=fff`} className="app-avatar" alt="avatar" />
                         <div className="app-details">
                            <h4>{app.firstName} {app.lastName}</h4>
                            <p>Transferred • {app.departmentName}</p>

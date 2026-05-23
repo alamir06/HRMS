@@ -324,9 +324,9 @@ const Designations = () => {
                       <div className="registry-employee-cell">
                          <div className="registry-avatar">
                            <img 
-                              src={des.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(getEmployeeDisplayName(des))}&background=0B8255&color=fff`} 
+                              src={des.profilePicture || `${import.meta.env.VITE_AVATAR_API_URL}?name=${encodeURIComponent(getEmployeeDisplayName(des))}&background=0B8255&color=fff`} 
                               alt="avatar" 
-                              onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(getEmployeeDisplayName(des))}&background=0B8255&color=fff` }}
+                              onError={(e) => { e.target.src = `${import.meta.env.VITE_AVATAR_API_URL}?name=${encodeURIComponent(getEmployeeDisplayName(des))}&background=0B8255&color=fff` }}
                            />
                          </div>
                          <div className="registry-emp-info">
@@ -452,7 +452,7 @@ const Designations = () => {
             <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', padding: '1.5rem' }}>
                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
                   <img 
-                    src={`https://ui-avatars.com/api/?name=${encodeURIComponent(getEmployeeDisplayName(viewDesignation))}&background=0B8255&color=fff`} 
+                    src={`${import.meta.env.VITE_AVATAR_API_URL}?name=${encodeURIComponent(getEmployeeDisplayName(viewDesignation))}&background=0B8255&color=fff`} 
                     alt="avatar" 
                     style={{ width: '64px', height: '64px', borderRadius: '50%' }} 
                   />
