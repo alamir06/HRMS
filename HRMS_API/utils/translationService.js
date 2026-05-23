@@ -3,7 +3,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 const DEFAULT_TRANSLATE_URL =
-  process.env.TRANSLATE_URL || "https://libretranslate.com/translate";
+  process.env.TRANSLATION_API_URL;
 const TRANSLATE_API_KEY = process.env.TRANSLATE_API_KEY || "";
 const TRANSLATE_TIMEOUT_MS = Number(process.env.TRANSLATE_TIMEOUT_MS || 8000);
 const TRANSLATE_MODE = (process.env.TRANSLATE_MODE || "transliteration").toLowerCase();

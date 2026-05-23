@@ -422,7 +422,7 @@ export class EmployeeService extends CrudService {
         const employeeEmail = (personal && personal.personalEmail) || (employment && employment.officialEmail);
         if (employeeEmail) {
           try {
-            const frontendUrl = process.env.FRONTEND_URL || process.env.CLIENT_URL || 'http://localhost:5173';
+            const frontendUrl = process.env.FRONTEND_URL || process.env.CLIENT_URL;
             const emailHtml = `
               <div style="font-family: 'Inter', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -2px rgba(0, 0, 0, 0.05);">
                 <div style="background-color: #0b8255; padding: 24px; text-align: center;">

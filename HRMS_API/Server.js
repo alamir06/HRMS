@@ -29,16 +29,11 @@ const limiter = rateLimit({
 });
 
 const parseOrigins = (value) => (value ? value.split(',').map((origin) => origin.trim()).filter(Boolean) : []);
-const defaultFrontendUrl = 'http://localhost:5173';
-const allowedOrigins = process.env.NODE_ENV === 'production'
-  ? [...parseOrigins(process.env.FRONTEND_URL), ...parseOrigins(process.env.CLIENT_URL), defaultFrontendUrl]
-  : [
-      'http://localhost:3000',
-      'http://localhost:5173',
-      defaultFrontendUrl,
-      ...parseOrigins(process.env.FRONTEND_URL),
-      ...parseOrigins(process.env.CLIENT_URL),
-    ];
+const allowedOrigins = [
+  ...parseOrigins(process.env.FRONTEND_URL),
+  ...parseOrigins(process.env.CLIENT_URL),
+  ...parseOrigins(process.env.CORS_ORIGINS),
+];
 
 //By Group1:Middleware
 app.use(helmet());
@@ -184,7 +179,7 @@ async function startServer() {
   startLeaveCronJobs();
 
   app.listen(PORT, () => {
-    const baseUrl = process.env.BACKEND_URL || `http://localhost:${PORT}`;
+    const baseUrl = process.env.BACKEND_URL;
     console.log(`HRMS Server running on port ${PORT}`);
     console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log(`Health check: ${baseUrl}/health`);

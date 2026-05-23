@@ -21,7 +21,7 @@ const REC_TYPES = [
 ];
 
 const Recommendations = () => {
-  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
   const apiOrigin = apiBaseUrl.replace(/\/api\/?$/, '');
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -501,9 +501,9 @@ const Recommendations = () => {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                           <div className="hr-leave-request-avatar">
                             <img 
-                              src={req.profilePicture ? `${apiOrigin}${req.profilePicture.startsWith('/') ? '' : '/'}${req.profilePicture}` : `https://ui-avatars.com/api/?name=${encodeURIComponent((req.firstName || "") + ' ' + (req.lastName || ""))}&background=0B8255&color=fff`} 
+                              src={req.profilePicture ? `${apiOrigin}${req.profilePicture.startsWith('/') ? '' : '/'}${req.profilePicture}` : `${import.meta.env.VITE_AVATAR_API_URL}?name=${encodeURIComponent((req.firstName || "") + ' ' + (req.lastName || ""))}&background=0B8255&color=fff`} 
                               alt="Profile"
-                              onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent((req.firstName || "") + ' ' + (req.lastName || ""))}&background=0B8255&color=fff` }}
+                              onError={(e) => { e.target.src = `${import.meta.env.VITE_AVATAR_API_URL}?name=${encodeURIComponent((req.firstName || "") + ' ' + (req.lastName || ""))}&background=0B8255&color=fff` }}
                             />
                           </div>
                           <div className="hr-leave-request-col-primary-text">

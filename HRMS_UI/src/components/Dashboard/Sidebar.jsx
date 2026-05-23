@@ -49,7 +49,7 @@ const Sidebar = ({ onOpenProfile, mobileOpen = false, onCloseMobile }) => {
   }, []);
 
   const { t } = useTranslation();
-  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
   const apiOrigin = apiBaseUrl.replace(/\/api\/?$/, '');
 
   const navItems = [
@@ -168,10 +168,10 @@ const Sidebar = ({ onOpenProfile, mobileOpen = false, onCloseMobile }) => {
                     ? (authUser.profilePicture.startsWith('http') 
                       ? authUser.profilePicture 
                       : `${apiOrigin}/${authUser.profilePicture.replace(/^\//, '')}`)
-                  : `https://ui-avatars.com/api/?name=${encodeURIComponent(authUser?.name || "Admin User")}&background=0B8255&color=fff`
+                  : `${import.meta.env.VITE_AVATAR_API_URL}?name=${encodeURIComponent(authUser?.name || "Admin User")}&background=0B8255&color=fff`
               } 
               onError={(e) => { 
-                e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(authUser?.name || "Admin User")}&background=0B8255&color=fff`; 
+                e.target.src = `${import.meta.env.VITE_AVATAR_API_URL}?name=${encodeURIComponent(authUser?.name || "Admin User")}&background=0B8255&color=fff`; 
               }}
               alt="User Profile" 
             />
