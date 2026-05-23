@@ -7,6 +7,7 @@ async function seed() {
   try {
     console.log("\nConnecting to your Aiven MySQL database...");
     
+    // We will pull the connection details directly from your .env variables!
     const connection = await mysql.createConnection({
       host: process.env.DB_HOST || 'mysql-1946dd8f-hrms-123.f.aivencloud.com',
       port: process.env.DB_PORT || 25060,
@@ -14,8 +15,9 @@ async function seed() {
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME || 'defaultdb',
       ssl: {
-        rejectUnauthorized: false
-      }
+          rejectUnauthorized: false
+      },
+      multipleStatements: true
     });
     
     console.log("Connected successfully! Reading and parsing HRMS.SQL...");
