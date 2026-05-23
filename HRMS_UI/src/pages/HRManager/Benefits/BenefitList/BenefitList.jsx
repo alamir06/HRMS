@@ -20,8 +20,36 @@ import ConfirmModal from '../../../../components/common/ConfirmModal';
 import { formatEthiopianDate } from '../../../../utils/dateTime';
 import './BenefitList.css';
 
-const BENEFIT_TYPES = ['Health', 'Retirement', 'Insurance', 'Wellness', 'Other'];
+const BENEFIT_TYPES = ['HEALTH', 'RETIREMENT', 'INSURANCE', 'WELLNESS', 'OTHER'];
 
+<<<<<<< HEAD
+const benefitFormFields = [
+  { name: 'benefitName', label: 'Benefit Name', type: 'text', required: true },
+  { name: 'benefitNameAmharic', label: 'Name (Amharic)', type: 'text' },
+  {
+    name: 'benefitType',
+    label: 'Type',
+    type: 'select',
+    required: true,
+    options: BENEFIT_TYPES.map((item) => ({ value: item, label: item[0] + item.slice(1).toLowerCase() }))
+  },
+  { name: 'costToCompany', label: 'Cost To Company', type: 'number', min: 0 },
+  {
+    name: 'isActive',
+    label: 'Status',
+    type: 'select',
+    required: true,
+    options: [
+      { value: 'true', label: 'Active' },
+      { value: 'false', label: 'Inactive' }
+    ]
+  },
+  { name: 'description', label: 'Description', type: 'textarea', fullWidth: true },
+  { name: 'descriptionAmharic', label: 'Description (Amharic)', type: 'textarea', fullWidth: true }
+];
+
+=======
+>>>>>>> 00e5d6b074a465353b0fbf77c899ee35e64611d1
 const BenefitList = () => {
   const { t, i18n } = useTranslation();
   const [benefits, setBenefits] = useState([]);
@@ -151,9 +179,21 @@ const BenefitList = () => {
   };
 
   const handleFormSubmit = async (formData) => {
+<<<<<<< HEAD
+    const payload = {
+      benefitName: formData.benefitName,
+      benefitNameAmharic: formData.benefitNameAmharic || null,
+      description: formData.description || null,
+      descriptionAmharic: formData.descriptionAmharic || null,
+      benefitType: String(formData.benefitType).toUpperCase(),
+      costToCompany: formData.costToCompany === '' ? null : Number(formData.costToCompany),
+      isActive: formData.isActive === true || formData.isActive === 'true',
+    };
+=======
     const payload = { ...formData };
     payload.costToCompany = payload.costToCompany === '' || payload.costToCompany == null ? null : Number(payload.costToCompany);
     payload.isActive = payload.isActive === true || payload.isActive === 'true';
+>>>>>>> 00e5d6b074a465353b0fbf77c899ee35e64611d1
 
     try {
       setIsSubmitting(true);
