@@ -643,6 +643,9 @@ export const generatePasswordResetToken = async (email) => {
     [hashedToken, expiresAt, user.userId]
   );
   const baseUrl = getFirstOrigin(process.env.FRONTEND_URL) || getFirstOrigin(process.env.CLIENT_URL);
+  if (!baseUrl) {
+    throw new Error('Missing FRONTEND_URL or CLIENT_URL for password reset link generation');
+  }
   const resetUrl = `${baseUrl}/reset-password?token=${resetToken}`;
   const subject = "Password Reset Request - HRMS";
   const html = `
