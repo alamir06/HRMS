@@ -641,7 +641,10 @@ export const generatePasswordResetToken = async (email) => {
     'UPDATE users SET resetPasswordToken = ?, resetPasswordExpires = ? WHERE id = UUID_TO_BIN(?)',
     [hashedToken, expiresAt, user.userId]
   );
-  const baseUrl = process.env.FRONTEND_URL;
+  const baseUrl = (process.env.FRONTEND_URL || process.env.CLIENT_URL || '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .find(Boolean) || '';
   const resetUrl = `${baseUrl}/reset-password?token=${resetToken}`;
   const subject = "Password Reset Request - HRMS";
   const html = `
