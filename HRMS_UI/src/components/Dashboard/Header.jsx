@@ -84,13 +84,13 @@ const Header = ({ onOpenProfile, onToggleSidebar, isSidebarOpen = false }) => {
     try {
       await api.post('/auth/logout');
     } catch (e) {
-      console.error("Logout API failed, proceeding with local logout", e);
+      console.error("Logout API failed, Proceeding With Local Logout", e);
     } finally {
       localStorage.removeItem('adminToken');
       localStorage.removeItem('user');
       sessionStorage.removeItem('adminToken');
       sessionStorage.removeItem('user');
-      window.location.href = '/login';
+      navigate('/login', { replace: true });
     }
   };
 

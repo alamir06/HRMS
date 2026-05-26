@@ -1,14 +1,19 @@
 import mysql from 'mysql2/promise';
 import dotenv from 'dotenv';
-dotenv.config();
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.join(__dirname, '.env') });
 
 async function createSuretyTable() {
   try {
-    const host = process.env.DB_HOST || 'mysql-1946dd8f-hrms-123.f.aivencloud.com';
-    const port = Number(process.env.DB_PORT) || 18319;
-    const user = process.env.DB_USER || 'avnadmin';
-    const password = process.env.DB_PASSWORD;
-    const database = process.env.DB_NAME || 'defaultdb';
+    const host = process.env.DB_HOST || 'kodama.proxy.rlwy.net';
+    const port = Number(process.env.DB_PORT) || 31463;
+    const user = process.env.DB_USER || 'root';
+    const password = process.env.DB_PASSWORD || '';
+    const database = process.env.DB_NAME || 'railway';
 
     console.log("Connecting to database to verify/create 'employee_surety' table...");
 
