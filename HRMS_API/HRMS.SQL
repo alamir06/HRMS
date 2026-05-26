@@ -1,4 +1,5 @@
--- DO NOT USE HRMS; Rely on DB_NAME connection string
+CREATE DATABASE IF NOT EXISTS HRMS;
+USE HRMS;
 SET time_zone = '+03:00';
 
 -- ORGANIZATION STRUCTURE
