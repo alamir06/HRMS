@@ -414,7 +414,6 @@ export const forgotPassword = async (req, res, next) => {
   const { email } = req.body;
   try {
     await generatePasswordResetToken(email);
-    // Always return success to prevent email enumeration attacks
     res.json({ success: true, message: "If an account exists with that email, a password reset link has been sent." });
   } catch (error) {
     next(error);
