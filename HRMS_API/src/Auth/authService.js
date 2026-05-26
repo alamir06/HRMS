@@ -621,7 +621,6 @@ export const getEmployeeContact = async (employeeId) => {
 };
 
 export const generatePasswordResetToken = async (email) => {
-  // Find user by email (checking both personal and official)
   const [rows] = await pool.execute(`
     SELECT BIN_TO_UUID(u.id) as userId, ep.firstName
     FROM users u
@@ -630,33 +629,20 @@ export const generatePasswordResetToken = async (email) => {
     LEFT JOIN employeeEmployment ee ON e.id = ee.employeeId
     WHERE ep.personalEmail = ? OR ee.officialEmail = ?
   `, [email, email]);
-
   if (!rows || rows.length === 0) {
-    // Return silently to prevent email enumeration
     return;
   }
 
   const user = rows[0];
-  
-  // Generate a random token
   const resetToken = crypto.randomBytes(32).toString('hex');
-  
-  // Hash it for the database
   const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
-  
-  // Set expiry to 1 hour from now
   const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
-
-  // Update user record
   await pool.execute(
     'UPDATE users SET resetPasswordToken = ?, resetPasswordExpires = ? WHERE id = UUID_TO_BIN(?)',
     [hashedToken, expiresAt, user.userId]
   );
-
-  // Send email
-  const baseUrl = process.env.FRONTEND_URL || process.env.CLIENT_URL;
+  const baseUrl = process.env.FRONTEND_URL;
   const resetUrl = `${baseUrl}/reset-password?token=${resetToken}`;
-  
   const subject = "Password Reset Request - HRMS";
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
