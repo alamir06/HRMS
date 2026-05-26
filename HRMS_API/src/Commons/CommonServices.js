@@ -98,7 +98,16 @@ export const createTelegramNotifier = () => {
           body: formData,
         });
       } catch (error) {
-        console.error("Telegram exact Image notification failed", error);
+        console.error("Telegram exact Image notification failed, falling back to text message...", error.message);
+        try {
+          await fetchImpl(`${process.env.TELEGRAM_API_BASE_URL}/bot${botToken}/sendMessage`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ chat_id: chatId, text: message })
+          });
+        } catch (fallbackError) {
+           console.error("Telegram fallback text notification failed", fallbackError.message);
+        }
       }
     },
   };
