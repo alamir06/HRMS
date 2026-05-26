@@ -191,6 +191,23 @@ CREATE TABLE employeeEducation (
     FOREIGN KEY (documentId) REFERENCES employeeDocuments(id) ON DELETE SET NULL
 );
 
+CREATE TABLE employee_surety (
+  id binary(16) NOT NULL,
+  employeeId binary(16) NOT NULL,
+  suretyName varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  suretyPhone varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  suretyEmail varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  documentName varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  documentPath varchar(1000) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  mimeType varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  fileSize int DEFAULT NULL,
+  createdAt timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  updatedAt timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY fk_employee_surety (employeeId),
+  CONSTRAINT `fk_employee_surety` FOREIGN KEY (`employeeId`) REFERENCES `employee` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- DESIGNATION WITH ASSIGNED EMPLOYEE
 CREATE TABLE designations (
     id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
@@ -295,6 +312,7 @@ CREATE TABLE leaveRequest (
     reason TEXT,
     reasonAmharic TEXT,
     supportDocument VARCHAR(255) NULL,
+    documentNumber VARCHAR(100) NULL,
     status ENUM('PENDING', 'APPROVED', 'REJECTED') DEFAULT 'PENDING',
     approvedBy BINARY(16),
     approvedAt TIMESTAMP NULL,
@@ -303,6 +321,7 @@ CREATE TABLE leaveRequest (
     createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
+
  CREATE TABLE  leaveRolloverRequest (
         id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID())),
         employeeId BINARY(16) NOT NULL,
@@ -330,14 +349,12 @@ CREATE TABLE payroll (
     overtimeAllowance DECIMAL(10,2) DEFAULT 0,
     otherAllowances DECIMAL(10,2) DEFAULT 0,
     totalEarnings DECIMAL(10,2) NOT NULL,
-    
     -- Deductions
     taxDeduction DECIMAL(10,2) DEFAULT 0,
     providentFund DECIMAL(10,2) DEFAULT 0,
     leaveDeduction DECIMAL(10,2) DEFAULT 0,
     otherDeductions DECIMAL(10,2) DEFAULT 0,
     totalDeductions DECIMAL(10,2) DEFAULT 0,
-    
     netSalary DECIMAL(10,2) NOT NULL,
     paymentDate DATE,
     paymentStatus ENUM('PENDING', 'PAID', 'UNPAID') DEFAULT 'PENDING',
@@ -423,6 +440,7 @@ CREATE TABLE recruitment (
     requirements TEXT,
     requirementsAmharic TEXT,
     vacancies INT NOT NULL,
+    level VARCHAR(50) NULL,
     experienceRequired VARCHAR(100),
     salaryRange VARCHAR(100),
     status ENUM('DRAFT', 'OPEN', 'CLOSED', 'CANCELLED') DEFAULT 'DRAFT',
@@ -561,7 +579,8 @@ CREATE TABLE notices (
     content TEXT NOT NULL,
     contentAmharic TEXT,
     noticeType ENUM('GENERAL', 'POLICY', 'EVENT', 'URGENT') DEFAULT 'GENERAL',
-    targetAudience ENUM('ALL', 'DEPARTMENT', 'INDIVIDUAL') DEFAULT 'ALL',
+    targetAudience ENUM('ALL', 'COLLEGE', 'DEPARTMENT', 'INDIVIDUAL') DEFAULT 'ALL',
+    targetCollegeId BINARY(16),
     targetDepartmentId BINARY(16),
     targetEmployeeId BINARY(16),
     publishDate DATE NOT NULL,
@@ -653,6 +672,7 @@ ALTER TABLE assetAssignment ADD FOREIGN KEY (employeeId) REFERENCES employee(id)
 ALTER TABLE assetAssignment ADD FOREIGN KEY (assignedBy) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE employeeBenefits ADD FOREIGN KEY (employeeId) REFERENCES employee(id) ON DELETE CASCADE;
 ALTER TABLE employeeBenefits ADD FOREIGN KEY (benefitId) REFERENCES benefits(id) ON DELETE CASCADE;
+ALTER TABLE notices ADD FOREIGN KEY (targetCollegeId) REFERENCES college(id) ON DELETE CASCADE;
 ALTER TABLE notices ADD FOREIGN KEY (targetDepartmentId) REFERENCES department(id) ON DELETE CASCADE;
 ALTER TABLE notices ADD FOREIGN KEY (targetEmployeeId) REFERENCES employee(id) ON DELETE CASCADE;
 ALTER TABLE notices ADD FOREIGN KEY (createdBy) REFERENCES users(id) ON DELETE CASCADE;

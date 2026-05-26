@@ -10,7 +10,7 @@ const assetCategoryBase = z.object({
   categoryNameAmharic: z.string().optional().nullable(),
   description: z.string().optional().nullable(),
   descriptionAmharic: z.string().optional().nullable(),
-}).strict();
+});
 
 const moneySchema = z
   .number({ invalidTypeError: "Value must be a number" })
