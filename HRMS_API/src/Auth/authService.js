@@ -621,6 +621,7 @@ export const getEmployeeContact = async (employeeId) => {
 };
 
 export const generatePasswordResetToken = async (email) => {
+  const getFirstOrigin = (value) => (value ? value.split(',').map((origin) => origin.trim()).find(Boolean) : null);
   const [rows] = await pool.execute(`
     SELECT BIN_TO_UUID(u.id) as userId, ep.firstName
     FROM users u
@@ -641,7 +642,10 @@ export const generatePasswordResetToken = async (email) => {
     'UPDATE users SET resetPasswordToken = ?, resetPasswordExpires = ? WHERE id = UUID_TO_BIN(?)',
     [hashedToken, expiresAt, user.userId]
   );
-  const baseUrl = process.env.FRONTEND_URL;
+  const baseUrl = getFirstOrigin(process.env.FRONTEND_URL) || getFirstOrigin(process.env.CLIENT_URL);
+  if (!baseUrl) {
+    throw new Error('Missing FRONTEND_URL or CLIENT_URL for password reset link generation');
+  }
   const resetUrl = `${baseUrl}/reset-password?token=${resetToken}`;
   const subject = "Password Reset Request - HRMS";
   const html = `
