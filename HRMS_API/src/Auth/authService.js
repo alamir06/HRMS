@@ -642,7 +642,7 @@ export const generatePasswordResetToken = async (email) => {
     [hashedToken, expiresAt, user.userId]
   );
   const baseUrl = process.env.FRONTEND_URL;
-  const resetUrl = `${baseUrl}/api/reset-password?token=${resetToken}`;
+  const resetUrl = `${baseUrl}/reset-password?token=${resetToken}`;
   const subject = "Password Reset Request - HRMS";
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
